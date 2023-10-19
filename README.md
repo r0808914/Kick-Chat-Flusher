@@ -9,16 +9,10 @@ Enhance your Kick.com viewing experience with a dynamic fullscreen chat overlay.
 - Compatible with both live and VOD (Video on Demand) modes
 - Experimental: May result in performance issues or lag
 
-> **Note**: Use with caution. This user script is experimental and may result in performance issues or lag.
-
 ## Instructions
 
 1. Install a user script manager like [Violentmonkey](https://violentmonkey.github.io/get-it/).
 2. Install this script by visiting [Greasy Fork](https://greasyfork.org/en/scripts/476381-kick-com-fullscreen-chat-overlay).
 3. Enjoy Kick.com with an enhanced chat experience!
 
-> **Future Updates**: This script may receive updates either by the original author or the community through forks or test releases.
-
-![Preview](https://i.ibb.co/GdGZCMc/screenshot.png)
-
-*This description is AI-generated.*
+![Screenshot](thumb.png)
