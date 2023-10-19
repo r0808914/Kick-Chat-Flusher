@@ -3,7 +3,7 @@
 // @namespace    Violentmonkey Scripts
 // @match        *://*.kick.com/*
 // @grant        none
-// @version      0.1.5
+// @version      0.1.6
 // @author       spaghetto.be
 // @description  Enhances the Kick.com viewing experience by providing a fullscreen chat overlay. Messages will flow from right to left, allowing for a seamless chat experience while watching content.
 // @icon         https://s2.googleusercontent.com/s2/favicons?domain=kick.com&sz=32
@@ -18,9 +18,9 @@ window.onload = function() {
 	let observer, existingSocket;
 
 	let loading = true,
-    isVod = true,
-    isProcessing = false,
-    lastFollowersCount = null;
+		isVod = true,
+		isProcessing = false,
+		lastFollowersCount = null;
 
 	const chatMessagesElement = document.getElementById("chat-messages");
 
@@ -57,7 +57,7 @@ window.onload = function() {
 			} else if (data.type === "message") {
 				createMessage(data);
 			} else if (data.type === "reply") {
-				if (!isVod) console.log('reply'); // Should be added
+				// if (!isVod) console.log('reply'); Should be added
 			} else if (eventType === "App\\Events\\UserBannedEvent") {
 				createUserBanMessage(data.data);
 			} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
@@ -99,7 +99,7 @@ window.onload = function() {
 	 */
 	function selectRow(messageContainer, messageWidth) {
 		let selectedRow = 0;
-    const parent = document.getElementById("chat-messages");
+		const parent = document.getElementById("chat-messages");
 		if (lastPositionPerRow.length > 0) {
 			for (let i = 0; i < lastPositionPerRow.length; i++) {
 				const lastMessage = lastPositionPerRow[i];
@@ -137,11 +137,11 @@ window.onload = function() {
 		const messageWidth = messageContainer.clientWidth;
 		const messageHeight = messageContainer.clientHeight;
 
-    const parent = document.getElementById("chat-messages");
-    if(parent === null) return;
+		const parent = document.getElementById("chat-messages");
+		if (parent === null) return;
 
-    let selectedRow = selectRow(messageContainer, messageWidth);
-		const topPosition = selectedRow * (messageHeight + 3);
+		let selectedRow = selectRow(messageContainer, messageWidth);
+		const topPosition = selectedRow * (messageHeight + 5);
 
 
 		if (topPosition <= parent.offsetHeight) {
@@ -274,24 +274,23 @@ window.onload = function() {
 		const sender = data.sender;
 		const badges = sender.identity.badges || [];
 
-    console.info('checkForBadges: ' + sender.username);
-
-		const firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase()}"]`);
+		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase().replace(/_/g, '-')}"]`);
 		if (firstChatIdentity === null) {
 			setTimeout(function() {
+				console.info('checkForBadges: ' + sender.username);
 				messageQueue.push(data);
 				processMessageQueue();
 
 			}, 2000);
 			return;
-
 		}
+
 		const identity = firstChatIdentity.closest('.chat-message-identity');
 
 		// Check for badges
 		identity.querySelectorAll('.badge-tooltip').forEach(function(baseBadge, index) {
 			let badge = badges[index];
-      if(badge === undefined) return;
+			if (badge === undefined) return;
 			let badgeText = badge.text;
 
 			if (badge.count) {
@@ -369,7 +368,7 @@ window.onload = function() {
 
 		if (badgeCount !== badges.length) {
 			setTimeout(checkForBadges(data), 1000);
-			return false;
+			return;
 		}
 
 		return badgeString; // Badge not found, return text in HTML
@@ -395,7 +394,6 @@ window.onload = function() {
 		);
 
 		const badges = getBadges(data);
-		if (badges === false) return;
 
 		const messageContent = `
   <div class="chat-message-content">
@@ -580,30 +578,35 @@ window.onload = function() {
 		console.info('Chat Overlay Created: ' + window.location.href);
 	}
 
+
 	/**
 	 * Intercepts chat requests to process incoming messages.
 	 */
 	function interceptChatRequests() {
-		setTimeout(function() {
-			let open = window.XMLHttpRequest.prototype.open;
-			window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+		let open = window.XMLHttpRequest.prototype.open;
+		window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+			open.apply(this, arguments); // Open the XMLHttpRequest immediately
+
+			if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
 				this.addEventListener("load", function() {
-					if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
-						const response = JSON.parse(this.responseText);
+					let self = this; // Store a reference to this
+
+					setTimeout(function() {
+						const response = JSON.parse(self.responseText);
 						if (isVod && response.data && response.data.messages && document.getElementById("chat-messages") !== null) {
 							response.data.messages.forEach(function(message) {
 								messageQueue.push(message);
 								processMessageQueue();
-
 							});
 						} else {
-							setTimeout(initializeChat(false), 1000);
+							setTimeout(function() {
+								initializeChat(false);
+							}, 1000);
 						}
-					}
+					}, 0);
 				}, false);
-				open.apply(this, arguments);
-			};
-		}, 0);
+			}
+		};
 	}
 
 	// Call initializeChat to initialize chat on page load
