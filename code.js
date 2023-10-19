@@ -3,7 +3,7 @@
 // @namespace    Violentmonkey Scripts
 // @match        *://*.kick.com/*
 // @grant        none
-// @version      0.1.6
+// @version      0.1.7
 // @author       spaghetto.be
 // @description  Enhances the Kick.com viewing experience by providing a fullscreen chat overlay. Messages will flow from right to left, allowing for a seamless chat experience while watching content.
 // @icon         https://s2.googleusercontent.com/s2/favicons?domain=kick.com&sz=32
@@ -274,17 +274,18 @@ window.onload = function() {
 		const sender = data.sender;
 		const badges = sender.identity.badges || [];
 
-		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase().replace(/_/g, '-')}"]`);
+		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase()}"]`);
 		if (firstChatIdentity === null) {
-			setTimeout(function() {
-				console.info('checkForBadges: ' + sender.username);
-				messageQueue.push(data);
-				processMessageQueue();
-
+     			firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase().replace(/_/g, '-')}"]`);
+      		if (firstChatIdentity === null) {
+      		setTimeout(function() {
+				    console.info('checkForBadges: ' + sender.username);
+				    messageQueue.push(data);
+				    processMessageQueue();
 			}, 2000);
 			return;
-		}
-
+		  }
+    }
 		const identity = firstChatIdentity.closest('.chat-message-identity');
 
 		// Check for badges
