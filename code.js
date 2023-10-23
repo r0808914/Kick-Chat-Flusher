@@ -1,295 +1,363 @@
 // ==UserScript==
-// @name         Kick.com Fullscreen Chat Overlay
+// @name         kick.com Fullscreen Chat Overlay
 // @namespace    Violentmonkey Scripts
 // @match        *://*.kick.com/*
 // @grant        none
-// @version      0.1.7
+// @version      0.1.8
 // @author       spaghetto.be
 // @description  Enhances the Kick.com viewing experience by providing a fullscreen chat overlay. Messages will flow from right to left, allowing for a seamless chat experience while watching content.
 // @icon         https://s2.googleusercontent.com/s2/favicons?domain=kick.com&sz=32
 // @license      MIT
 // ==/UserScript==
 
-window.onload = function() {
-	const displayedMessages = {}; // Keeps track of displayed messages to avoid duplicates
-	const lastPositionPerRow = []; // Keeps track of the last position of messages in each row
-	const messageQueue = [];
+window.onload = function () {
+const lastPositionPerRow = [];
+const messageQueue = [];
+const badgeCache = [];
+const rowQueue = [];
 
-	let observer, existingSocket;
+let displayedMessages = {};
 
-	let loading = true,
-		isVod = true,
-		isProcessing = false,
-		lastFollowersCount = null;
+let observer, existingSocket;
 
-	const chatMessagesElement = document.getElementById("chat-messages");
+let loading = true,
+	isVod = true,
+	isProcessing = false,
+	chatEnabled = true,
+	parentWidth = null,
+	lastFollowersCount = null;
 
-	// Bind handleChatMessageEvent to the current context
-	const boundHandleChatMessageEvent = handleChatMessageEvent.bind(this);
+const boundHandleChatMessageEvent = handleChatMessageEvent.bind(this);
 
-	/**
-	 * Generates a unique key based on sender ID and content.
-	 * @param {string} key - The base key.
-	 * @param {string} value - The value to append to the key.
-	 * @returns {string} The generated message key.
-	 */
-	function getMessageKey(key, value) {
-		return key + "|" + value;
+function getMessageKey(key, value) {
+	return key + "|" + value;
+}
+
+function processMessageQueue() {
+
+	if (isProcessing || messageQueue.length === 0) {
+		return;
 	}
 
-	/**
-	 * Processes the message queue.
-	 */
-	function processMessageQueue() {
+	isProcessing = true;
 
-		if (isProcessing || messageQueue.length === 0) {
+	const data = messageQueue.shift();
+	const eventType = data.event ?? "";
+
+	try {
+		if (eventType === "App\\Events\\ChatMessageEvent") {
+			createMessage(data.data);
+		} else if (data.type === "message") {
+			createMessage(data);
+		} else if (eventType === "App\\Events\\UserBannedEvent") {
+			createUserBanMessage(data.data);
+		} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
+			createGiftedMessage(data.data);
+		} else if (eventType === "App\\Events\\FollowersUpdated") {
+			createFollowersMessage(data.data);
+		} else if (eventType === "App\\Events\\StreamHostEvent") {
+			createHostMessage(data.data);
+		} else if (eventType === "App\\Events\\SubscriptionEvent") {
+			createSubMessage(data.data);
+		}
+
+	} catch (error) {
+		console.error("Error parsing message data: ", error);
+	}
+
+	const queueLength = messageQueue.length;
+
+	let wait = isVod ? (100 * (40 / queueLength)) : 2000 / queueLength;
+	if (queueLength < 3) {
+		wait = 1000;
+	}
+
+	setTimeout(function () {
+		isProcessing = false;
+		processMessageQueue();
+	}, wait);
+}
+
+function selectRow(messageContainer, messageKey) {
+	let selectedRow = 0;
+	const messageWidth = messageContainer.clientWidth;
+
+	const parent = document.getElementById("chat-messages");
+	if (parent === null) return;
+
+	newParentWidth = (parent.offsetWidth);
+	if (parentWidth != newParentWidth) {
+		messageQueue.length = 0;
+
+		while (chatMessages.firstChild) {
+			chatMessages.removeChild(chatMessages.firstChild);
+		}
+
+		displayedMessages = {};
+		lastPositionPerRow.length = 0;
+	}
+
+	parentWidth = newParentWidth;
+
+	if (lastPositionPerRow.length > 0) {
+		for (let i = 0; i < lastPositionPerRow.length; i++) {
+			const messageHeight = messageContainer.clientHeight;
+			const topPosition = i * (messageHeight + 5) + 2;
+
+			const lastMessage = lastPositionPerRow[i];
+			if (topPosition <= parent.offsetHeight && lastMessage !== undefined) {
+
+				if (rowQueue[i] === null || rowQueue[i] === undefined) {
+
+					const timeNeeded = calculateTimeNeeded(messageWidth, lastMessage);
+
+					if (timeNeeded === 0) {
+						lastPositionPerRow[i] = messageContainer;
+
+						startAnimation(topPosition, messageContainer, messageKey);
+						return;
+					}
+
+					rowQueue[i] = messageContainer;
+
+					messageContainer.style.display = 'none';
+
+					setTimeout(() => {
+						messageContainer.style.display = '';
+						lastPositionPerRow[i] = messageContainer;
+						rowQueue[i] = null;
+						startAnimation(topPosition, messageContainer, messageKey);
+					}, timeNeeded);
+
+					return;
+				}
+			}
+			else {
+				try {
+					chatMessages.removeChild(messageContainer);
+					delete displayedMessages[messageKey];
+				} finally {
+					return;
+				}
+			}
+
+			selectedRow = i + 1;
+		}
+	}
+
+	lastPositionPerRow[selectedRow] = messageContainer;
+
+	const topPosition = 2;
+	startAnimation(topPosition, messageContainer, messageKey);
+}
+
+function calculateTimeNeeded(messageWidth, lastMessage) {
+	const remainingSpace = parentWidth + messageWidth - (lastMessage.offsetLeft + lastMessage.clientWidth + 5);
+
+	if (remainingSpace >= messageWidth) {
+		return 0;
+	}
+
+	const scrollTime = Math.ceil((messageWidth - remainingSpace) / (parentWidth * 2) * 20000);
+	return scrollTime;
+}
+
+function appendMessage(messageKey, messageContent) {
+	if (displayedMessages[messageKey]) {
+		return;
+	}
+
+	displayedMessages[messageKey] = true;
+
+	const messageContainer = document.createElement("div");
+	messageContainer.classList.add("chat-message", "chat-entry");
+
+	messageContainer.appendChild(messageContent);
+	chatMessages.appendChild(messageContainer);
+
+	selectRow(messageContainer, messageKey);
+}
+
+function startAnimation(topPosition, messageContainer, messageKey) {
+	messageContainer.style.top = topPosition + 'px';
+	messageContainer.style.animation = "slide-in 20s linear";
+	messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
+
+	messageContainer.addEventListener("animationend", function () {
+		chatMessages.removeChild(messageContainer);
+		delete displayedMessages[messageKey];
+	});
+}
+
+function createMessage(data) {
+	const sender = data.sender;
+	const username = sender.username;
+	const color = sender.identity.color;
+	const content = data.content;
+
+	const reduced = reduceRepeatedSentences(content);
+	const messageKey = getMessageKey(sender.id, reduced);
+
+	const messageContentContainer = document.createElement("div");
+	messageContentContainer.classList.add("chat-message-content");
+
+	const badgeSpan = document.createElement("span");
+	badgeSpan.classList.add("chat-overlay-badge");
+
+	const badgeElements = getBadges(data);
+	badgeElements.forEach(badgeElement => {
+		badgeSpan.appendChild(badgeElement);
+	});
+
+	const usernameSpan = document.createElement("span");
+	usernameSpan.style.color = color;
+	usernameSpan.classList.add("chat-overlay-username");
+	usernameSpan.style.verticalAlign = "middle";
+	usernameSpan.textContent = username;
+
+	const boldSpan = document.createElement("span");
+	boldSpan.classList.add("font-bold", "text-white");
+	boldSpan.style.verticalAlign = "middle";
+	boldSpan.textContent = ": ";
+
+	const contentSpan = document.createElement("span");
+	contentSpan.style.color = "#ffffff";
+	contentSpan.style.verticalAlign = "middle";
+	contentSpan.classList.add("chat-overlay-content");
+
+	const emoteRegex = /\[emote:(\d+):(\w+)\]/g;
+	let lastIndex = 0;
+	let match;
+
+	while ((match = emoteRegex.exec(reduced)) !== null) {
+		const textBeforeEmote = reduced.slice(lastIndex, match.index);
+		contentSpan.appendChild(document.createTextNode(textBeforeEmote));
+
+		const img = document.createElement("img");
+		const [, id, name] = match;
+		img.src = `https://files.kick.com/emotes/${id}/fullsize`;
+		img.alt = name;
+		img.classList.add("emote-image", "my-auto");
+		contentSpan.appendChild(img);
+
+		lastIndex = emoteRegex.lastIndex;
+	}
+
+	const textAfterLastEmote = reduced.slice(lastIndex);
+	contentSpan.appendChild(document.createTextNode(textAfterLastEmote));
+
+	messageContentContainer.append(badgeSpan, usernameSpan, boldSpan, contentSpan);
+	appendMessage(messageKey, messageContentContainer);
+}
+
+function createUserBanMessage(data) {
+	const bannedUser = data.user.username;
+	const messageKey = getMessageKey('-ban-', bannedUser);
+
+	const banMessageContent = document.createElement("div");
+	banMessageContent.classList.add("chat-message-content");
+
+	const banMessageSpan = document.createElement("span");
+	banMessageSpan.style.color = "#FF0000";
+	banMessageSpan.textContent = `${bannedUser} \uD83D\uDEAB banned by \uD83D\uDEAB ${data.banned_by.username}`;
+
+	banMessageContent.appendChild(banMessageSpan);
+
+	appendMessage(messageKey, banMessageContent);
+}
+
+function createSubMessage(data) {
+	const username = data.username;
+	const months = data.months;
+	const messageKey = getMessageKey('-sub-', username);
+
+	const subscriptionMessageContent = document.createElement("div");
+	subscriptionMessageContent.classList.add("chat-message-content");
+
+	const subscriptionMessageSpan = document.createElement("span");
+	subscriptionMessageSpan.style.color = "#00FF00";
+	subscriptionMessageSpan.textContent = `\uD83C\uDF89 ${username} subscribed for ${months} month(s)`;
+
+	subscriptionMessageContent.appendChild(subscriptionMessageSpan);
+
+	appendMessage(messageKey, subscriptionMessageContent);
+}
+
+function createHostMessage(data) {
+	const hostUsername = data.host_username;
+	const viewersCount = data.number_viewers;
+	const messageKey = getMessageKey('-host-', hostUsername);
+
+	const hostMessageContent = document.createElement("div");
+	hostMessageContent.classList.add("chat-message-content");
+
+	const hostMessageSpan = document.createElement("span");
+	hostMessageSpan.style.color = "#00FF00";
+	hostMessageSpan.textContent = `\uD83C\uDF89 ${hostUsername} hosted with ${viewersCount} viewers`;
+
+	hostMessageContent.appendChild(hostMessageSpan);
+
+	appendMessage(messageKey, hostMessageContent);
+}
+
+function createGiftedMessage(data) {
+	const gifterUsername = data.gifter_username;
+	const giftedUsernames = data.gifted_usernames;
+	const messageKey = getMessageKey('-gift-', gifterUsername + giftedUsernames[0]);
+
+	const giftedContent = document.createElement("div");
+	giftedContent.classList.add("chat-message-content");
+
+	const giftedSpan = document.createElement("span");
+	giftedSpan.style.color = "#00FF00";
+	giftedSpan.textContent = `\uD83C\uDF89 ${giftedUsernames.length} Subscriptions Gifted by ${gifterUsername}`;
+
+	giftedContent.appendChild(giftedSpan);
+
+	appendMessage(messageKey, giftedContent);
+}
+
+function createFollowersMessage(data) {
+	const followersCount = data.followersCount;
+	const messageKey = getMessageKey('-followers-', followersCount);
+
+	if (lastFollowersCount !== null) {
+		const followersDiff = followersCount - lastFollowersCount;
+		if (followersDiff === 0) {
 			return;
 		}
-
-		isProcessing = true;
-
-		const data = messageQueue.shift();
-		const eventType = data.event ?? "";
-
-		try {
-			if (eventType === "App\\Events\\ChatMessageEvent") {
-				createMessage(data.data);
-			} else if (data.type === "message") {
-				createMessage(data);
-			} else if (data.type === "reply") {
-				// if (!isVod) console.log('reply'); Should be added
-			} else if (eventType === "App\\Events\\UserBannedEvent") {
-				createUserBanMessage(data.data);
-			} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
-				createGiftedMessage(data.data);
-			} else if (eventType === "App\\Events\\FollowersUpdated") {
-				createFollowersMessage(data.data);
-			} else if (eventType === "App\\Events\\StreamHostEvent") {
-				createHostMessage(data.data);
-			} else if (eventType === "App\\Events\\SubscriptionEvent") {
-				createSubMessage(data.data);
-			} else if (eventType.includes("pusher_internal")) {
-				// Do nothing for internal events
-			} else {
-				// console.warn(`Unknown event type: ${eventType}`);
-				// console.log(data); Other events like MessagePinned
-			}
-
-		} catch (error) {
-			console.error("Error parsing message data: ", error);
-		}
-
-		// Dynamic
-		let wait = isVod ? (100 * (40 / messageQueue.length)) : (100 * (40 / messageQueue.length));
-		if (messageQueue.length < 3) {
-			wait = 2000;
-		}
-
-		setTimeout(function() {
-			isProcessing = false;
-			processMessageQueue();
-		}, wait);
-	}
-
-	/**
-	 * Selects the appropriate row for a new message.
-	 * @param {Element} messageContainer - The message container element.
-	 * @param {number} messageWidth - The width of the message.
-	 * @returns {number} The selected row index.
-	 */
-	function selectRow(messageContainer, messageWidth) {
-		let selectedRow = 0;
-		const parent = document.getElementById("chat-messages");
-		if (lastPositionPerRow.length > 0) {
-			for (let i = 0; i < lastPositionPerRow.length; i++) {
-				const lastMessage = lastPositionPerRow[i];
-				if ((parent.offsetWidth * 2) - (lastMessage.offsetLeft + lastMessage.clientWidth + 10) >= messageWidth) {
-					selectedRow = i;
-					break;
-				}
-				selectedRow = i + 1;
-			}
-		}
-
-		lastPositionPerRow[selectedRow] = messageContainer;
-		return selectedRow;
-
-	}
-
-	/**
-	 * Appends a message to the chat overlay.
-	 * @param {string} messageKey - The unique message key.
-	 * @param {string} messageContent - The content of the message.
-	 */
-	function appendMessage(messageKey, messageContent) {
-		if (displayedMessages[messageKey]) {
-			return; // Ignore duplicate message
-		}
-
-		displayedMessages[messageKey] = true;
-
-		const messageContainer = document.createElement("div");
-		messageContainer.classList.add("chat-message", "chat-entry");
-
-		messageContainer.innerHTML = messageContent;
-		chatMessages.appendChild(messageContainer);
-
-		const messageWidth = messageContainer.clientWidth;
-		const messageHeight = messageContainer.clientHeight;
-
-		const parent = document.getElementById("chat-messages");
-		if (parent === null) return;
-
-		let selectedRow = selectRow(messageContainer, messageWidth);
-		const topPosition = selectedRow * (messageHeight + 5);
-
-
-		if (topPosition <= parent.offsetHeight) {
-			messageContainer.style.top = topPosition + 'px';
-			messageContainer.style.animation = "slide 20s linear";
-
-			messageContainer.addEventListener("animationend", function() {
-				chatMessages.removeChild(messageContainer);
-				delete displayedMessages[messageKey];
-			});
-		} else {
-			// Handle case where message doesn't fit in the available height
-			// You may add custom logic or display an error message here
-			chatMessages.removeChild(messageContainer);
-			delete displayedMessages[messageKey];
-		}
-	}
-
-	/**
-	 * Appends a ban message to the chat overlay.
-	 * @param {object} data - Data containing information about the ban.
-	 */
-	function createUserBanMessage(data) {
-		const bannedUser = data.user.username;
-		const messageKey = getMessageKey('-ban-', bannedUser);
-
-		const banMessageContent = `
-                <div class="chat-message-content">
-                    <span style="color:#FF0000">${bannedUser} 🚫 banned by 🚫 ${data.banned_by.username}</span>
-                </div>
-            `;
-
-		appendMessage(messageKey, banMessageContent);
-	}
-
-	/**
-	 * Appends a subscription message to the chat overlay.
-	 * @param {object} data - Data containing information about the subscription.
-	 */
-	function createSubMessage(data) {
-		const username = data.username;
-		const months = data.months;
-		const messageKey = getMessageKey('-sub-', username);
-
-		const subscriptionMessageContent = `
-                <div class="chat-message-content">
-                    <span style="color:#00FF00">🎉 ${username} subscribed for ${months} month(s)</span>
-                </div>
-            `;
-
-		appendMessage(messageKey, subscriptionMessageContent);
-	}
-
-	/**
-	 * Appends a host message to the chat overlay.
-	 * @param {object} data - Data containing information about the host.
-	 */
-	function createHostMessage(data) {
-		const hostUsername = data.host_username;
-		const viewersCount = data.number_viewers;
-		const messageKey = getMessageKey('-host-', hostUsername);
-
-		const hostMessageContent = `
-                <div class="chat-message-content">
-                    <span style="color:#00FF00">🎉 ${hostUsername} hosted with ${viewersCount} viewers</span>
-                </div>
-            `;
-
-		appendMessage(messageKey, hostMessageContent);
-	}
-
-	/**
-	 * Appends a gifted message to the chat overlay.
-	 * @param {object} data - Data containing information about the gifted subscription.
-	 */
-	function createGiftedMessage(data) {
-		const gifterUsername = data.gifter_username;
-		const giftedUsernames = data.gifted_usernames;
-		const messageKey = getMessageKey('-gift-', gifterUsername + giftedUsernames[0]);
-
-		const giftedContent = `
-                <div class="chat-message-content">
-                    <span style="color:#00FF00">🎉 ${giftedUsernames.length} Subscriptions Gifted by ${gifterUsername}</span>
-                </div>
-            `;
-
-		appendMessage(messageKey, giftedContent);
-	}
-
-	/**
-	 * Appends a followers message to the chat overlay.
-	 * @param {object} data - Data containing information about the followers count.
-	 */
-	function createFollowersMessage(data) {
-		const followersCount = data.followersCount;
 		const messageKey = getMessageKey('-followers-', followersCount);
 
-		if (lastFollowersCount !== null) {
-			const followersDiff = followersCount - lastFollowersCount;
-			if (followersDiff === 0) {
-				return;
-			}
-			const messageKey = getMessageKey('-followers-', followersCount);
-			const messageContent = `
-                    <div class="chat-message-content">
-                        🎉 Followers gained: ${followersDiff}
-                    </div>
-                `;
-			appendMessage(messageKey, messageContent);
-		}
+		const messageContent = document.createElement("div");
+		messageContent.classList.add("chat-message-content");
 
-		lastFollowersCount = followersCount;
+		const followersMessageSpan = document.createElement("span");
+		followersMessageSpan.textContent = `\uD83C\uDF89 ${followersDiff} new follower(s)`;
+
+		messageContent.appendChild(followersMessageSpan);
+
+		appendMessage(messageKey, messageContent);
 	}
 
-	/**
-	 * Reduces repeated sentences in a message.
-	 * @param {string} input - The input message content.
-	 * @returns {string} The message content with repeated sentences reduced.
-	 */
-	function reduceRepeatedSentences(input) {
-		const regexSentence = /(\b.+?\b)\1+/g; // Regex for repeated sentences
-		const sentence = input.replace(regexSentence, '$1');
-		const regexChar = /(.)(\1{10,})/g; // Regex for repeated characters
-		return sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
-	}
+	lastFollowersCount = followersCount;
+}
 
-	const badgeCache = [];
+function reduceRepeatedSentences(input) {
+	const regexSentence = /(\b.+?\b)\1+/g;
+	const sentence = input.replace(regexSentence, '$1');
+	const regexChar = /(.)(\1{10,})/g;
+	return sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
+}
 
-	function checkForBadges(data) {
-		const sender = data.sender;
-		const badges = sender.identity.badges || [];
+function checkForBadges(data) {
+	const badges = data.sender.identity.badges || [];
+	const badgeElements = [];
 
-		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase()}"]`);
-		if (firstChatIdentity === null) {
-     			firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user="${sender.username.toLowerCase().replace(/_/g, '-')}"]`);
-      		if (firstChatIdentity === null) {
-      		setTimeout(function() {
-				    console.info('checkForBadges: ' + sender.username);
-				    messageQueue.push(data);
-				    processMessageQueue();
-			}, 2000);
-			return;
-		  }
-    }
-		const identity = firstChatIdentity.closest('.chat-message-identity');
+	let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
 
-		// Check for badges
-		identity.querySelectorAll('.badge-tooltip').forEach(function(baseBadge, index) {
+	if (firstChatIdentity !== null) {
+		let identity = firstChatIdentity.closest('.chat-message-identity');
+		identity.querySelectorAll('.badge-tooltip').forEach(function (baseBadge, index) {
 			let badge = badges[index];
 			if (badge === undefined) return;
 			let badgeText = badge.text;
@@ -299,7 +367,8 @@ window.onload = function() {
 			}
 			const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
 			if (cachedBadge) {
-				return; // Badge found in cache, return HTML
+				badgeElements.push(new DOMParser().parseFromString(cachedBadge.html, 'text/html').body.firstChild);
+				return;
 			}
 
 			const imgElement = baseBadge.querySelector(`img`);
@@ -307,309 +376,306 @@ window.onload = function() {
 				const imgUrl = imgElement.src;
 				const newImg = document.createElement('img');
 				newImg.src = imgUrl;
-				newImg.classList.add('badge-overlay'); // Add your specific class here
+				newImg.classList.add('badge-overlay');
 				badgeCache.push({
 					type: badgeText,
 					html: newImg.outerHTML
 				});
-				messageQueue.push(data);
+				badgeElements.push(newImg);
 				return;
 			}
 
 			const svgElement = baseBadge.querySelector(`svg`);
 			if (svgElement) {
-				// Add the badge-overlay class to the parent div
-				const divElement = document.createElement('div');
-				divElement.classList.add('chat-overlay-badge');
 				svgElement.classList.add('badge-overlay');
-
-				divElement.appendChild(svgElement);
 
 				badgeCache.push({
 					type: badgeText,
-					html: divElement.outerHTML
+					html: svgElement.outerHTML
 				});
-				messageQueue.push(data);
 
+				badgeElements.push(svgElement);
 				return;
 			}
 
 			console.warn('badge not found: ' + badgeText);
 		});
 	}
+	return badgeElements;
+}
 
-	/**
-	 * Check if the provided HTML contains an image with alt like badge.
-	 * If found, extract img tag and add it before username with other badges.
-	 * Also, update the badgeArray with the badge text and content.
-	 * @param {string} badgeText - The text associated with the badge.
-	 * @param {Array} badgeArray - Array to store badges and content.
-	 * @returns {string} The badge element in HTML.
-	 */
-	function getBadges(data) {
-		const sender = data.sender;
-		const badges = sender.identity.badges || [];
+function getBadges(data) {
+	const badges = data.sender.identity.badges || [];
 
-		let badgeString = '';
-		let badgeCount = 0;
+	let badgeArray = [];
+	let badgeCount = 0;
 
-		// Check for badges
-		badges.forEach(badge => {
-			let badgeText = badge.text;
-			if (badge.count) {
-				badgeText = `${badge.type}-${badge.count}`;
-			}
-			const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
-			if (cachedBadge) {
-				badgeString += ` ${cachedBadge.html}`;
-				badgeCount++;
-				return; // Badge found in cache, return HTML
-			}
-		});
+	if (badges.length === 0) return badgeArray;
 
-		if (badgeCount !== badges.length) {
-			setTimeout(checkForBadges(data), 1000);
+	badges.forEach(badge => {
+		let badgeText = badge.text;
+		if (badge.count) {
+			badgeText = `${badge.type}-${badge.count}`;
+		}
+		const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
+		if (cachedBadge) {
+			badgeArray.push(new DOMParser().parseFromString(cachedBadge.html, 'text/html').body.firstChild)
+			badgeCount++;
 			return;
 		}
+	});
 
-		return badgeString; // Badge not found, return text in HTML
+	if (badgeCount !== badges.length) {
+		return checkForBadges(data);
 	}
 
-	/**
-	 * Creates a message and handles emotes.
-	 * @param {object} data - Data containing information about the message.
-	 */
-	function createMessage(data) {
-		const sender = data.sender;
-		const username = sender.username;
-		const color = sender.identity.color;
-		const content = data.content;
-		const reduced = reduceRepeatedSentences(content);
-		const messageKey = getMessageKey(data.sender.id, reduced);
+	return badgeArray;
+}
 
-		const replacedContent = reduced.replace(
-			/\[emote:(\d+):(\w+)\]/g,
-			(match, id, name) => {
-				return `<img src="https://files.kick.com/emotes/${id}/fullsize" alt="${name}" class="emote-image my-auto" />`;
+function initializeChat(self) {
+	const chatMessagesElement = document.getElementById("chat-messages");
+	if (chatMessagesElement !== null && (loading || !self)) return;
+
+	loading = true;
+	resetConnection();
+
+	if (document.querySelector("video") !== null) {
+		createChat();
+		existingSocket.connection.bind("message", boundHandleChatMessageEvent);
+		return;
+	}
+
+	observer = new MutationObserver(function (mutations) {
+		mutations.forEach(function (mutation) {
+			if (mutation.addedNodes) {
+				mutation.addedNodes.forEach(function (node) {
+					if (node.nodeName.toLowerCase() === "video") {
+						observer.disconnect();
+						createChat();
+					}
+				});
 			}
-		);
-
-		const badges = getBadges(data);
-
-		const messageContent = `
-  <div class="chat-message-content">
-    <span class="chat-overlay-badge">${badges ? badges + ' ' : ''}</span>
-    <span style="color:${color}; vertical-align: middle;" class="chat-overlay-username">${username}</span>
-    <span class="font-bold text-white" style="vertical-align: middle;">: </span>
-    <span style="color:#ffffff; vertical-align: middle;" class="chat-overlay-content">${replacedContent}</span>
-  </div>
-`;
-
-		appendMessage(messageKey, messageContent);
-	}
-
-	/**
-	 * Initializes the chat overlay.
-	 * @param {boolean} self - Indicates if the chat overlay is being initialized on page load.
-	 */
-	function initializeChat(self) {
-		if (chatMessagesElement !== null && (loading || !self)) return;
-
-		loading = true;
-		resetConnection();
-
-		if (document.querySelector("video") !== null) {
-			createChat();
-			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
-			return;
-		}
-
-		observer = new MutationObserver(function(mutations) {
-			mutations.forEach(function(mutation) {
-				if (mutation.addedNodes) {
-					mutation.addedNodes.forEach(function(node) {
-						if (node.nodeName.toLowerCase() === "video") {
-							observer.disconnect();
-							createChat();
-						}
-					});
-				}
-			});
 		});
+	});
 
-		observer.observe(document.body, {
-			childList: true,
-			subtree: true
-		});
+	observer.observe(document.body, {
+		childList: true,
+		subtree: true
+	});
 
-		setTimeout(function() {
-			observer.disconnect();
-			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
-			interceptChatRequests();
-		}, 2000);
-	}
+	setTimeout(function () {
+		observer.disconnect();
+		existingSocket.connection.bind("message", boundHandleChatMessageEvent);
+		interceptChatRequests();
+	}, 2000);
+}
 
-	/**
-	 * Resets the chat connection and clears message data.
-	 */
-	function resetConnection() {
-		existingSocket = window.Echo.connector.pusher;
-		existingSocket.connection.unbind("message", boundHandleChatMessageEvent);
+function resetConnection() {
+	existingSocket = window.Echo.connector.pusher;
+	existingSocket.connection.unbind("message", boundHandleChatMessageEvent);
 
-		for (const key in displayedMessages) {
-			if (displayedMessages.hasOwnProperty(key)) {
-				delete displayedMessages[key];
-			}
+	for (const key in displayedMessages) {
+		if (displayedMessages.hasOwnProperty(key)) {
+			delete displayedMessages[key];
 		}
-
-		lastPositionPerRow.length = 0;
-		messageQueue.length = 0;
-
-		isVod = window.location.href.includes('/video/');
 	}
 
-	/**
-	 * Handles incoming chat messages over pusher handler.
-	 * @param {object} data - Data containing information about the incoming message.
-	 */
-	function handleChatMessageEvent(data) {
-		if (isVod) return;
-		if (document.getElementById("chat-messages") !== null) {
-			messageQueue.push(data);
-			processMessageQueue();
-			return;
-		}
-		initializeChat(false);
+	lastPositionPerRow.length = 0;
+	messageQueue.length = 0;
+	badgeCache.length = 0;
+
+	isVod = window.location.href.includes('/video/');
+}
+
+function handleChatMessageEvent(data) {
+	if (isVod) return;
+	if (document.getElementById("chat-messages") !== null && chatEnabled) {
+		messageQueue.push(data);
+		processMessageQueue();
+		return;
 	}
 
-	/**
-	 * Creates the chat overlay and appends it to the page.
-	 */
-	function createChat() {
-		if (chatMessagesElement !== null) return;
-
-		const chatOverlay = document.createElement("div");
-		chatOverlay.id = "chat-overlay";
-		chatOverlay.innerHTML = `
-                <div id="chat-messages"></div>
-            `;
-
-		const videoPlayer = document.querySelector("video");
-		videoPlayer.parentNode.insertBefore(chatOverlay, videoPlayer);
-
-		const chatOverlayStyles = document.createElement("style");
-		chatOverlayStyles.textContent = `
-                #chat-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    pointer-events: none;
-                    overflow: hidden;
-                    z-index: 9999;
-                }
-
-                #chat-messages {
-                    display: flex;
-                    flex-direction: column-reverse;
-                    align-items: flex-end;
-                    height: 100%;
-                    overflow-y: auto;
-                }
-
-                .chat-overlay-username {
-                    font-weight: 700;
-                }
-
-                .chat-message .font-bold {
-                    margin-left: -4px; /* Adjust the value as needed */
-                }
-
-                .chat-overlay-username,
-                .chat-overlay-content {
-                    vertical-align: middle;
-                }
-
-                .chat-message {
-                    position: absolute;
-                    background-color: rgba(34, 34, 34, 0.6);
-                    border-radius: 10px;
-                    white-space: nowrap;
-                    max-width: calc(100% - 20px);
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    max-height: 1rem;
-                    display: flex;
-                    align-items: center;
-                }
-
-                .chat-overlay-badge {
-                    display: inline !important;
-                }
-
-                .badge-overlay {
-                    display: inline !important;
-                    max-width: 1rem;
-                    max-height: 1rem;
-                }
-
-                .emote-image {
-                    display: inline !important;
-                    margin-right: 3px;
-                    max-width: 1.5rem;
-                    max-height: 1.5rem;
-                }
-
-                @keyframes slide {
-                    0% {
-                        right: -100%;
-                    }
-
-                    100% {
-                        right: 100%;
-                    }
-                }
-            `;
-
-		document.head.appendChild(chatOverlayStyles);
-		chatMessages = document.getElementById("chat-messages");
-
-		loading = false;
-		console.info('Chat Overlay Created: ' + window.location.href);
-	}
-
-
-	/**
-	 * Intercepts chat requests to process incoming messages.
-	 */
-	function interceptChatRequests() {
-		let open = window.XMLHttpRequest.prototype.open;
-		window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-			open.apply(this, arguments); // Open the XMLHttpRequest immediately
-
-			if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
-				this.addEventListener("load", function() {
-					let self = this; // Store a reference to this
-
-					setTimeout(function() {
-						const response = JSON.parse(self.responseText);
-						if (isVod && response.data && response.data.messages && document.getElementById("chat-messages") !== null) {
-							response.data.messages.forEach(function(message) {
-								messageQueue.push(message);
-								processMessageQueue();
-							});
-						} else {
-							setTimeout(function() {
-								initializeChat(false);
-							}, 1000);
-						}
-					}, 0);
-				}, false);
-			}
-		};
-	}
-
-	// Call initializeChat to initialize chat on page load
 	initializeChat(false);
+}
+
+function createChat() {
+	const chatMessagesElement = document.getElementById("chat-messages");
+	if (chatMessagesElement !== null) return;
+
+	const chatOverlay = document.createElement("div");
+	chatOverlay.id = "chat-overlay";
+
+	const chatMessagesContainer = document.createElement("div");
+	chatMessagesContainer.id = "chat-messages";
+
+	chatOverlay.appendChild(chatMessagesContainer);
+
+	const videoPlayer = document.querySelector("video");
+	videoPlayer.parentNode.insertBefore(chatOverlay, videoPlayer);
+
+	const chatOverlayStyles = document.createElement("style");
+	chatOverlayStyles.textContent = `
+			#chat-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				pointer-events: none;
+				overflow: hidden;
+				z-index: 9999;
+			}
+
+			#chat-messages {
+				display: flex;
+				flex-direction: column-reverse;
+				align-items: flex-end;
+				height: 100%;
+				overflow-y: auto;
+			}
+
+			.chat-overlay-username {
+				font-weight: 700;
+			}
+
+			.chat-message .font-bold {
+				margin-left: -1px; /* Adjust the value as needed */
+			}
+
+			.chat-overlay-username,
+			.chat-overlay-content {
+				vertical-align: middle;
+			}
+
+			.chat-message {
+				position: absolute;
+				background-color: rgba(34, 34, 34, 0.6);
+				border-radius: 10px;
+				white-space: nowrap;
+				max-width: calc(100% - 20px);
+				overflow: hidden;
+				text-overflow: ellipsis;
+				max-height: 1rem;
+				display: flex;
+				align-items: center;
+			}
+
+			.chat-overlay-badge {
+				display: inline !important;
+			}
+
+			.badge-overlay {
+				display: inline !important;
+				max-width: 0.9rem;
+				max-height: 0.9rem;
+				margin-right: 4px;
+			}
+
+			.svg-toggle {
+				fill: rgb(83, 252, 24) !important;
+			}
+
+			.emote-image {
+				display: inline !important;
+				margin-right: 3px;
+				max-width: 1.5rem;
+				max-height: 1.5rem;
+			}
+
+			@keyframes slide-in {
+				0% {
+					right: 0;
+				}
+				100% {
+					right: 200%;
+				}
+			}
+		`;
+
+	document.head.appendChild(chatOverlayStyles);
+
+	createToggle();
+
+	loading = false;
+	console.info('Chat Overlay Created: ' + window.location.href);
+}
+
+function createToggle() {
+	chatMessages = document.getElementById("chat-messages");
+
+	const toggleButton = document.createElement('button');
+	toggleButton.className = 'vjs-control vjs-button';
+
+	const spanIconPlaceholder = document.createElement('span');
+	spanIconPlaceholder.className = 'vjs-icon-placeholder';
+	spanIconPlaceholder.setAttribute('aria-hidden', 'true');
+
+	const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	svgElement.setAttribute('width', '65%');
+	svgElement.setAttribute('viewBox', '0 0 16 16');
+	svgElement.setAttribute('fill', 'none');
+	svgElement.classList.add('mx-auto');
+	svgElement.id = 'toggle-icon';
+
+	const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+	pathElement.setAttribute('d', 'M12.8191 7.99813C12.8191 7.64949 12.7816 7.30834 12.7104 6.97844L13.8913 6.29616L12.3918 3.69822L11.2071 4.38051C10.7048 3.9269 10.105 3.57076 9.44517 3.35708V2H6.44611V3.36082C5.78632 3.57451 5.19025 3.9269 4.68416 4.38426L3.49953 3.70197L2 6.29616L3.18088 6.97844C3.10965 7.30834 3.07217 7.64949 3.07217 7.99813C3.07217 8.34677 3.10965 8.68791 3.18088 9.01781L2 9.70009L3.49953 12.298L4.68416 11.6157C5.1865 12.0694 5.78632 12.4255 6.44611 12.6392V14H9.44517V12.6392C10.105 12.4255 10.701 12.0731 11.2071 11.6157L12.3918 12.298L13.8913 9.70009L12.7104 9.01781C12.7816 8.68791 12.8191 8.34677 12.8191 7.99813ZM9.82006 9.87254H6.07123V6.12371H9.82006V9.87254Z');
+	pathElement.setAttribute('fill', 'currentColor');
+	pathElement.classList.add('svg-toggle');
+
+	const spanControlText = document.createElement('span');
+	spanControlText.className = 'vjs-control-text';
+	spanControlText.setAttribute('aria-live', 'polite');
+	spanControlText.textContent = 'Toggle Chat';
+
+	svgElement.append(pathElement);
+	toggleButton.append(spanIconPlaceholder, svgElement, spanControlText);
+
+	const existingButton = document.querySelector('.vjs-fullscreen-control');
+	existingButton.parentNode.insertBefore(toggleButton, existingButton.nextSibling);
+
+	chatEnabled = true;
+
+	toggleButton.addEventListener('click', function () {
+		chatEnabled = !chatEnabled;
+		messageQueue.length = 0;
+		while (chatMessages.firstChild) {
+			chatMessages.removeChild(chatMessages.firstChild);
+		}
+
+		displayedMessages = {};
+		lastPositionPerRow.length = 0;
+
+		if (chatEnabled) {
+			pathElement.classList.add('svg-toggle');
+		} else {
+			pathElement.classList.remove('svg-toggle');
+		}
+	});
+}
+
+function interceptChatRequests() {
+	let open = window.XMLHttpRequest.prototype.open;
+	window.XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
+		open.apply(this, arguments);
+		if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
+			this.addEventListener("load", function () {
+				let self = this;
+				const response = JSON.parse(self.responseText);
+				if (isVod && response.data && response.data.messages && document.getElementById("chat-messages") !== null && chatEnabled) {
+					response.data.messages.forEach(function (message) {
+						messageQueue.push(message);
+						processMessageQueue();
+					});
+				} else {
+					setTimeout(function () {
+						initializeChat(false);
+					}, 1000);
+				}
+
+			}, false);
+		}
+	};
+}
+
+initializeChat(false);
 };
