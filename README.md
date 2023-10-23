@@ -7,7 +7,7 @@ Enhance your Kick.com viewing experience with a dynamic fullscreen chat overlay.
 - Fullscreen chat overlay for Kick.com
 - Elegant left-to-right message transition
 - Compatible with both live and VOD (Video on Demand) modes
-- Experimental: May result in performance issues or lag
+- Supports various message types, including user bans, gifted subscriptions, etc.
 
 ## Instructions
 
@@ -19,5 +19,8 @@ Enhance your Kick.com viewing experience with a dynamic fullscreen chat overlay.
 
 [![Get it on Firefox](https://extensionworkshop.com/assets/img/documentation/publish/get-the-addon-129x45px.8041c789.png)](https://addons.mozilla.org/en-US/firefox/addon/kickchatoverlay/)
 
+<p>
+  <img src="https://addons.mozilla.org/user-media/previews/full/288/288989.png" alt="Screenshot 1" width="48%" />
+  <img src="https://addons.mozilla.org/user-media/previews/full/288/288995.png" alt="Screenshot 2" width="48%" />
+</p>
 
-![Screenshot](thumb.png)
