@@ -15,4 +15,9 @@ Enhance your Kick.com viewing experience with a dynamic fullscreen chat overlay.
 2. Install this script by visiting [Greasy Fork](https://greasyfork.org/en/scripts/476381-kick-com-fullscreen-chat-overlay).
 3. Enjoy Kick.com with an enhanced chat experience!
 
+## Now Available on Firefox!
+
+[![Get it on Firefox](https://extensionworkshop.com/assets/img/documentation/publish/get-the-addon-129x45px.8041c789.png)](https://addons.mozilla.org/en-US/firefox/addon/kickchatoverlay/)
+
+
 ![Screenshot](thumb.png)
