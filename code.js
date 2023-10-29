@@ -1,6 +1,8 @@
 window.onload = function () {
 	const messageQueue = [];
 	const elementQueue = [];
+
+	const timeoutIds = [];
 	const rowQueue = [];
 
 	const badgeCache = [];
@@ -55,9 +57,15 @@ window.onload = function () {
 		} catch (error) {
 			console.error("Error parsing message data: ", error);
 		}
+
+		let wait = 2000 / messageQueue.length;
+
+		setTimeout(function () {
+			processMessageQueue();
+		}, wait);
 	}
 
-	function processElementQueue() {
+	async function processElementQueue() {
 
 		if (isProcessing || !chatEnabled || elementQueue.length === 0) {
 			return;
@@ -111,6 +119,10 @@ window.onload = function () {
 		messageQueue.length = 0;
 		elementQueue.length = 0;
 
+		for (const id of timeoutIds) {
+			clearTimeout(id);
+		}
+
 		if (chatMessages !== null) {
 			while (chatMessages.firstChild) {
 				chatMessages.removeChild(chatMessages.firstChild);
@@ -120,6 +132,7 @@ window.onload = function () {
 		displayedMessages = {};
 		lastPositionPerRow.length = 0;
 		rowQueue.length = 0;
+		timeoutIds.length = 0;
 
 		chatEnabled = isEnabled;
 	}
@@ -346,85 +359,120 @@ window.onload = function () {
 				this.addEventListener("load", function () {
 					let self = this;
 					const response = JSON.parse(self.responseText);
-					if (isVod && response.data && response.data.messages && document.getElementById("chat-messages") !== null && chatEnabled) {
-						response.data.messages.forEach(function (message) {
-							messageQueue.push(message);
-							processMessageQueue();
-						});
-					} else {
-						setTimeout(function () {
-							initializeChat(false);
-						}, 1000);
-					}
-
+					parseRequest(response);
 				}, false);
 			}
 		};
 	}
 
-	function selectRow(messageContainer, messageKey) {
+	function parseRequest(response) {
+		if (isVod && response.data && response.data.messages && document.getElementById("chat-messages") !== null && chatEnabled) {
+			response.data.messages.forEach(function (message) {
+				messageQueue.push(message);
+			});
+			processMessageQueue();
+		} else {
+			setTimeout(function () {
+				initializeChat(false);
+			}, 1000);
+		}
+	}
+
+	async function selectRow(messageContainer, messageKey) {
 		let selectedRow = 0;
-		chatMessages.appendChild(messageContainer);
+		const positions = lastPositionPerRow.length;
+		if (positions > 0) {
+			for (let i = 0; i < positions; i++) {
+				const item = lastPositionPerRow[i];
+				if (item === undefined) {
+					selectedRow = i;
+					break;
+				}
 
-		if (lastPositionPerRow.length > 0) {
-			for (let i = 0; i < lastPositionPerRow.length; i++) {
-				if (rowQueue[i] === undefined) {
-
-					const topPosition = i * (messageContainer.clientHeight + 5) + 2;
-					const lastMessage = lastPositionPerRow[i];
-
-					if (topPosition <= parentHeight) {
-
-						const timeNeeded = calculateTimeNeeded(messageContainer.clientWidth, lastMessage);
-
-						if (timeNeeded === 0) {
-							lastPositionPerRow[i] = messageContainer;
-							startAnimation(topPosition, messageContainer, messageKey);
-							return;
-						}
-
-						rowQueue[i] = messageContainer;
-						messageContainer.style.display = 'none';
-
-						setTimeout(() => {
-							messageContainer.style.display = '';
-							lastPositionPerRow[i] = messageContainer;
-							rowQueue[i] = undefined;
-							startAnimation(topPosition, messageContainer, messageKey);
-						}, timeNeeded);
-
-						return;
-					}
-					else {
-						try {
-							chatMessages.removeChild(messageContainer);
-							delete displayedMessages[messageKey];
-						} finally {
-							return;
-						}
-					}
+				const queueItem = rowQueue[i];
+				if (queueItem === undefined) {
+					rowQueue[i] = { key: messageKey, index: i, message: messageContainer };
+					return;
 				}
 
 				selectedRow = i + 1;
 			}
+
 		}
 
-		lastPositionPerRow[selectedRow] = messageContainer;
-
-		const topPosition = 2;
-		startAnimation(topPosition, messageContainer, messageKey);
+		startAnimation(selectedRow, messageContainer, messageKey);
 	}
 
-	function calculateTimeNeeded(messageWidth, lastMessage) {
-		if (lastMessage === undefined) return 0;
-		const remainingSpace = parentWidth + messageWidth - (lastMessage.offsetLeft + lastMessage.clientWidth + 5);
+	async function startAnimation(rowIndex, messageContainer, messageKey) {
+		chatMessages.appendChild(messageContainer);
 
-		if (remainingSpace >= messageWidth) {
-			return 0;
+		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 5) + 2;
+
+		if (topPosition <= parentHeight) {
+			lastPositionPerRow[rowIndex] = messageContainer;
+
+			let timeNeeded = Math.ceil((messageContainer.clientWidth + 10) / (parentWidth * 2) * 20000);
+
+			messageContainer.style.top = topPosition + 'px';
+			messageContainer.style.animation = "slide-in 20s linear";
+			messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
+
+			messageContainer.addEventListener("animationend", function () {
+				chatMessages.removeChild(messageContainer);
+				delete displayedMessages[messageKey];
+			});
+
+			const timeoutId = setTimeout(() => {
+				checkQueue(rowIndex, topPosition);
+				const index = timeoutIds.indexOf(timeoutId);
+				if (index !== -1) {
+					timeoutIds.splice(index, 1);
+				}
+			}, timeNeeded);
+			timeoutIds.push(timeoutId);
+		}
+		else {
+			try {
+				chatMessages.removeChild(messageContainer);
+				delete displayedMessages[messageKey];
+			} finally {
+				return;
+			}
+		}
+	}
+
+	async function checkQueue(rowIndex, topPosition) {
+		const queueItem = rowQueue[rowIndex];
+
+		if (queueItem !== undefined) {
+			const queueContainer = queueItem.message;
+			lastPositionPerRow[rowIndex] = queueContainer;
+			rowQueue[rowIndex] = undefined;
+
+			chatMessages.appendChild(queueContainer);
+
+			queueContainer.style.top = topPosition + 'px';
+			queueContainer.style.animation = "slide-in 20s linear";
+			queueContainer.style.marginRight = `-${queueContainer.clientWidth}px`;
+
+			queueContainer.addEventListener("animationend", function () {
+				chatMessages.removeChild(queueContainer);
+				delete displayedMessages[queueItem.key];
+			});
+
+			timeNeeded = Math.ceil((queueContainer.clientWidth + 10) / (parentWidth * 2) * 20000);
+			const timeoutId = setTimeout(() => {
+				checkQueue(rowIndex, topPosition);
+				const index = timeoutIds.indexOf(timeoutId);
+				if (index !== -1) {
+					timeoutIds.splice(index, 1);
+				}
+			}, timeNeeded);
+			timeoutIds.push(timeoutId);
+			return;
 		}
 
-		const scrollTime = Math.ceil((messageWidth - remainingSpace) / (parentWidth * 2) * 20000);
-		return scrollTime;
+		lastPositionPerRow[rowIndex] = undefined;
 	}
 
 	async function appendMessage(messageKey, messageContent) {
@@ -441,17 +489,6 @@ window.onload = function () {
 
 		elementQueue.push({ key: messageKey, message: messageContainer });
 		processElementQueue();
-	}
-
-	async function startAnimation(topPosition, messageContainer, messageKey) {
-		messageContainer.style.top = topPosition + 'px';
-		messageContainer.style.animation = "slide-in 20s linear";
-		messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
-
-		messageContainer.addEventListener("animationend", function () {
-			chatMessages.removeChild(messageContainer);
-			delete displayedMessages[messageKey];
-		});
 	}
 
 	async function createMessage(data) {
