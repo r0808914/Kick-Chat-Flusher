@@ -58,7 +58,7 @@ window.onload = function () {
 			console.error("Error parsing message data: ", error);
 		}
 
-		let wait = 2000 / messageQueue.length;
+		let wait = Math.trunc(2000 / messageQueue.length);
 
 		setTimeout(function () {
 			processMessageQueue();
@@ -66,7 +66,6 @@ window.onload = function () {
 	}
 
 	async function processElementQueue() {
-
 		if (isProcessing || !chatEnabled || elementQueue.length === 0) {
 			return;
 		}
@@ -78,7 +77,7 @@ window.onload = function () {
 
 		const queueLength = elementQueue.length;
 
-		let wait = isVod ? (100 * (40 / queueLength)) : 2000 / queueLength;
+		let wait = Math.trunc(isVod ? (100 * (40 / queueLength)) : 2000 / queueLength);
 		if (queueLength < 3) {
 			wait = 1000;
 		}
@@ -90,9 +89,8 @@ window.onload = function () {
 	}
 
 	async function checkResize() {
+		if (chatMessages === null) return;
 		let resizeTimer;
-
-		const targetElement = document.getElementById('chat-messages');
 
 		const resizeObserver = new ResizeObserver(entries => {
 			for (let entry of entries) {
@@ -100,16 +98,23 @@ window.onload = function () {
 				resizeTimer = setTimeout(() => {
 					for (let entry of entries) {
 						const { width, height } = entry.contentRect;
-						if (width === 0) return;
-						parentWidth = width;
-						parentHeight = height;
+						if (width === 0) {
+							if(chatMessages !== null){
+								chatMessages = null;
+								clearChat();
+							}
+							return;
+						}
+						parentWidth = Math.trunc(width);
+						parentHeight = Math.trunc(height);
 						clearChat();
+						updateAnimation();
 					}
 				}, 100);
 			}
 		});
 
-		resizeObserver.observe(targetElement);
+		resizeObserver.observe(chatMessages);
 	}
 
 	function clearChat() {
@@ -138,9 +143,8 @@ window.onload = function () {
 	}
 
 	function initializeChat(self) {
-		const chatMessagesElement = document.getElementById("chat-messages");
-		if (chatMessagesElement !== null && (loading || !self)) return;
-		chatMessages = chatMessagesElement;
+		chatMessages = document.getElementById("chat-messages");
+		if (chatMessages !== null && (loading || !self)) return;
 
 		loading = true;
 		resetConnection();
@@ -199,10 +203,7 @@ window.onload = function () {
 	}
 
 	function createChat() {
-		const chatMessagesElement = document.getElementById("chat-messages");
-		if (chatMessagesElement !== null) return;
-
-		chatMessages = chatMessagesElement;
+		if (chatMessages !== null) return;
 
 		const chatOverlay = document.createElement("div");
 		chatOverlay.id = "chat-overlay";
@@ -210,93 +211,11 @@ window.onload = function () {
 		const chatMessagesContainer = document.createElement("div");
 		chatMessagesContainer.id = "chat-messages";
 
+		chatMessages = chatMessagesContainer;
 		chatOverlay.appendChild(chatMessagesContainer);
 
 		const videoPlayer = document.querySelector("video");
 		videoPlayer.parentNode.insertBefore(chatOverlay, videoPlayer);
-
-		const chatOverlayStyles = document.createElement("style");
-		chatOverlayStyles.textContent = `
-			#chat-overlay {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				pointer-events: none;
-				overflow: hidden;
-				z-index: 9999;
-			}
-
-			#chat-messages {
-				display: flex;
-				flex-direction: column-reverse;
-				align-items: flex-end;
-				height: 100%;
-				overflow-y: auto;
-			}
-
-			.chat-overlay-username {
-				font-weight: 700;
-			}
-
-			.chat-message .font-bold {
-				margin-left: -1px; /* Adjust the value as needed */
-			}
-
-			.chat-overlay-username,
-			.chat-overlay-content {
-				vertical-align: middle;
-			}
-
-			.chat-message {
-				position: absolute;
-				background-color: rgba(34, 34, 34, 0.6);
-				border-radius: 10px;
-				white-space: nowrap;
-				max-width: calc(100% - 20px);
-				overflow: hidden;
-				text-overflow: ellipsis;
-				max-height: 1rem;
-				display: flex;
-				align-items: center;
-				will-change: transform;
-			}
-
-			.chat-overlay-badge {
-				display: inline !important;
-			}
-
-			.badge-overlay {
-				display: inline !important;
-				max-width: 0.9rem;
-				max-height: 0.9rem;
-				margin-right: 4px;
-			}
-
-			.svg-toggle {
-				fill: rgb(83, 252, 24) !important;
-			}
-
-			.emote-image {
-				display: inline !important;
-				margin-right: 3px;
-				max-width: 1.5rem;
-				max-height: 1.5rem;
-			} 
-
-			@keyframes slide-in {
-				0% {
-					right: 0;
-				}
-				100% {
-					right: 200%;
-				}
-			}
-				
-		`;
-
-		document.head.appendChild(chatOverlayStyles);
 
 		createToggle();
 		checkResize();
@@ -305,9 +224,21 @@ window.onload = function () {
 		console.info('Chat Overlay Created: ' + window.location.href);
 	}
 
-	function createToggle() {
-		chatMessages = document.getElementById("chat-messages");
+	function updateAnimation() {
+		const chatAnimationStyles = document.getElementById('chat-animation-styles');
+		chatAnimationStyles.textContent = `
+        	@keyframes slide-in {
+            		0% {
+                		transform: translateX(0);
+            		}
+           		100% {
+                		transform: translateX(-${parentWidth * 2}px);
+            		}
+        	}
+    		`;
+	}
 
+	function createToggle() {
 		const toggleButton = document.createElement('button');
 		toggleButton.className = 'vjs-control vjs-button';
 
@@ -359,14 +290,17 @@ window.onload = function () {
 				this.addEventListener("load", function () {
 					let self = this;
 					const response = JSON.parse(self.responseText);
-					parseRequest(response);
+					if(response.data && response.data.messages) {
+						parseRequest(response);
+					}
 				}, false);
 			}
 		};
 	}
 
 	function parseRequest(response) {
-		if (isVod && response.data && response.data.messages && document.getElementById("chat-messages") !== null && chatEnabled) {
+		if(!isVod || !chatEnabled) return;
+		if (chatMessages !== null) {
 			response.data.messages.forEach(function (message) {
 				messageQueue.push(message);
 			});
@@ -411,11 +345,12 @@ window.onload = function () {
 		if (topPosition <= parentHeight) {
 			lastPositionPerRow[rowIndex] = messageContainer;
 
-			let timeNeeded = Math.ceil((messageContainer.clientWidth + 10) / (parentWidth * 2) * 20000);
+			let timeNeeded = Math.trunc((messageContainer.clientWidth + 10) / (parentWidth * 2) * 20000);
 
 			messageContainer.style.top = topPosition + 'px';
-			messageContainer.style.animation = "slide-in 20s linear";
 			messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
+
+			messageContainer.classList.add("chat-overlay-animation");
 
 			messageContainer.addEventListener("animationend", function () {
 				chatMessages.removeChild(messageContainer);
@@ -423,7 +358,7 @@ window.onload = function () {
 			});
 
 			const timeoutId = setTimeout(() => {
-				checkQueue(rowIndex, topPosition);
+				checkQueue(rowIndex);
 				const index = timeoutIds.indexOf(timeoutId);
 				if (index !== -1) {
 					timeoutIds.splice(index, 1);
@@ -441,34 +376,14 @@ window.onload = function () {
 		}
 	}
 
-	async function checkQueue(rowIndex, topPosition) {
+	async function checkQueue(rowIndex) {
 		const queueItem = rowQueue[rowIndex];
 
 		if (queueItem !== undefined) {
 			const queueContainer = queueItem.message;
 			lastPositionPerRow[rowIndex] = queueContainer;
 			rowQueue[rowIndex] = undefined;
-
-			chatMessages.appendChild(queueContainer);
-
-			queueContainer.style.top = topPosition + 'px';
-			queueContainer.style.animation = "slide-in 20s linear";
-			queueContainer.style.marginRight = `-${queueContainer.clientWidth}px`;
-
-			queueContainer.addEventListener("animationend", function () {
-				chatMessages.removeChild(queueContainer);
-				delete displayedMessages[queueItem.key];
-			});
-
-			timeNeeded = Math.ceil((queueContainer.clientWidth + 10) / (parentWidth * 2) * 20000);
-			const timeoutId = setTimeout(() => {
-				checkQueue(rowIndex, topPosition);
-				const index = timeoutIds.indexOf(timeoutId);
-				if (index !== -1) {
-					timeoutIds.splice(index, 1);
-				}
-			}, timeNeeded);
-			timeoutIds.push(timeoutId);
+			startAnimation(rowIndex, queueContainer, queueItem.key);
 			return;
 		}
 
@@ -483,7 +398,7 @@ window.onload = function () {
 		displayedMessages[messageKey] = true;
 
 		const messageContainer = document.createElement("div");
-		messageContainer.classList.add("chat-message", "chat-entry");
+		messageContainer.classList.add("chat-message");
 
 		messageContainer.appendChild(messageContent);
 
@@ -514,17 +429,14 @@ window.onload = function () {
 		const usernameSpan = document.createElement("span");
 		usernameSpan.style.color = color;
 		usernameSpan.classList.add("chat-overlay-username");
-		usernameSpan.style.verticalAlign = "middle";
 		usernameSpan.textContent = username;
 
 		const boldSpan = document.createElement("span");
 		boldSpan.classList.add("font-bold", "text-white");
-		boldSpan.style.verticalAlign = "middle";
 		boldSpan.textContent = ": ";
 
 		const contentSpan = document.createElement("span");
 		contentSpan.style.color = "#ffffff";
-		contentSpan.style.verticalAlign = "middle";
 		contentSpan.classList.add("chat-overlay-content");
 
 		const emoteRegex = /\[emote:(\d+):(\w+)\]/g;
@@ -785,7 +697,92 @@ window.onload = function () {
 		}
 	}
 
+	function addCSS() {
+		const chatOverlayStyles = document.createElement("style");
+		chatOverlayStyles.id = 'chat-overlay-styles';
+		chatOverlayStyles.textContent = `
+			#chat-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				pointer-events: none;
+				overflow: hidden;
+				z-index: 9999;
+			}
+
+			#chat-messages {
+				display: flex;
+				flex-direction: column-reverse;
+				align-items: flex-end;
+				height: 100%;
+				overflow-y: auto;
+			}
+
+			.chat-overlay-username {
+				font-weight: 700;
+			}
+
+			.chat-message .font-bold {
+				margin-left: -1px; /* Adjust the value as needed */
+			}
+
+			.chat-message {
+				position: absolute;
+				background-color: rgba(34, 34, 34, 0.6);
+				border-radius: 10px;
+				max-width: calc(100% - 20px);
+				height: 2em;
+				display: flex;
+   				align-items: center;
+    				white-space: nowrap; 
+				will-change: transform;
+ 			    	padding: .25rem .5rem;
+  				font-size: .875rem;
+  				line-height: 1.25rem;
+  				font-weight: 500;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			.chat-overlay-badge {
+				display: inline !important;
+			}
+
+			.badge-overlay {
+				display: inline !important;
+				max-width: 0.9rem;
+				max-height: 0.9rem;
+				margin-right: 4px;
+			}
+
+			.chat-overlay-animation {
+				animation: slide-in 20s linear;
+			}
+
+			.svg-toggle {
+				fill: rgb(83, 252, 24) !important;
+			}
+
+			.emote-image {
+				display: inline !important;
+				margin-right: 3px;
+				max-width: 1.5rem;
+				max-height: 1.5rem;
+			} 
+		`;
+
+		const animationStyles = document.createElement("style");
+		animationStyles.id = 'chat-animation-styles';
+
+		document.head.appendChild(chatOverlayStyles);
+		document.head.appendChild(animationStyles);
+	}
+
 	document.addEventListener('visibilitychange', handleVisibilityChange);
+
+	addCSS();
 
 	initializeChat(false);
 };
