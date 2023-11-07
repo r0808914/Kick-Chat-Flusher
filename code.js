@@ -173,11 +173,12 @@ window.onload = function () {
 			subtree: true
 		});
 
+    existingSocket.connection.bind("message", boundHandleChatMessageEvent);
+		interceptChatRequests();
+
 		setTimeout(function () {
 			observer.disconnect();
-			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
-			interceptChatRequests();
-		}, 2000);
+		}, 5000);
 	}
 
 	function resetConnection() {
@@ -205,6 +206,8 @@ window.onload = function () {
 	function createChat() {
 		if (chatMessages !== null) return;
 
+    observer.disconnect();
+
 		const chatOverlay = document.createElement("div");
 		chatOverlay.id = "chat-overlay";
 
@@ -227,15 +230,15 @@ window.onload = function () {
 	function updateAnimation() {
 		const chatAnimationStyles = document.getElementById('chat-animation-styles');
 		chatAnimationStyles.textContent = `
-        	@keyframes slide-in {
-            		0% {
-                		transform: translateX(0);
-            		}
-           		100% {
-                		transform: translateX(-${parentWidth * 2}px);
-            		}
-        	}
-    		`;
+        @keyframes slide-in {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-${parentWidth * 2}px);
+            }
+        }
+    `;
 	}
 
 	function createToggle() {
@@ -345,7 +348,7 @@ window.onload = function () {
 		if (topPosition <= parentHeight) {
 			lastPositionPerRow[rowIndex] = messageContainer;
 
-			let timeNeeded = Math.trunc((messageContainer.clientWidth + 10) / (parentWidth * 2) * 20000);
+			let timeNeeded = Math.trunc((messageContainer.clientWidth + 10) / (parentWidth * 2) * 16000);
 
 			messageContainer.style.top = topPosition + 'px';
 			messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
@@ -736,9 +739,9 @@ window.onload = function () {
 				height: 2em;
 				display: flex;
    				align-items: center;
-    				white-space: nowrap; 
+    				white-space: nowrap;
 				will-change: transform;
- 			    	padding: .25rem .5rem;
+ 			  	padding: .25rem .5rem;
   				font-size: .875rem;
   				line-height: 1.25rem;
   				font-weight: 500;
@@ -758,7 +761,7 @@ window.onload = function () {
 			}
 
 			.chat-overlay-animation {
-				animation: slide-in 20s linear;
+				animation: slide-in 16s linear;
 			}
 
 			.svg-toggle {
@@ -770,7 +773,7 @@ window.onload = function () {
 				margin-right: 3px;
 				max-width: 1.5rem;
 				max-height: 1.5rem;
-			} 
+			}
 		`;
 
 		const animationStyles = document.createElement("style");
