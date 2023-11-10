@@ -77,7 +77,7 @@ window.onload = function () {
 
 		const queueLength = elementQueue.length;
 
-		let wait = Math.trunc(isVod ? (100 * (40 / queueLength)) : 2000 / queueLength);
+		let wait = Math.trunc(isVod ? 5000 / queueLength : 2000 / queueLength);
 		if (queueLength < 3) {
 			wait = 1000;
 		}
@@ -99,13 +99,13 @@ window.onload = function () {
 					for (let entry of entries) {
 						const { width, height } = entry.contentRect;
 						if (width === 0) {
-							if(chatMessages !== null){
+							if (chatMessages !== null) {
 								chatMessages = null;
 								clearChat();
 							}
 							return;
 						}
-						parentWidth = Math.trunc(width);
+						parentWidth = Math.trunc(width) * 2;
 						parentHeight = Math.trunc(height);
 						clearChat();
 						updateAnimation();
@@ -173,7 +173,7 @@ window.onload = function () {
 			subtree: true
 		});
 
-    existingSocket.connection.bind("message", boundHandleChatMessageEvent);
+		existingSocket.connection.bind("message", boundHandleChatMessageEvent);
 		interceptChatRequests();
 
 		setTimeout(function () {
@@ -205,8 +205,9 @@ window.onload = function () {
 
 	function createChat() {
 		if (chatMessages !== null) return;
+		chatMessages = 0;
 
-    observer.disconnect();
+		observer.disconnect();
 
 		const chatOverlay = document.createElement("div");
 		chatOverlay.id = "chat-overlay";
@@ -235,7 +236,7 @@ window.onload = function () {
                 transform: translateX(0);
             }
             100% {
-                transform: translateX(-${parentWidth * 2}px);
+                transform: translateX(-${parentWidth}px);
             }
         }
     `;
@@ -293,7 +294,7 @@ window.onload = function () {
 				this.addEventListener("load", function () {
 					let self = this;
 					const response = JSON.parse(self.responseText);
-					if(response.data && response.data.messages) {
+					if (response.data && response.data.messages) {
 						parseRequest(response);
 					}
 				}, false);
@@ -302,7 +303,7 @@ window.onload = function () {
 	}
 
 	function parseRequest(response) {
-		if(!isVod || !chatEnabled) return;
+		if (!isVod || !chatEnabled) return;
 		if (chatMessages !== null) {
 			response.data.messages.forEach(function (message) {
 				messageQueue.push(message);
@@ -342,13 +343,12 @@ window.onload = function () {
 
 	async function startAnimation(rowIndex, messageContainer, messageKey) {
 		chatMessages.appendChild(messageContainer);
-
 		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 5) + 2;
 
 		if (topPosition <= parentHeight) {
 			lastPositionPerRow[rowIndex] = messageContainer;
 
-			let timeNeeded = Math.trunc((messageContainer.clientWidth + 10) / (parentWidth * 2) * 16000);
+			let timeNeeded = Math.trunc((messageContainer.clientWidth + 7) / parentWidth * 16000);
 
 			messageContainer.style.top = topPosition + 'px';
 			messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
@@ -468,8 +468,10 @@ window.onload = function () {
 	}
 
 	async function createUserBanMessage(data) {
+		const now = new Date();
 		const bannedUser = data.user.username;
-		const messageKey = getMessageKey('-ban-', bannedUser);
+
+		const messageKey = getMessageKey(`-ban${now.getMinutes()}-`, bannedUser);
 
 		const banMessageContent = document.createElement("div");
 		banMessageContent.classList.add("chat-message-content");
@@ -483,9 +485,11 @@ window.onload = function () {
 		const emoji = document.createElement('span');
 		emoji.textContent = ' ' + String.fromCodePoint(0x1F6AB) + ' ';
 
+		const banText = document.createTextNode("banned by");
+
 		const banMessageSpan = document.createElement("span");
 		banMessageSpan.style.color = "#FF0000";
-		banMessageSpan.append(bannedUserSpan, emoji, document.createTextNode(" banned by "), emoji.cloneNode(true), bannedBySpan);
+		banMessageSpan.append(bannedUserSpan, emoji, banText, emoji.cloneNode(true), bannedBySpan);
 
 		banMessageContent.appendChild(banMessageSpan);
 
@@ -493,49 +497,53 @@ window.onload = function () {
 	}
 
 	async function createSubMessage(data) {
+		const now = new Date();
+
 		const username = data.username;
 		const months = data.months;
-		const messageKey = getMessageKey('-sub-', username);
+		const messageKey = getMessageKey(`-sub${now.getMinutes()}-`, username + '-' + months);
 
 		const subscriptionMessageContent = document.createElement("div");
 		subscriptionMessageContent.classList.add("chat-message-content");
 
 		const emojiSpan = document.createElement('span');
-		emojiSpan.textContent = String.fromCodePoint(0x1F389);
+		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const subscriptionMessageSpan = document.createElement("span");
 		subscriptionMessageSpan.style.color = "#00FF00";
-		subscriptionMessageSpan.textContent = ` ${username} subscribed for ${months} month(s)`;
+		subscriptionMessageSpan.textContent = `${months > 1 ? months + ' months' : '1 month'} subscription by ${username}`;
 
-		subscriptionMessageContent.append(emojiSpan, subscriptionMessageSpan);
+		const subSpan = document.createElement("span");
+		subSpan.style.color = "#00FF00";
+
+		subSpan.append(emojiSpan, subscriptionMessageSpan);
+
+		subscriptionMessageContent.append(subSpan);
 
 		appendMessage(messageKey, subscriptionMessageContent);
 	}
 
 
 	async function createHostMessage(data) {
+		const now = new Date();
+
 		const hostUsername = data.host_username;
 		const viewersCount = data.number_viewers;
-		const messageKey = getMessageKey('-host-', hostUsername);
+		const messageKey = getMessageKey(`-host${now.getMinutes()}-`, hostUsername + ' ' + viewersCount);
 
 		const hostMessageContent = document.createElement("div");
 		hostMessageContent.classList.add("chat-message-content");
 
 		const emojiSpan = document.createElement('span');
-		emojiSpan.textContent = String.fromCodePoint(0x1F389);
-
-		const hostUsernameSpan = document.createElement("span");
-		hostUsernameSpan.textContent = hostUsername;
+		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const viewersCountSpan = document.createElement("span");
-		viewersCountSpan.textContent = ` with ${viewersCount} viewers`;
+		viewersCountSpan.textContent = `${viewersCount > 1 ? viewersCount + ' viewers' : '1 viewer'} hosted by ` + hostUsername;
 
 		const hostMessageSpan = document.createElement("span");
 		hostMessageSpan.style.color = "#00FF00";
-		hostMessageSpan.appendChild(emojiSpan);
-		hostMessageSpan.appendChild(hostUsernameSpan);
-		hostMessageSpan.appendChild(document.createTextNode(" hosted"));
-		hostMessageSpan.appendChild(viewersCountSpan);
+
+		hostMessageSpan.append(emojiSpan, viewersCountSpan);
 
 		hostMessageContent.appendChild(hostMessageSpan);
 
@@ -544,24 +552,24 @@ window.onload = function () {
 
 
 	async function createGiftedMessage(data) {
+		const now = new Date();
+
 		const gifterUsername = data.gifter_username;
 		const giftedUsernames = data.gifted_usernames;
-		const messageKey = getMessageKey('-gift-', gifterUsername + giftedUsernames[0]);
+		const messageKey = getMessageKey(`-gift${now.getMinutes()}-`, gifterUsername + '-' + giftedUsernames[0]);
 
 		const giftedContent = document.createElement("div");
 		giftedContent.classList.add("chat-message-content");
 
 		const emojiSpan = document.createElement('span');
-		emojiSpan.textContent = String.fromCodePoint(0x1F389);
+		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const gifterUsernameSpan = document.createElement("span");
-		gifterUsernameSpan.textContent = gifterUsername;
-
+		gifterUsernameSpan.textContent = `${giftedUsernames.length > 1 ? giftedUsernames.length + ' Subscriptions' : '1 Subscription'} gifted by ` + gifterUsername;
 		const giftedSpan = document.createElement("span");
 		giftedSpan.style.color = "#00FF00";
-		giftedSpan.appendChild(emojiSpan);
-		giftedSpan.appendChild(document.createTextNode(` ${giftedUsernames.length} Subscriptions Gifted by `));
-		giftedSpan.appendChild(gifterUsernameSpan);
+
+		giftedSpan.append(emojiSpan, gifterUsernameSpan);
 
 		giftedContent.appendChild(giftedSpan);
 
@@ -583,13 +591,15 @@ window.onload = function () {
 			messageContent.classList.add("chat-message-content");
 
 			const emojiSpan = document.createElement('span');
-			emojiSpan.textContent = String.fromCodePoint(0x1F389);
+			emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 			const followersMessageSpan = document.createElement("span");
-			followersMessageSpan.textContent = ` ${followersDiff} new follower(s)`;
+			followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + ' new followers' : '1 new follower'}`;
 
-			messageContent.appendChild(emojiSpan);
-			messageContent.appendChild(followersMessageSpan);
+			const followersSpan = document.createElement("span");
+			followersSpan.append(emojiSpan, followersMessageSpan)
+
+			messageContent.append(followersSpan);
 
 			appendMessage(messageKey, messageContent);
 		}
@@ -728,36 +738,38 @@ window.onload = function () {
 			}
 
 			.chat-message .font-bold {
-				margin-left: -1px; /* Adjust the value as needed */
+				margin-right: 0.2em;
 			}
 
 			.chat-message {
 				position: absolute;
 				background-color: rgba(34, 34, 34, 0.6);
-				border-radius: 10px;
+				border-radius: 9px;
 				max-width: calc(100% - 20px);
 				height: 2em;
 				display: flex;
    				align-items: center;
-    				white-space: nowrap;
 				will-change: transform;
- 			  	padding: .25rem .5rem;
+ 				padding: 0 .5rem;
   				font-size: .875rem;
   				line-height: 1.25rem;
   				font-weight: 500;
+				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
 			}
 
-			.chat-overlay-badge {
-				display: inline !important;
+			.chat-overlay-badge,
+			.chat-overlay-content,
+			.chat-message-content {
+				display: flex;
+				align-items: center;
 			}
-
+			  
 			.badge-overlay {
-				display: inline !important;
-				max-width: 0.9rem;
-				max-height: 0.9rem;
-				margin-right: 4px;
+				max-width: 16px;
+				max-height: 16px;
+				margin-right: 5px;
 			}
 
 			.chat-overlay-animation {
@@ -769,10 +781,15 @@ window.onload = function () {
 			}
 
 			.emote-image {
-				display: inline !important;
-				margin-right: 3px;
+				display: inline-block;
 				max-width: 1.5rem;
 				max-height: 1.5rem;
+				vertical-align: middle;
+				margin:  0 0.2em;
+			}			
+
+			.chat-overlay-content img:last-child {
+				margin-right: 0;
 			}
 		`;
 
