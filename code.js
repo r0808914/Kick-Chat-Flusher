@@ -14,7 +14,8 @@ window.onload = function () {
 
 	let loading = true,
 		isVod = true,
-		isProcessing = false,
+		isProcessingElements = false,
+		isProcessingMessages = false,
 		chatEnabled = true,
 		chatEnabledVisible = true,
 		parentWidth = null,
@@ -28,9 +29,11 @@ window.onload = function () {
 	}
 
 	async function processMessageQueue() {
-		if (!chatEnabled) {
+		if (!chatEnabled && isProcessingMessages) {
 			return;
 		}
+
+		isProcessingMessages = true;
 
 		const data = messageQueue.shift();
 		if (data === undefined) return;
@@ -58,19 +61,16 @@ window.onload = function () {
 			console.error("Error parsing message data: ", error);
 		}
 
-		let wait = Math.trunc(2000 / messageQueue.length);
-
-		setTimeout(function () {
-			processMessageQueue();
-		}, wait);
+		isProcessingMessages = false;
+		processMessageQueue();
 	}
 
 	async function processElementQueue() {
-		if (isProcessing || !chatEnabled || elementQueue.length === 0) {
+		if (isProcessingElements || !chatEnabled || elementQueue.length === 0) {
 			return;
 		}
 
-		isProcessing = true;
+		isProcessingElements = true;
 
 		const data = elementQueue.shift();
 		selectRow(data.message, data.key);
@@ -83,7 +83,7 @@ window.onload = function () {
 		}
 
 		setTimeout(function () {
-			isProcessing = false;
+			isProcessingElements = false;
 			processElementQueue();
 		}, wait);
 	}
@@ -238,8 +238,7 @@ window.onload = function () {
             100% {
                 transform: translateX(-${parentWidth}px);
             }
-        }
-    `;
+        } `;
 	}
 
 	function createToggle() {
@@ -289,7 +288,6 @@ window.onload = function () {
 	function interceptChatRequests() {
 		let open = window.XMLHttpRequest.prototype.open;
 		window.XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
-			open.apply(this, arguments);
 			if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
 				this.addEventListener("load", function () {
 					let self = this;
@@ -299,6 +297,8 @@ window.onload = function () {
 					}
 				}, false);
 			}
+
+			open.apply(this, arguments);
 		};
 	}
 
@@ -321,15 +321,16 @@ window.onload = function () {
 		const positions = lastPositionPerRow.length;
 		if (positions > 0) {
 			for (let i = 0; i < positions; i++) {
+				rowQueue[i] = rowQueue[i] ?? [];
+
 				const item = lastPositionPerRow[i];
 				if (item === undefined) {
 					selectedRow = i;
 					break;
 				}
 
-				const queueItem = rowQueue[i];
-				if (queueItem === undefined) {
-					rowQueue[i] = { key: messageKey, index: i, message: messageContainer };
+				if (rowQueue[i].length < 2) {
+					rowQueue[i].push({ key: messageKey, index: i, message: messageContainer });
 					return;
 				}
 
@@ -338,12 +339,13 @@ window.onload = function () {
 
 		}
 
+		rowQueue[selectedRow] = rowQueue[selectedRow] ?? [];
 		startAnimation(selectedRow, messageContainer, messageKey);
 	}
 
 	async function startAnimation(rowIndex, messageContainer, messageKey) {
 		chatMessages.appendChild(messageContainer);
-		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 5) + 2;
+		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 6) + 2;
 
 		if (topPosition <= parentHeight) {
 			lastPositionPerRow[rowIndex] = messageContainer;
@@ -380,12 +382,11 @@ window.onload = function () {
 	}
 
 	async function checkQueue(rowIndex) {
-		const queueItem = rowQueue[rowIndex];
+		const queueItem = rowQueue[rowIndex].shift();
 
 		if (queueItem !== undefined) {
 			const queueContainer = queueItem.message;
 			lastPositionPerRow[rowIndex] = queueContainer;
-			rowQueue[rowIndex] = undefined;
 			startAnimation(rowIndex, queueContainer, queueItem.key);
 			return;
 		}
@@ -424,7 +425,7 @@ window.onload = function () {
 		const badgeSpan = document.createElement("span");
 		badgeSpan.classList.add("chat-overlay-badge");
 
-		const badgeElements = getBadges(data);
+		const badgeElements = await getBadges(data);
 		badgeElements.forEach(badgeElement => {
 			badgeSpan.appendChild(badgeElement.cloneNode(true));
 		});
@@ -523,7 +524,6 @@ window.onload = function () {
 		appendMessage(messageKey, subscriptionMessageContent);
 	}
 
-
 	async function createHostMessage(data) {
 		const now = new Date();
 
@@ -550,7 +550,6 @@ window.onload = function () {
 		appendMessage(messageKey, hostMessageContent);
 	}
 
-
 	async function createGiftedMessage(data) {
 		const now = new Date();
 
@@ -575,7 +574,6 @@ window.onload = function () {
 
 		appendMessage(messageKey, giftedContent);
 	}
-
 
 	async function createFollowersMessage(data) {
 		const followersCount = data.followersCount;
@@ -607,7 +605,6 @@ window.onload = function () {
 		lastFollowersCount = followersCount;
 	}
 
-
 	function reduceRepeatedSentences(input) {
 		const regexSentence = /(\b.+?\b)\1+/g;
 		const sentence = input.replace(regexSentence, '$1');
@@ -623,7 +620,8 @@ window.onload = function () {
 
 		if (firstChatIdentity !== null) {
 			let identity = firstChatIdentity.closest('.chat-message-identity');
-			identity.querySelectorAll('.badge-tooltip').forEach(function (baseBadge, index) {
+
+			identity.querySelectorAll('div.badge-tooltip').forEach(function (baseBadge, index) {
 				let badge = badges[index];
 				if (badge === undefined) return;
 				let badgeText = badge.text;
@@ -631,6 +629,7 @@ window.onload = function () {
 				if (badge.count) {
 					badgeText = `${badge.type}-${badge.count}`;
 				}
+
 				const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
 				if (cachedBadge) {
 					badgeElements.push(cachedBadge.html);
@@ -647,12 +646,12 @@ window.onload = function () {
 						type: badgeText,
 						html: newImg
 					});
+
 					badgeElements.push(newImg);
 					return;
 				}
 
 				const svgElement = baseBadge.querySelector('svg');
-
 				if (svgElement) {
 					const svgCopy = svgElement.cloneNode(true);
 					svgCopy.classList.add('badge-overlay');
@@ -672,7 +671,7 @@ window.onload = function () {
 		return badgeElements;
 	}
 
-	function getBadges(data) {
+	async function getBadges(data) {
 		const badges = data.sender.identity.badges || [];
 
 		let badgeArray = [];
@@ -693,8 +692,15 @@ window.onload = function () {
 			}
 		});
 
-		if (badgeCount !== badges.length) {
-			return checkForBadges(data);
+		let attempts = 0;
+		while (badgeCount !== badges.length && attempts < 10) {	
+			const newBadges = checkForBadges(data);
+			badgeArray = newBadges;
+	
+			badgeCount = badgeArray.length;
+			attempts++;
+
+			await new Promise(resolve => setTimeout(resolve, 750));
 		}
 
 		return badgeArray;
