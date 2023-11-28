@@ -1,4 +1,4 @@
-window.onload = function () {
+window.onload = () => {
 	const messageQueue = [];
 	const elementQueue = [];
 
@@ -10,17 +10,22 @@ window.onload = function () {
 
 	let displayedMessages = {};
 
-	let observer, existingSocket, chatMessages;
+	let resizeObserver = null;
 
-	let loading = true,
-		isVod = true,
-		isProcessingElements = false,
-		isProcessingMessages = false,
+	let loading = false,
+		isVod = false,
 		chatEnabled = true,
+		existingSocket = null,
 		chatEnabledVisible = true,
-		parentWidth = null,
-		parentHeight = null,
-		lastFollowersCount = null;
+		lastFollowersCount = null,
+		chatFlusherMessages = null,
+		currentUrl;
+
+	let parentWidth = null,
+		parentHeight = null;
+
+	let isProcessingElements = false,
+		isProcessingMessages = false;
 
 	const boundHandleChatMessageEvent = handleChatMessageEvent.bind(this);
 
@@ -88,49 +93,87 @@ window.onload = function () {
 		}, wait);
 	}
 
-	async function checkResize() {
-		if (chatMessages === null) return;
+	async function checkResize(video) {
 		let resizeTimer;
 
-		const resizeObserver = new ResizeObserver(entries => {
+		resizeObserver = new ResizeObserver(entries => {
+			if (chatFlusherMessages !== null)
+				chatFlusherMessages.style.display = 'none';
+
 			for (let entry of entries) {
 				clearTimeout(resizeTimer);
 				resizeTimer = setTimeout(() => {
 					for (let entry of entries) {
 						const { width, height } = entry.contentRect;
-						if (width === 0) {
-							if (chatMessages !== null) {
-								chatMessages = null;
+						if (width === null || width === 0) {
+							if (chatFlusherMessages !== null) {
+								chatFlusherMessages = null;
+								parentWidth = null;
 								clearChat();
 							}
 							return;
 						}
+
+						if (parentWidth == null || parentWidth == 0) {
+							const data = {
+								event: "App\\Events\\ChatMessageEvent",
+								data: {
+									content: "Thanks for trying our dev build! [emote:37230:POLICE]",
+									sender: {
+										username: "Kick Chat Flusher",
+										identity: {
+											color: "#E9113C",										
+										}
+									}
+								}
+							};
+
+							if (chatFlusherMessages === null) return;
+							createMessage(data.data);
+							processMessageQueue();
+
+							console.info('Chat Overlay Created: ' + window.location.href);
+						}
+
 						parentWidth = Math.trunc(width) * 2;
 						parentHeight = Math.trunc(height);
+
 						clearChat();
-						updateAnimation();
+
+						chatFlusherMessages.style.setProperty('--chat-flusher-width', `-${parentWidth}px`);
 					}
-				}, 100);
+				}, 750);
 			}
 		});
 
-		resizeObserver.observe(chatMessages);
+		resizeObserver.observe(video);
 	}
 
 	function clearChat() {
+		if (chatFlusherMessages !== null)
+			chatFlusherMessages.style.display = 'none';
+
 		const isEnabled = chatEnabled;
 		chatEnabled = false;
 
-		messageQueue.length = 0;
+		if (currentUrl !== window.location.href) {
+			messageQueue.length = 0;
+		}
+		else {
+			const lastMessage = messageQueue[messageQueue.length - 1];
+			messageQueue.push(lastMessage);
+		}
+		currentUrl = window.location.href;
+
 		elementQueue.length = 0;
 
 		for (const id of timeoutIds) {
 			clearTimeout(id);
 		}
 
-		if (chatMessages !== null) {
-			while (chatMessages.firstChild) {
-				chatMessages.removeChild(chatMessages.firstChild);
+		if (chatFlusherMessages !== null) {
+			while (chatFlusherMessages.firstChild) {
+				chatFlusherMessages.removeChild(chatFlusherMessages.firstChild);
 			}
 		}
 
@@ -139,23 +182,24 @@ window.onload = function () {
 		rowQueue.length = 0;
 		timeoutIds.length = 0;
 
+		if (chatFlusherMessages !== null)
+			chatFlusherMessages.style.display = 'flex';
+
 		chatEnabled = isEnabled;
 	}
 
-	function initializeChat(self) {
-		chatMessages = document.getElementById("chat-messages");
-		if (chatMessages !== null && (loading || !self)) return;
-
+	function initializeChat() {
+		if (chatFlusherMessages !== null || loading) return;
 		loading = true;
+
 		resetConnection();
 
 		if (document.querySelector("video") !== null) {
 			createChat();
-			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
 			return;
 		}
 
-		observer = new MutationObserver(function (mutations) {
+		const observer = new MutationObserver(function (mutations) {
 			mutations.forEach(function (mutation) {
 				if (mutation.addedNodes) {
 					mutation.addedNodes.forEach(function (node) {
@@ -173,72 +217,89 @@ window.onload = function () {
 			subtree: true
 		});
 
-		existingSocket.connection.bind("message", boundHandleChatMessageEvent);
-		interceptChatRequests();
-
 		setTimeout(function () {
 			observer.disconnect();
+			if (chatFlusherMessages !== null) return;
+			loading = false;
+			bindRequests();
 		}, 5000);
 	}
 
 	function resetConnection() {
-		existingSocket = window.Echo.connector.pusher;
-		existingSocket.connection.unbind("message", boundHandleChatMessageEvent);
+		if (resizeObserver !== null)
+			resizeObserver.disconnect();
 
 		clearChat();
 		badgeCache.length = 0;
 		lastFollowersCount = null;
 
-		isVod = window.location.href.includes('/video/');
+		isVod = currentUrl.includes('/video/');
 	}
 
-	async function handleChatMessageEvent(data) {
+	function handleChatMessageEvent(data) {
 		if (isVod) return;
-		if (chatMessages !== null && chatEnabled) {
+		if (chatFlusherMessages !== null && chatEnabled) {
 			messageQueue.push(data);
 			processMessageQueue();
 			return;
 		}
 
-		initializeChat(false);
+		messageQueue.push(data);
+		initializeChat();
 	}
 
 	function createChat() {
-		if (chatMessages !== null) return;
-		chatMessages = 0;
+		if (chatFlusherMessages !== null) return;
+		chatFlusherMessages = 0;
 
-		observer.disconnect();
+		const chatFlusher = document.createElement("div");
+		chatFlusher.id = "chat-flusher";
 
-		const chatOverlay = document.createElement("div");
-		chatOverlay.id = "chat-overlay";
-
-		const chatMessagesContainer = document.createElement("div");
-		chatMessagesContainer.id = "chat-messages";
-
-		chatMessages = chatMessagesContainer;
-		chatOverlay.appendChild(chatMessagesContainer);
+		const chatFlusherMessagesContainer = document.createElement("div");
+		chatFlusherMessagesContainer.id = "chat-flusher-messages";
 
 		const videoPlayer = document.querySelector("video");
-		videoPlayer.parentNode.insertBefore(chatOverlay, videoPlayer);
+		const shadowRoot = chatFlusher.attachShadow({ mode: 'open' });
+
+		const metaTag = document.querySelector('meta[name="chat-flusher-css"]');
+		const cssFileURL = metaTag ? metaTag.content : '';
+
+		const link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.type = 'text/css';
+
+		link.href = cssFileURL;
+
+		shadowRoot.appendChild(link);
+
+		videoPlayer.parentNode.insertBefore(chatFlusher, videoPlayer);
+
+		chatFlusherMessages = chatFlusherMessagesContainer;
+		shadowRoot.appendChild(chatFlusherMessages);
 
 		createToggle();
-		checkResize();
+
+		const video = document.querySelector('video');
+		chatFlusherMessages.style.setProperty('--chat-flusher-parent-width', `-${video.offsetWidth}px`);
+		checkResize(video);
+
+		bindRequests();
 
 		loading = false;
-		console.info('Chat Overlay Created: ' + window.location.href);
 	}
 
-	function updateAnimation() {
-		const chatAnimationStyles = document.getElementById('chat-animation-styles');
-		chatAnimationStyles.textContent = `
-        @keyframes slide-in {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(-${parentWidth}px);
-            }
-        } `;
+	function bindRequests() {
+		const chatFlusherStyles = document.getElementById("chat-flusher-styles");
+		if (chatFlusherStyles === null) {
+			document.addEventListener('visibilitychange', handleVisibilityChange);
+			addCSS();
+			interceptChatRequests();
+		}
+
+		if (existingSocket === null) {
+			existingSocket = window.Echo.connector.pusher;
+			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
+		}
 	}
 
 	function createToggle() {
@@ -304,14 +365,17 @@ window.onload = function () {
 
 	function parseRequest(response) {
 		if (!isVod || !chatEnabled) return;
-		if (chatMessages !== null) {
+		if (chatFlusherMessages !== null) {
 			response.data.messages.forEach(function (message) {
 				messageQueue.push(message);
 			});
 			processMessageQueue();
 		} else {
 			setTimeout(function () {
-				initializeChat(false);
+				if (response.data.messages.length > 0) {
+					messageQueue.push(response.data.messages[0]);
+				 }
+				initializeChat();
 			}, 1000);
 		}
 	}
@@ -344,23 +408,23 @@ window.onload = function () {
 	}
 
 	async function startAnimation(rowIndex, messageContainer, messageKey) {
-		chatMessages.appendChild(messageContainer);
+		chatFlusherMessages.appendChild(messageContainer);
+
 		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 6) + 2;
 
 		if (topPosition <= parentHeight) {
 			lastPositionPerRow[rowIndex] = messageContainer;
 
-			let timeNeeded = Math.trunc((messageContainer.clientWidth + 7) / parentWidth * 16000);
-
 			messageContainer.style.top = topPosition + 'px';
-			messageContainer.style.marginRight = `-${messageContainer.clientWidth}px`;
+			messageContainer.style.marginRight = `-${messageContainer.offsetWidth}px`;
 
-			messageContainer.classList.add("chat-overlay-animation");
-
-			messageContainer.addEventListener("animationend", function () {
-				chatMessages.removeChild(messageContainer);
+			messageContainer.addEventListener("animationend", async function () {
+				chatFlusherMessages.removeChild(messageContainer);
 				delete displayedMessages[messageKey];
 			});
+
+			let timeNeeded = Math.trunc((messageContainer.offsetWidth + 7) / parentWidth * 16000);
+			messageContainer.classList.add("chat-flusher-animation");
 
 			const timeoutId = setTimeout(() => {
 				checkQueue(rowIndex);
@@ -369,11 +433,12 @@ window.onload = function () {
 					timeoutIds.splice(index, 1);
 				}
 			}, timeNeeded);
+
 			timeoutIds.push(timeoutId);
 		}
 		else {
 			try {
-				chatMessages.removeChild(messageContainer);
+				chatFlusherMessages.removeChild(messageContainer);
 				delete displayedMessages[messageKey];
 			} finally {
 				return;
@@ -395,7 +460,7 @@ window.onload = function () {
 	}
 
 	async function appendMessage(messageKey, messageContent) {
-		if (displayedMessages[messageKey]) {
+		if (displayedMessages[messageKey] || chatFlusherMessages === null) {
 			return;
 		}
 
@@ -423,7 +488,7 @@ window.onload = function () {
 		messageContentContainer.classList.add("chat-message-content");
 
 		const badgeSpan = document.createElement("span");
-		badgeSpan.classList.add("chat-overlay-badge");
+		badgeSpan.classList.add("chat-flusher-badge");
 
 		const badgeElements = await getBadges(data);
 		badgeElements.forEach(badgeElement => {
@@ -432,7 +497,7 @@ window.onload = function () {
 
 		const usernameSpan = document.createElement("span");
 		usernameSpan.style.color = color;
-		usernameSpan.classList.add("chat-overlay-username");
+		usernameSpan.classList.add("chat-flusher-username");
 		usernameSpan.textContent = username;
 
 		const boldSpan = document.createElement("span");
@@ -441,7 +506,7 @@ window.onload = function () {
 
 		const contentSpan = document.createElement("span");
 		contentSpan.style.color = "#ffffff";
-		contentSpan.classList.add("chat-overlay-content");
+		contentSpan.classList.add("chat-flusher-content");
 
 		const emoteRegex = /\[emote:(\d+):(\w+)\]/g;
 		let lastIndex = 0;
@@ -462,7 +527,15 @@ window.onload = function () {
 		}
 
 		const textAfterLastEmote = reduced.slice(lastIndex);
-		contentSpan.appendChild(document.createTextNode(textAfterLastEmote));
+		if (textAfterLastEmote.trim() !== '') {
+			contentSpan.appendChild(document.createTextNode(textAfterLastEmote));
+		}
+		else {
+			const lastChild = contentSpan.lastChild;
+			if (lastChild.tagName === 'IMG') {
+				lastChild.classList.add('last-emote-image');
+			}
+		}
 
 		messageContentContainer.append(badgeSpan, usernameSpan, boldSpan, contentSpan);
 		appendMessage(messageKey, messageContentContainer);
@@ -693,10 +766,10 @@ window.onload = function () {
 		});
 
 		let attempts = 0;
-		while (badgeCount !== badges.length && attempts < 10) {	
+		while (badgeCount !== badges.length && attempts < 10) {
 			const newBadges = checkForBadges(data);
 			badgeArray = newBadges;
-	
+
 			badgeCount = badgeArray.length;
 			attempts++;
 
@@ -717,10 +790,10 @@ window.onload = function () {
 	}
 
 	function addCSS() {
-		const chatOverlayStyles = document.createElement("style");
-		chatOverlayStyles.id = 'chat-overlay-styles';
-		chatOverlayStyles.textContent = `
-			#chat-overlay {
+		const chatFlusherStyles = document.createElement("style");
+		chatFlusherStyles.id = 'chat-flusher-styles';
+		chatFlusherStyles.textContent = `
+			#chat-flusher {
 				position: absolute;
 				top: 0;
 				left: 0;
@@ -730,85 +803,13 @@ window.onload = function () {
 				overflow: hidden;
 				z-index: 9999;
 			}
-
-			#chat-messages {
-				display: flex;
-				flex-direction: column-reverse;
-				align-items: flex-end;
-				height: 100%;
-				overflow-y: auto;
-			}
-
-			.chat-overlay-username {
-				font-weight: 700;
-			}
-
-			.chat-message .font-bold {
-				margin-right: 0.2em;
-			}
-
-			.chat-message {
-				position: absolute;
-				background-color: rgba(34, 34, 34, 0.6);
-				border-radius: 9px;
-				max-width: calc(100% - 20px);
-				height: 2em;
-				display: flex;
-   				align-items: center;
-				will-change: transform;
- 				padding: 0 .5rem;
-  				font-size: .875rem;
-  				line-height: 1.25rem;
-  				font-weight: 500;
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-			}
-
-			.chat-overlay-badge,
-			.chat-overlay-content,
-			.chat-message-content {
-				display: flex;
-				align-items: center;
-			}
-			  
-			.badge-overlay {
-				max-width: 16px;
-				max-height: 16px;
-				margin-right: 5px;
-			}
-
-			.chat-overlay-animation {
-				animation: slide-in 16s linear;
-			}
-
 			.svg-toggle {
 				fill: rgb(83, 252, 24) !important;
-			}
-
-			.emote-image {
-				display: inline-block;
-				max-width: 1.5rem;
-				max-height: 1.5rem;
-				vertical-align: middle;
-				margin:  0 0.2em;
-			}			
-
-			.chat-overlay-content img:last-child {
-				margin-right: 0;
-			}
+			}		
 		`;
 
-		const animationStyles = document.createElement("style");
-		animationStyles.id = 'chat-animation-styles';
-
-		document.head.appendChild(chatOverlayStyles);
-		document.head.appendChild(animationStyles);
+		document.head.appendChild(chatFlusherStyles);
 	}
 
-	document.addEventListener('visibilitychange', handleVisibilityChange);
-
-	addCSS();
-
-	initializeChat(false);
+	initializeChat();
 };

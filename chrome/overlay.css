@@ -1,0 +1,61 @@
+#chat-flusher-messages {
+   display: flex;
+   flex-direction: column-reverse;
+   align-items: flex-end;
+   height: 100%;
+   overflow-y: auto;
+}
+.chat-flusher-username {
+   font-weight: 700;
+}
+.chat-message .font-bold {
+   padding-right: 0.25em;
+}
+.chat-message {
+   position: absolute;
+   background-color: rgba(34, 34, 34, 0.6);
+   border-radius: 9px;
+   max-width: calc(100% - 20px);
+   height: 2em;
+   display: flex;
+   align-items: center;
+   will-change: transform;
+   padding: 0 .5rem;
+   font-size: .875rem;
+   line-height: 1.25rem;
+   font-weight: 500;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+}
+.chat-flusher-badge, .chat-flusher-content, .chat-message-content {
+   display: flex;
+   align-items: center;
+}
+.badge-overlay {
+   max-width: 16px;
+   max-height: 16px;
+   margin-right: 5px;
+   fill: rgb(83, 252, 24);
+}
+.chat-flusher-animation {
+   animation: slide-in 16s linear;
+}
+.emote-image {
+   display: inline-block;
+   max-width: 1.5rem;
+   max-height: 1.5rem;
+   vertical-align: middle;
+   padding: 0 0.3em;
+}
+.last-emote-image {
+   padding-right: 0;
+ }
+@keyframes slide-in {
+   0% {
+       transform: translateX(0px);
+  }
+   100% {
+       transform: translateX(var(--chat-flusher-width));
+  }
+}
