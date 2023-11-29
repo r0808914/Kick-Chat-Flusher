@@ -71,18 +71,22 @@ window.onload = () => {
 	}
 
 	async function processElementQueue() {
-		if (isProcessingElements || !chatEnabled || elementQueue.length === 0) {
+		if (isProcessingElements || !chatEnabled) {
 			return;
 		}
 
 		isProcessingElements = true;
-
 		const data = elementQueue.shift();
+		if (data === undefined) {
+			isProcessingElements = false;
+			return;
+		}
+
 		selectRow(data.message, data.key);
 
 		const queueLength = elementQueue.length;
 
-		let wait = Math.trunc(isVod ? 5000 / queueLength : 2000 / queueLength);
+		let wait = Math.trunc(2000 / queueLength);
 		if (queueLength < 3) {
 			wait = 1000;
 		}
@@ -99,6 +103,7 @@ window.onload = () => {
 		resizeObserver = new ResizeObserver(entries => {
 			if (chatFlusherMessages !== null)
 				chatFlusherMessages.style.display = 'none';
+			loading = false;
 
 			for (let entry of entries) {
 				clearTimeout(resizeTimer);
@@ -108,8 +113,7 @@ window.onload = () => {
 						if (width === null || width === 0) {
 							if (chatFlusherMessages !== null) {
 								chatFlusherMessages = null;
-								parentWidth = null;
-								clearChat();
+								initializeChat();
 							}
 							return;
 						}
@@ -118,11 +122,11 @@ window.onload = () => {
 							const data = {
 								event: "App\\Events\\ChatMessageEvent",
 								data: {
-									content: "Thanks for trying our dev build! [emote:37230:POLICE]",
+									content: "Thanks for trying this dev build!",
 									sender: {
 										username: "Kick Chat Flusher",
 										identity: {
-											color: "#E9113C",										
+											color: "#E9113C",
 										}
 									}
 								}
@@ -130,8 +134,6 @@ window.onload = () => {
 
 							if (chatFlusherMessages === null) return;
 							createMessage(data.data);
-							processMessageQueue();
-
 							console.info('Chat Overlay Created: ' + window.location.href);
 						}
 
@@ -157,13 +159,13 @@ window.onload = () => {
 		chatEnabled = false;
 
 		if (currentUrl !== window.location.href) {
+			currentUrl = window.location.href;
 			messageQueue.length = 0;
+		} else {
+			// const lastMessage = messageQueue.pop();
+			// messageQueue.length = 0;
+			// messageQueue.push(lastMessage);
 		}
-		else {
-			const lastMessage = messageQueue[messageQueue.length - 1];
-			messageQueue.push(lastMessage);
-		}
-		currentUrl = window.location.href;
 
 		elementQueue.length = 0;
 
@@ -190,8 +192,8 @@ window.onload = () => {
 
 	function initializeChat() {
 		if (chatFlusherMessages !== null || loading) return;
-		loading = true;
 
+		loading = true;
 		resetConnection();
 
 		if (document.querySelector("video") !== null) {
@@ -229,6 +231,8 @@ window.onload = () => {
 		if (resizeObserver !== null)
 			resizeObserver.disconnect();
 
+		parentWidth = null;
+
 		clearChat();
 		badgeCache.length = 0;
 		lastFollowersCount = null;
@@ -237,14 +241,16 @@ window.onload = () => {
 	}
 
 	function handleChatMessageEvent(data) {
-		if (isVod) return;
-		if (chatFlusherMessages !== null && chatEnabled) {
+		if (isVod || !chatEnabled || loading) return;
+		if (chatFlusherMessages !== null) {
 			messageQueue.push(data);
 			processMessageQueue();
 			return;
 		}
-
+		
+		/* check if needed */
 		messageQueue.push(data);
+
 		initializeChat();
 	}
 
@@ -284,8 +290,6 @@ window.onload = () => {
 		checkResize(video);
 
 		bindRequests();
-
-		loading = false;
 	}
 
 	function bindRequests() {
@@ -303,8 +307,12 @@ window.onload = () => {
 	}
 
 	function createToggle() {
+		const toggle = document.getElementById('chat-flusher-toggle');
+		if(toggle !== null) return;
+
 		const toggleButton = document.createElement('button');
 		toggleButton.className = 'vjs-control vjs-button';
+		toggleButton.id = 'chat-flusher-toggle';
 
 		const spanIconPlaceholder = document.createElement('span');
 		spanIconPlaceholder.className = 'vjs-icon-placeholder';
@@ -364,7 +372,7 @@ window.onload = () => {
 	}
 
 	function parseRequest(response) {
-		if (!isVod || !chatEnabled) return;
+		if (!isVod || !chatEnabled || loading) return;
 		if (chatFlusherMessages !== null) {
 			response.data.messages.forEach(function (message) {
 				messageQueue.push(message);
@@ -373,8 +381,9 @@ window.onload = () => {
 		} else {
 			setTimeout(function () {
 				if (response.data.messages.length > 0) {
+					/* check if needed */
 					messageQueue.push(response.data.messages[0]);
-				 }
+				}
 				initializeChat();
 			}, 1000);
 		}
@@ -385,9 +394,10 @@ window.onload = () => {
 		const positions = lastPositionPerRow.length;
 		if (positions > 0) {
 			for (let i = 0; i < positions; i++) {
-				rowQueue[i] = rowQueue[i] ?? [];
 
+				rowQueue[i] = rowQueue[i] ?? [];
 				const item = lastPositionPerRow[i];
+
 				if (item === undefined) {
 					selectedRow = i;
 					break;
@@ -468,7 +478,6 @@ window.onload = () => {
 
 		const messageContainer = document.createElement("div");
 		messageContainer.classList.add("chat-message");
-
 		messageContainer.appendChild(messageContent);
 
 		elementQueue.push({ key: messageKey, message: messageContainer });
