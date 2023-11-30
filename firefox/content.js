@@ -8,6 +8,8 @@ window.onload = () => {
 	const badgeCache = [];
 	const lastPositionPerRow = [];
 
+	const toggledClass = 'toggled-on';
+
 	let displayedMessages = {};
 
 	let resizeObserver = null;
@@ -15,6 +17,7 @@ window.onload = () => {
 	let loading = false,
 		isVod = false,
 		chatEnabled = true,
+		spamEnabled = false,
 		existingSocket = null,
 		chatEnabledVisible = true,
 		lastFollowersCount = null,
@@ -122,7 +125,7 @@ window.onload = () => {
 							const data = {
 								event: "App\\Events\\ChatMessageEvent",
 								data: {
-									content: "Thanks for trying this dev build!",
+									content: "thanks for testing this extension",
 									sender: {
 										username: "Kick Chat Flusher",
 										identity: {
@@ -162,9 +165,9 @@ window.onload = () => {
 			currentUrl = window.location.href;
 			messageQueue.length = 0;
 		} else {
-			// const lastMessage = messageQueue.pop();
-			// messageQueue.length = 0;
-			// messageQueue.push(lastMessage);
+			/* const lastMessage = messageQueue.pop();
+			messageQueue.length = 0;
+			messageQueue.push(lastMessage); */
 		}
 
 		elementQueue.length = 0;
@@ -247,7 +250,7 @@ window.onload = () => {
 			processMessageQueue();
 			return;
 		}
-		
+
 		/* check if needed */
 		messageQueue.push(data);
 
@@ -267,23 +270,81 @@ window.onload = () => {
 		const videoPlayer = document.querySelector("video");
 		const shadowRoot = chatFlusher.attachShadow({ mode: 'open' });
 
-		const metaTag = document.querySelector('meta[name="chat-flusher-css"]');
-		const cssFileURL = metaTag ? metaTag.content : '';
+		const metaTag = document.querySelector('meta[name="chat-flusher-data"]');
+		const dataFileURL = metaTag ? metaTag.content : '';
 
-		const link = document.createElement('link');
-		link.rel = 'stylesheet';
-		link.type = 'text/css';
+		const xhr = new XMLHttpRequest();
+		xhr.open('GET', dataFileURL, true);
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState === 4 && xhr.status === 200) {
+				const parser = new DOMParser();
+				const parsedDocument = parser.parseFromString(xhr.responseText, 'text/html');
 
-		link.href = cssFileURL;
+				const overlayStyles = parsedDocument.getElementById('css-overlay');
+				if (overlayStyles) {
+					const overlayStyle = document.createElement('style');
+					overlayStyle.textContent = overlayStyles.textContent;
+					overlayStyle.id = 'chat-flusher-css-overlay';
+					shadowRoot.appendChild(overlayStyle);
+				}
 
-		shadowRoot.appendChild(link);
+				const menuStyles = parsedDocument.getElementById('css-menu');
+				const menuStylesDom = document.getElementById('chat-flusher-css');
+
+				if (menuStyles && !menuStylesDom) {
+					const menuStyle = document.createElement('style');
+					menuStyle.textContent = menuStyles.textContent;
+					menuStyle.id = 'chat-flusher-css';
+					document.head.appendChild(menuStyle);
+				}
+
+				const menuHtml = parsedDocument.getElementById('chat-flusher-menu');
+				if (menuHtml) {
+					const closeBtn = menuHtml.querySelector('#chat-flusher-menu-close');
+					closeBtn.addEventListener('click', function (event) {
+						menuHtml.style.display = "none";
+						svgToggle();
+					});
+
+					const homeBtn = menuHtml.querySelector('#chat-flusher-home');
+					homeBtn.addEventListener('click', function (event) {
+						menuHtml.style.display = "none";
+						window.open('https://github.com/r0808914/Kick-Chat-Flusher', '_blank');
+					});
+
+					const chatEnabledValue = localStorage.getItem('chat-flusher');
+					chatEnabled = chatEnabledValue ? JSON.parse(chatEnabledValue) : true;
+
+					const spamEnabledValue = localStorage.getItem('chat-flusher-spam');
+					spamEnabled = spamEnabledValue ? JSON.parse(spamEnabledValue) : false;
+
+					menuHtml.querySelectorAll('.base-toggle').forEach(function (item) {
+						item.addEventListener('click', function (event) {
+							toggleButton(event);
+						});
+						const toggleType = item.dataset.chatToggleType;
+						if (chatEnabled && toggleType == "enable") {
+							item.classList.toggle(toggledClass);
+						}
+
+						if (spamEnabled && toggleType == "spam") {
+							item.classList.toggle(toggledClass);
+						}
+					});
+
+					const parent = document.querySelector('.vjs-control-bar');
+					parent.append(menuHtml);
+
+					createToggle();
+				}
+			}
+		};
+		xhr.send();
 
 		videoPlayer.parentNode.insertBefore(chatFlusher, videoPlayer);
 
 		chatFlusherMessages = chatFlusherMessagesContainer;
 		shadowRoot.appendChild(chatFlusherMessages);
-
-		createToggle();
 
 		const video = document.querySelector('video');
 		chatFlusherMessages.style.setProperty('--chat-flusher-parent-width', `-${video.offsetWidth}px`);
@@ -292,11 +353,41 @@ window.onload = () => {
 		bindRequests();
 	}
 
+	function toggleButton(event) {
+		const element = event.currentTarget;
+		const toggleType = element.dataset.chatToggleType;
+
+		element.classList.toggle(toggledClass);
+
+		if (element.classList.contains(toggledClass)) {
+			if (toggleType == "enable") {
+				localStorage.setItem('chat-flusher', JSON.stringify(true));
+				svgToggle();
+				chatEnabled = true;
+			}
+			if (toggleType == "spam") {
+				localStorage.setItem('chat-flusher-spam', JSON.stringify(true));
+				spamEnabled = true;
+			}
+		} else {
+			if (toggleType == "enable") {
+				localStorage.setItem('chat-flusher', JSON.stringify(false));
+				svgToggle();
+				chatEnabled = false;
+				clearChat();
+			}
+			if (toggleType == "spam") {
+				localStorage.setItem('chat-flusher-spam', JSON.stringify(false));
+				spamEnabled = false;
+				displayedMessages = {};
+			}
+		}
+	}
+
 	function bindRequests() {
 		const chatFlusherStyles = document.getElementById("chat-flusher-styles");
 		if (chatFlusherStyles === null) {
 			document.addEventListener('visibilitychange', handleVisibilityChange);
-			addCSS();
 			interceptChatRequests();
 		}
 
@@ -308,7 +399,7 @@ window.onload = () => {
 
 	function createToggle() {
 		const toggle = document.getElementById('chat-flusher-toggle');
-		if(toggle !== null) return;
+		if (toggle !== null) return;
 
 		const toggleButton = document.createElement('button');
 		toggleButton.className = 'vjs-control vjs-button';
@@ -328,12 +419,11 @@ window.onload = () => {
 		const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 		pathElement.setAttribute('d', 'M12.8191 7.99813C12.8191 7.64949 12.7816 7.30834 12.7104 6.97844L13.8913 6.29616L12.3918 3.69822L11.2071 4.38051C10.7048 3.9269 10.105 3.57076 9.44517 3.35708V2H6.44611V3.36082C5.78632 3.57451 5.19025 3.9269 4.68416 4.38426L3.49953 3.70197L2 6.29616L3.18088 6.97844C3.10965 7.30834 3.07217 7.64949 3.07217 7.99813C3.07217 8.34677 3.10965 8.68791 3.18088 9.01781L2 9.70009L3.49953 12.298L4.68416 11.6157C5.1865 12.0694 5.78632 12.4255 6.44611 12.6392V14H9.44517V12.6392C10.105 12.4255 10.701 12.0731 11.2071 11.6157L12.3918 12.298L13.8913 9.70009L12.7104 9.01781C12.7816 8.68791 12.8191 8.34677 12.8191 7.99813ZM9.82006 9.87254H6.07123V6.12371H9.82006V9.87254Z');
 		pathElement.setAttribute('fill', 'currentColor');
-		pathElement.classList.add('svg-toggle');
 
 		const spanControlText = document.createElement('span');
 		spanControlText.className = 'vjs-control-text';
 		spanControlText.setAttribute('aria-live', 'polite');
-		spanControlText.textContent = 'Toggle Chat';
+		spanControlText.textContent = 'Kick Chat Flusher';
 
 		svgElement.append(pathElement);
 		toggleButton.append(spanIconPlaceholder, svgElement, spanControlText);
@@ -341,17 +431,32 @@ window.onload = () => {
 		const existingButton = document.querySelector('.vjs-fullscreen-control');
 		existingButton.parentNode.insertBefore(toggleButton, existingButton.nextSibling);
 
-		chatEnabled = true;
+		svgToggle();
 
 		toggleButton.addEventListener('click', function () {
-			chatEnabled = !chatEnabled;
-			if (chatEnabled) {
-				pathElement.classList.add('svg-toggle');
+			var popupMenu = document.getElementById("chat-flusher-menu");
+			if (popupMenu.style.display === "block") {
+				popupMenu.style.display = "none";
+				svgToggle();
 			} else {
-				clearChat();
-				pathElement.classList.remove('svg-toggle');
+				popupMenu.style.display = "block";
+				svgToggle();
 			}
 		});
+	}
+
+	function svgToggle() {
+		const toggle = document.getElementById('toggle-icon').firstChild;
+
+		const menuHtml = document.getElementById('chat-flusher-menu');
+		const visible = menuHtml.style.display === "block" ? true : false;
+
+		if (toggle === null) return;
+		if (chatEnabled || visible) {
+			toggle.classList.add('svg-toggle');
+		} else {
+			toggle.classList.remove('svg-toggle');
+		}
 	}
 
 	function interceptChatRequests() {
@@ -404,56 +509,36 @@ window.onload = () => {
 				}
 
 				if (rowQueue[i].length < 2) {
-					rowQueue[i].push({ key: messageKey, index: i, message: messageContainer });
+					messageContainer = prepareAnimation(messageContainer, selectedRow, messageKey);
+					if (messageContainer !== null)
+						rowQueue[i].push({ key: messageKey, index: i, message: messageContainer });
 					return;
 				}
 
 				selectedRow = i + 1;
 			}
-
 		}
 
 		rowQueue[selectedRow] = rowQueue[selectedRow] ?? [];
-		startAnimation(selectedRow, messageContainer, messageKey);
+		messageContainer = prepareAnimation(messageContainer, selectedRow, messageKey);
+		if (messageContainer !== null)
+			startAnimation(selectedRow, messageContainer, messageKey);
 	}
 
-	async function startAnimation(rowIndex, messageContainer, messageKey) {
-		chatFlusherMessages.appendChild(messageContainer);
+	async function startAnimation(rowIndex, messageContainer) {
+		messageContainer.classList.add("chat-flusher-animation");
 
-		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 6) + 2;
+		let timeNeeded = Math.trunc((messageContainer.offsetWidth + 8) / parentWidth * 16000);
 
-		if (topPosition <= parentHeight) {
-			lastPositionPerRow[rowIndex] = messageContainer;
-
-			messageContainer.style.top = topPosition + 'px';
-			messageContainer.style.marginRight = `-${messageContainer.offsetWidth}px`;
-
-			messageContainer.addEventListener("animationend", async function () {
-				chatFlusherMessages.removeChild(messageContainer);
-				delete displayedMessages[messageKey];
-			});
-
-			let timeNeeded = Math.trunc((messageContainer.offsetWidth + 7) / parentWidth * 16000);
-			messageContainer.classList.add("chat-flusher-animation");
-
-			const timeoutId = setTimeout(() => {
-				checkQueue(rowIndex);
-				const index = timeoutIds.indexOf(timeoutId);
-				if (index !== -1) {
-					timeoutIds.splice(index, 1);
-				}
-			}, timeNeeded);
-
-			timeoutIds.push(timeoutId);
-		}
-		else {
-			try {
-				chatFlusherMessages.removeChild(messageContainer);
-				delete displayedMessages[messageKey];
-			} finally {
-				return;
+		const timeoutId = setTimeout(async () => {
+			checkQueue(rowIndex);
+			const index = timeoutIds.indexOf(timeoutId);
+			if (index !== -1) {
+				timeoutIds.splice(index, 1);
 			}
-		}
+		}, timeNeeded);
+
+		timeoutIds.push(timeoutId);
 	}
 
 	async function checkQueue(rowIndex) {
@@ -469,10 +554,35 @@ window.onload = () => {
 		lastPositionPerRow[rowIndex] = undefined;
 	}
 
-	async function appendMessage(messageKey, messageContent) {
-		if (displayedMessages[messageKey] || chatFlusherMessages === null) {
-			return;
+	function prepareAnimation(messageContainer, rowIndex, messageKey) {
+		chatFlusherMessages.appendChild(messageContainer);
+
+		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 6) + 2;
+
+		if (topPosition <= parentHeight) {
+			lastPositionPerRow[rowIndex] = messageContainer;
+
+			messageContainer.style.top = topPosition + 'px';
+			messageContainer.style.marginRight = `-${messageContainer.offsetWidth}px`;
+
+			messageContainer.addEventListener("animationend", async function () {
+				chatFlusherMessages.removeChild(messageContainer);
+				delete displayedMessages[messageKey];
+			});
+			return messageContainer;
 		}
+		else {
+			try {
+				chatFlusherMessages.removeChild(messageContainer);
+				delete displayedMessages[messageKey];
+			} finally {
+				return null;
+			}
+		}
+	}
+
+	async function appendMessage(messageKey, messageContent) {
+		if ((displayedMessages[messageKey] && !spamEnabled) || chatFlusherMessages === null) return;
 
 		displayedMessages[messageKey] = true;
 
@@ -796,28 +906,6 @@ window.onload = () => {
 		} else {
 			chatEnabled = chatEnabledVisible;
 		}
-	}
-
-	function addCSS() {
-		const chatFlusherStyles = document.createElement("style");
-		chatFlusherStyles.id = 'chat-flusher-styles';
-		chatFlusherStyles.textContent = `
-			#chat-flusher {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				pointer-events: none;
-				overflow: hidden;
-				z-index: 9999;
-			}
-			.svg-toggle {
-				fill: rgb(83, 252, 24) !important;
-			}		
-		`;
-
-		document.head.appendChild(chatFlusherStyles);
 	}
 
 	initializeChat();

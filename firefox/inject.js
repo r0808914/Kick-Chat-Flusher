@@ -2,11 +2,11 @@
 
   const b = typeof browser !== 'undefined' ? browser : chrome
 
-  const cssFileURL = chrome.runtime.getURL('overlay.css');
+  const dataFileURL = chrome.runtime.getURL('data.html');
 
   const metaTag = document.createElement('meta');
-  metaTag.name = 'chat-flusher-css';
-  metaTag.content = cssFileURL;
+  metaTag.name = 'chat-flusher-data';
+  metaTag.content = dataFileURL;
   document.head.appendChild(metaTag);
 
   const script = document.createElement('script')
