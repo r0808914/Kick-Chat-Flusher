@@ -5,7 +5,7 @@
   const dataFileURL = chrome.runtime.getURL('data.html');
 
   const metaTag = document.createElement('meta');
-  metaTag.name = 'chat-flusher-data';
+  metaTag.name = 'flusher-data';
   metaTag.content = dataFileURL;
   document.head.appendChild(metaTag);
 

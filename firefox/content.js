@@ -9,6 +9,7 @@ window.onload = () => {
 	const lastPositionPerRow = [];
 
 	const toggledClass = 'toggled-on';
+	const spamStates = ['Auto', 'ON', 'OFF'];
 
 	let displayedMessages = {};
 
@@ -17,8 +18,12 @@ window.onload = () => {
 	let loading = false,
 		isVod = false,
 		chatEnabled = true,
-		spamEnabled = false,
+		spacedEnabled = true,
+		spamState = null,
+		elementHeight = null,
+		maxRows = null,
 		existingSocket = null,
+		lastRow = null,
 		chatEnabledVisible = true,
 		lastFollowersCount = null,
 		chatFlusherMessages = null,
@@ -116,6 +121,10 @@ window.onload = () => {
 						if (width === null || width === 0) {
 							if (chatFlusherMessages !== null) {
 								chatFlusherMessages = null;
+								const element = document.getElementById("flusher");
+								if (element) {
+									element.remove();
+								}
 								initializeChat();
 							}
 							return;
@@ -127,7 +136,7 @@ window.onload = () => {
 								data: {
 									content: "thanks for testing this extension",
 									sender: {
-										username: "Kick Chat Flusher",
+										username: "KickChatFlusher",
 										identity: {
 											color: "#E9113C",
 										}
@@ -136,16 +145,21 @@ window.onload = () => {
 							};
 
 							if (chatFlusherMessages === null) return;
-							createMessage(data.data);
+							messageQueue.push(data);
+
+							/* setInterval(() => {
+							}, 500); */
+
 							console.info('Chat Overlay Created: ' + window.location.href);
 						}
 
 						parentWidth = Math.trunc(width) * 2;
 						parentHeight = Math.trunc(height);
 
+						elementHeight = null;
 						clearChat();
 
-						chatFlusherMessages.style.setProperty('--chat-flusher-width', `-${parentWidth}px`);
+						chatFlusherMessages.style.setProperty('--flusher-width', `-${parentWidth}px`);
 					}
 				}, 750);
 			}
@@ -177,6 +191,8 @@ window.onload = () => {
 		}
 
 		if (chatFlusherMessages !== null) {
+			chatFlusherMessages.setAttribute("spaced", spacedEnabled);
+
 			while (chatFlusherMessages.firstChild) {
 				chatFlusherMessages.removeChild(chatFlusherMessages.firstChild);
 			}
@@ -186,6 +202,7 @@ window.onload = () => {
 		lastPositionPerRow.length = 0;
 		rowQueue.length = 0;
 		timeoutIds.length = 0;
+
 
 		if (chatFlusherMessages !== null)
 			chatFlusherMessages.style.display = 'flex';
@@ -262,15 +279,15 @@ window.onload = () => {
 		chatFlusherMessages = 0;
 
 		const chatFlusher = document.createElement("div");
-		chatFlusher.id = "chat-flusher";
+		chatFlusher.id = "flusher";
 
 		const chatFlusherMessagesContainer = document.createElement("div");
-		chatFlusherMessagesContainer.id = "chat-flusher-messages";
+		chatFlusherMessagesContainer.id = "flusher-messages";
 
 		const videoPlayer = document.querySelector("video");
 		const shadowRoot = chatFlusher.attachShadow({ mode: 'open' });
 
-		const metaTag = document.querySelector('meta[name="chat-flusher-data"]');
+		const metaTag = document.querySelector('meta[name="flusher-data"]');
 		const dataFileURL = metaTag ? metaTag.content : '';
 
 		const xhr = new XMLHttpRequest();
@@ -281,56 +298,92 @@ window.onload = () => {
 				const parsedDocument = parser.parseFromString(xhr.responseText, 'text/html');
 
 				const overlayStyles = parsedDocument.getElementById('css-overlay');
+
 				if (overlayStyles) {
 					const overlayStyle = document.createElement('style');
 					overlayStyle.textContent = overlayStyles.textContent;
-					overlayStyle.id = 'chat-flusher-css-overlay';
+					overlayStyle.id = 'flusher-css';
 					shadowRoot.appendChild(overlayStyle);
 				}
 
 				const menuStyles = parsedDocument.getElementById('css-menu');
-				const menuStylesDom = document.getElementById('chat-flusher-css');
+				const menuStylesDom = document.getElementById('flusher-css');
 
 				if (menuStyles && !menuStylesDom) {
 					const menuStyle = document.createElement('style');
 					menuStyle.textContent = menuStyles.textContent;
-					menuStyle.id = 'chat-flusher-css';
+					menuStyle.id = 'flusher-css';
 					document.head.appendChild(menuStyle);
 				}
 
-				const menuHtml = parsedDocument.getElementById('chat-flusher-menu');
+				const menuHtml = parsedDocument.getElementById('flusher-menu');
 				if (menuHtml) {
-					const closeBtn = menuHtml.querySelector('#chat-flusher-menu-close');
+					const closeBtn = menuHtml.querySelector('#flusher-menu-close');
 					closeBtn.addEventListener('click', function (event) {
 						menuHtml.style.display = "none";
 						svgToggle();
 					});
 
-					const homeBtn = menuHtml.querySelector('#chat-flusher-home');
+					const homeBtn = menuHtml.querySelector('#flusher-home');
 					homeBtn.addEventListener('click', function (event) {
 						menuHtml.style.display = "none";
-						window.open('https://github.com/r0808914/Kick-Chat-Flusher', '_blank');
+						window.open('https://github.com/r0808914/Kick-chat-flusher', '_blank');
 					});
 
-					const chatEnabledValue = localStorage.getItem('chat-flusher');
+					const chatEnabledValue = localStorage.getItem('flusher-enable');
 					chatEnabled = chatEnabledValue ? JSON.parse(chatEnabledValue) : true;
 
-					const spamEnabledValue = localStorage.getItem('chat-flusher-spam');
-					spamEnabled = spamEnabledValue ? JSON.parse(spamEnabledValue) : false;
+					const spamStateValue = localStorage.getItem('flusher-spam');
+					spamState = spamStateValue ? JSON.parse(spamStateValue) : 2;
 
-					menuHtml.querySelectorAll('.base-toggle').forEach(function (item) {
-						item.addEventListener('click', function (event) {
-							toggleButton(event);
-						});
-						const toggleType = item.dataset.chatToggleType;
-						if (chatEnabled && toggleType == "enable") {
-							item.classList.toggle(toggledClass);
-						}
+					const spaceEnabledValue = localStorage.getItem('flusher-spaced');
+					spacedEnabled = spaceEnabledValue ? JSON.parse(spaceEnabledValue) : true;
 
-						if (spamEnabled && toggleType == "spam") {
-							item.classList.toggle(toggledClass);
+					const spamBtn = menuHtml.querySelector('#flusher-spam');
+					const spanInsideSpam = spamBtn.querySelector('span');
+					spanInsideSpam.textContent = spamStates[spamState];
+
+					spamBtn.addEventListener('click', function (event) {
+						spamState = (spamState + 1) % spamStates.length;
+						localStorage.setItem('flusher-spam', JSON.stringify(spamState));
+						spanInsideSpam.textContent = spamStates[spamState];
+						clearChat();
+					});
+
+					const flusherToggle = menuHtml.querySelector('#flusher-enable .base-toggle');
+					flusherToggle.addEventListener('click', function (event) {
+						const element = event.currentTarget;
+						element.classList.toggle(toggledClass);
+						if (element.classList.contains(toggledClass)) {
+							localStorage.setItem('flusher-enable', JSON.stringify(true));
+							svgToggle();
+							chatEnabled = true;
+						} else {
+							localStorage.setItem('flusher-enable', JSON.stringify(false));
+							svgToggle();
+							chatEnabled = false;
+							clearChat();
 						}
 					});
+
+					if (chatEnabled) flusherToggle.classList.toggle(toggledClass);
+
+					const spaceToggle = menuHtml.querySelector('#flusher-spaced .base-toggle');
+					spaceToggle.addEventListener('click', function (event) {
+						const element = event.currentTarget;
+						element.classList.toggle(toggledClass);
+						if (element.classList.contains(toggledClass)) {
+							localStorage.setItem('flusher-spaced', JSON.stringify(true));
+							spacedEnabled = true;
+							clearChat();
+						} else {
+							localStorage.setItem('flusher-spaced', JSON.stringify(false));
+							spacedEnabled = false;
+							clearChat();
+						}
+					});
+
+					if (chatEnabled) spaceToggle.classList.toggle(toggledClass);
 
 					const parent = document.querySelector('.vjs-control-bar');
 					parent.append(menuHtml);
@@ -347,45 +400,13 @@ window.onload = () => {
 		shadowRoot.appendChild(chatFlusherMessages);
 
 		const video = document.querySelector('video');
-		chatFlusherMessages.style.setProperty('--chat-flusher-parent-width', `-${video.offsetWidth}px`);
 		checkResize(video);
 
 		bindRequests();
 	}
 
-	function toggleButton(event) {
-		const element = event.currentTarget;
-		const toggleType = element.dataset.chatToggleType;
-
-		element.classList.toggle(toggledClass);
-
-		if (element.classList.contains(toggledClass)) {
-			if (toggleType == "enable") {
-				localStorage.setItem('chat-flusher', JSON.stringify(true));
-				svgToggle();
-				chatEnabled = true;
-			}
-			if (toggleType == "spam") {
-				localStorage.setItem('chat-flusher-spam', JSON.stringify(true));
-				spamEnabled = true;
-			}
-		} else {
-			if (toggleType == "enable") {
-				localStorage.setItem('chat-flusher', JSON.stringify(false));
-				svgToggle();
-				chatEnabled = false;
-				clearChat();
-			}
-			if (toggleType == "spam") {
-				localStorage.setItem('chat-flusher-spam', JSON.stringify(false));
-				spamEnabled = false;
-				displayedMessages = {};
-			}
-		}
-	}
-
 	function bindRequests() {
-		const chatFlusherStyles = document.getElementById("chat-flusher-styles");
+		const chatFlusherStyles = document.getElementById("flusher-styles");
 		if (chatFlusherStyles === null) {
 			document.addEventListener('visibilitychange', handleVisibilityChange);
 			interceptChatRequests();
@@ -398,19 +419,19 @@ window.onload = () => {
 	}
 
 	function createToggle() {
-		const toggle = document.getElementById('chat-flusher-toggle');
+		const toggle = document.getElementById('flusher-toggle');
 		if (toggle !== null) return;
 
 		const toggleButton = document.createElement('button');
 		toggleButton.className = 'vjs-control vjs-button';
-		toggleButton.id = 'chat-flusher-toggle';
+		toggleButton.id = 'flusher-toggle';
 
 		const spanIconPlaceholder = document.createElement('span');
 		spanIconPlaceholder.className = 'vjs-icon-placeholder';
 		spanIconPlaceholder.setAttribute('aria-hidden', 'true');
 
 		const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-		svgElement.setAttribute('width', '65%');
+		svgElement.setAttribute('width', '63%');
 		svgElement.setAttribute('viewBox', '0 0 16 16');
 		svgElement.setAttribute('fill', 'none');
 		svgElement.classList.add('mx-auto');
@@ -423,7 +444,7 @@ window.onload = () => {
 		const spanControlText = document.createElement('span');
 		spanControlText.className = 'vjs-control-text';
 		spanControlText.setAttribute('aria-live', 'polite');
-		spanControlText.textContent = 'Kick Chat Flusher';
+		spanControlText.textContent = 'Chat Flusher';
 
 		svgElement.append(pathElement);
 		toggleButton.append(spanIconPlaceholder, svgElement, spanControlText);
@@ -434,7 +455,7 @@ window.onload = () => {
 		svgToggle();
 
 		toggleButton.addEventListener('click', function () {
-			var popupMenu = document.getElementById("chat-flusher-menu");
+			var popupMenu = document.getElementById("flusher-menu");
 			if (popupMenu.style.display === "block") {
 				popupMenu.style.display = "none";
 				svgToggle();
@@ -448,7 +469,7 @@ window.onload = () => {
 	function svgToggle() {
 		const toggle = document.getElementById('toggle-icon').firstChild;
 
-		const menuHtml = document.getElementById('chat-flusher-menu');
+		const menuHtml = document.getElementById('flusher-menu');
 		const visible = menuHtml.style.display === "block" ? true : false;
 
 		if (toggle === null) return;
@@ -505,6 +526,7 @@ window.onload = () => {
 
 				if (item === undefined) {
 					selectedRow = i;
+					lastRow = selectedRow;
 					break;
 				}
 
@@ -520,18 +542,48 @@ window.onload = () => {
 		}
 
 		rowQueue[selectedRow] = rowQueue[selectedRow] ?? [];
+		messageContainer.classList.add('flusher-message-first');
+
 		messageContainer = prepareAnimation(messageContainer, selectedRow, messageKey);
-		if (messageContainer !== null)
+		if (messageContainer !== null) {
 			startAnimation(selectedRow, messageContainer, messageKey);
+			lastRow = selectedRow;
+		}
 	}
 
 	async function startAnimation(rowIndex, messageContainer) {
-		messageContainer.classList.add("chat-flusher-animation");
+		const lastItem = lastPositionPerRow[rowIndex];
+		lastPositionPerRow[rowIndex] = messageContainer;
 
-		let timeNeeded = Math.trunc((messageContainer.offsetWidth + 8) / parentWidth * 16000);
+		let overlap = 0;
 
+		if (lastItem !== undefined) {
+			const rect1 = messageContainer.getBoundingClientRect();
+			const rect2 = lastItem.getBoundingClientRect();
+
+			let difference = null;
+			if (spacedEnabled) {
+				difference = rect2.right - rect1.left + 6;
+			} else {
+				difference = rect2.right - rect1.left - 4;
+			}
+
+			overlap = difference;
+			console.log(difference);
+			messageContainer.style.marginRight = `-${(messageContainer.offsetWidth + difference)}px`;
+
+			// Adjust z-index during animation
+			/* messageContainer.addEventListener('animationiteration', () => {
+				messageContainer.style.zIndex = '10';
+			}, { once: true }); */
+		}
+		messageContainer.classList.add('flusher-animation');
+
+		const isSpaced = spacedEnabled ? 8 : 0;
+
+		let timeNeeded = Math.round((messageContainer.offsetWidth + isSpaced + overlap) / parentWidth * 16000);
 		const timeoutId = setTimeout(async () => {
-			checkQueue(rowIndex);
+			checkQueue(rowIndex, messageContainer);
 			const index = timeoutIds.indexOf(timeoutId);
 			if (index !== -1) {
 				timeoutIds.splice(index, 1);
@@ -541,14 +593,14 @@ window.onload = () => {
 		timeoutIds.push(timeoutId);
 	}
 
-	async function checkQueue(rowIndex) {
+	async function checkQueue(rowIndex, messageContainer) {
 		const queueItem = rowQueue[rowIndex].shift();
-
 		if (queueItem !== undefined) {
 			const queueContainer = queueItem.message;
-			lastPositionPerRow[rowIndex] = queueContainer;
 			startAnimation(rowIndex, queueContainer, queueItem.key);
 			return;
+		} else {
+			messageContainer.classList.add('flusher-message-last');
 		}
 
 		lastPositionPerRow[rowIndex] = undefined;
@@ -557,13 +609,22 @@ window.onload = () => {
 	function prepareAnimation(messageContainer, rowIndex, messageKey) {
 		chatFlusherMessages.appendChild(messageContainer);
 
-		const topPosition = (rowIndex === 0) ? 2 : rowIndex * (messageContainer.clientHeight + 6) + 2;
-
-		if (topPosition <= parentHeight) {
-			lastPositionPerRow[rowIndex] = messageContainer;
-
-			messageContainer.style.top = topPosition + 'px';
+		//const topPosition = (rowIndex === 0) ? (isSpaced ? 2 : 0) : rowIndex * (messageContainer.clientHeight + (isSpaced ? 6 : 0)) + (isSpaced ? 2 : 0);
+		if (elementHeight === null) {
+			elementHeight = messageContainer.clientHeight;
+			chatFlusherMessages.style.setProperty('--flusher-message-height', `${elementHeight}px`);
+			maxRows = Math.ceil(parentHeight / elementHeight);
+			console.log('maxRows: ' + maxRows);
+		}
+		if (rowIndex <= maxRows) {
+			messageContainer.style.setProperty('--row', rowIndex);
+			messageContainer.classList.add("flusher-message");
 			messageContainer.style.marginRight = `-${messageContainer.offsetWidth}px`;
+
+			if (spacedEnabled) {
+				messageContainer.classList.add('flusher-message-first');
+				messageContainer.classList.add('flusher-message-last');
+			}
 
 			messageContainer.addEventListener("animationend", async function () {
 				chatFlusherMessages.removeChild(messageContainer);
@@ -581,14 +642,12 @@ window.onload = () => {
 		}
 	}
 
-	async function appendMessage(messageKey, messageContent) {
-		if ((displayedMessages[messageKey] && !spamEnabled) || chatFlusherMessages === null) return;
+	async function appendMessage(messageKey, messageContainer) {
+		if (chatFlusherMessages === null) return;
 
+		const dupe = displayedMessages[messageKey];
+		if ((spamState === 2 && dupe) || (spamState === 0 && dupe && lastRow > 3)) return;
 		displayedMessages[messageKey] = true;
-
-		const messageContainer = document.createElement("div");
-		messageContainer.classList.add("chat-message");
-		messageContainer.appendChild(messageContent);
 
 		elementQueue.push({ key: messageKey, message: messageContainer });
 		processElementQueue();
@@ -603,11 +662,10 @@ window.onload = () => {
 		const reduced = reduceRepeatedSentences(content);
 		const messageKey = getMessageKey(sender.id, reduced);
 
-		const messageContentContainer = document.createElement("div");
-		messageContentContainer.classList.add("chat-message-content");
+		const messageContainer = document.createElement("div");
 
 		const badgeSpan = document.createElement("span");
-		badgeSpan.classList.add("chat-flusher-badge");
+		badgeSpan.classList.add("flusher-badge");
 
 		const badgeElements = await getBadges(data);
 		badgeElements.forEach(badgeElement => {
@@ -616,7 +674,7 @@ window.onload = () => {
 
 		const usernameSpan = document.createElement("span");
 		usernameSpan.style.color = color;
-		usernameSpan.classList.add("chat-flusher-username");
+		usernameSpan.classList.add("flusher-username");
 		usernameSpan.textContent = username;
 
 		const boldSpan = document.createElement("span");
@@ -624,8 +682,7 @@ window.onload = () => {
 		boldSpan.textContent = ": ";
 
 		const contentSpan = document.createElement("span");
-		contentSpan.style.color = "#ffffff";
-		contentSpan.classList.add("chat-flusher-content");
+		contentSpan.classList.add("flusher-content");
 
 		const emoteRegex = /\[emote:(\d+):(\w+)\]/g;
 		let lastIndex = 0;
@@ -633,13 +690,18 @@ window.onload = () => {
 
 		while ((match = emoteRegex.exec(reduced)) !== null) {
 			const textBeforeEmote = reduced.slice(lastIndex, match.index);
-			contentSpan.appendChild(document.createTextNode(textBeforeEmote));
+			if (textBeforeEmote.trim() !== '') {
+				const textBeforeNode = document.createElement("span");
+				textBeforeNode.textContent = textBeforeEmote;
+				textBeforeNode.classList.add("flusher-content-text");
+				contentSpan.appendChild(textBeforeNode);
+			}
 
 			const img = document.createElement("img");
 			const [, id, name] = match;
 			img.src = `https://files.kick.com/emotes/${id}/fullsize`;
 			img.alt = name;
-			img.classList.add("emote-image", "my-auto");
+			img.classList.add("flusher-emote");
 			contentSpan.appendChild(img);
 
 			lastIndex = emoteRegex.lastIndex;
@@ -647,17 +709,21 @@ window.onload = () => {
 
 		const textAfterLastEmote = reduced.slice(lastIndex);
 		if (textAfterLastEmote.trim() !== '') {
-			contentSpan.appendChild(document.createTextNode(textAfterLastEmote));
+			const textAfterNode = document.createElement("span");
+			textAfterNode.textContent = textAfterLastEmote;
+			textAfterNode.classList.add("flusher-content-text");
+			contentSpan.appendChild(textAfterNode);
 		}
 		else {
 			const lastChild = contentSpan.lastChild;
 			if (lastChild.tagName === 'IMG') {
-				lastChild.classList.add('last-emote-image');
+				lastChild.className = 'last-flusher-emote';
 			}
 		}
 
-		messageContentContainer.append(badgeSpan, usernameSpan, boldSpan, contentSpan);
-		appendMessage(messageKey, messageContentContainer);
+		badgeSpan.firstChild ? messageContainer.append(badgeSpan) : null;
+		messageContainer.append(usernameSpan, boldSpan, contentSpan);
+		appendMessage(messageKey, messageContainer);
 	}
 
 	async function createUserBanMessage(data) {
@@ -667,7 +733,7 @@ window.onload = () => {
 		const messageKey = getMessageKey(`-ban${now.getMinutes()}-`, bannedUser);
 
 		const banMessageContent = document.createElement("div");
-		banMessageContent.classList.add("chat-message-content");
+		banMessageContent.classList.add("flusher-message");
 
 		const bannedUserSpan = document.createElement("span");
 		bannedUserSpan.textContent = bannedUser;
@@ -685,7 +751,6 @@ window.onload = () => {
 		banMessageSpan.append(bannedUserSpan, emoji, banText, emoji.cloneNode(true), bannedBySpan);
 
 		banMessageContent.appendChild(banMessageSpan);
-
 		appendMessage(messageKey, banMessageContent);
 	}
 
@@ -697,7 +762,7 @@ window.onload = () => {
 		const messageKey = getMessageKey(`-sub${now.getMinutes()}-`, username + '-' + months);
 
 		const subscriptionMessageContent = document.createElement("div");
-		subscriptionMessageContent.classList.add("chat-message-content");
+		subscriptionMessageContent.classList.add("flusher-message");
 
 		const emojiSpan = document.createElement('span');
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
@@ -712,7 +777,6 @@ window.onload = () => {
 		subSpan.append(emojiSpan, subscriptionMessageSpan);
 
 		subscriptionMessageContent.append(subSpan);
-
 		appendMessage(messageKey, subscriptionMessageContent);
 	}
 
@@ -724,7 +788,7 @@ window.onload = () => {
 		const messageKey = getMessageKey(`-host${now.getMinutes()}-`, hostUsername + ' ' + viewersCount);
 
 		const hostMessageContent = document.createElement("div");
-		hostMessageContent.classList.add("chat-message-content");
+		hostMessageContent.classList.add("flusher-message");
 
 		const emojiSpan = document.createElement('span');
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
@@ -738,7 +802,6 @@ window.onload = () => {
 		hostMessageSpan.append(emojiSpan, viewersCountSpan);
 
 		hostMessageContent.appendChild(hostMessageSpan);
-
 		appendMessage(messageKey, hostMessageContent);
 	}
 
@@ -750,7 +813,7 @@ window.onload = () => {
 		const messageKey = getMessageKey(`-gift${now.getMinutes()}-`, gifterUsername + '-' + giftedUsernames[0]);
 
 		const giftedContent = document.createElement("div");
-		giftedContent.classList.add("chat-message-content");
+		giftedContent.classList.add("flusher-message");
 
 		const emojiSpan = document.createElement('span');
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
@@ -763,7 +826,6 @@ window.onload = () => {
 		giftedSpan.append(emojiSpan, gifterUsernameSpan);
 
 		giftedContent.appendChild(giftedSpan);
-
 		appendMessage(messageKey, giftedContent);
 	}
 
@@ -778,7 +840,7 @@ window.onload = () => {
 			}
 
 			const messageContent = document.createElement("div");
-			messageContent.classList.add("chat-message-content");
+			messageContent.classList.add("flusher-message");
 
 			const emojiSpan = document.createElement('span');
 			emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
@@ -790,7 +852,6 @@ window.onload = () => {
 			followersSpan.append(emojiSpan, followersMessageSpan)
 
 			messageContent.append(followersSpan);
-
 			appendMessage(messageKey, messageContent);
 		}
 
@@ -808,10 +869,10 @@ window.onload = () => {
 		const badges = data.sender.identity.badges || [];
 		const badgeElements = [];
 
-		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
+		let firstChatIdentity = document.querySelector(`.flusher-entry-username[data-flusher-entry-user-id="${data.sender.id}"]`);
 
 		if (firstChatIdentity !== null) {
-			let identity = firstChatIdentity.closest('.chat-message-identity');
+			let identity = firstChatIdentity.closest('.flusher-message-identity');
 
 			identity.querySelectorAll('div.badge-tooltip').forEach(function (baseBadge, index) {
 				let badge = badges[index];
@@ -833,7 +894,7 @@ window.onload = () => {
 					const imgUrl = imgElement.src;
 					const newImg = document.createElement('img');
 					newImg.src = imgUrl;
-					newImg.classList.add('badge-overlay');
+					newImg.classList.add('flusher-badge');
 					badgeCache.push({
 						type: badgeText,
 						html: newImg
@@ -846,7 +907,7 @@ window.onload = () => {
 				const svgElement = baseBadge.querySelector('svg');
 				if (svgElement) {
 					const svgCopy = svgElement.cloneNode(true);
-					svgCopy.classList.add('badge-overlay');
+					svgCopy.classList.add('flusher-badge');
 
 					badgeCache.push({
 						type: badgeText,

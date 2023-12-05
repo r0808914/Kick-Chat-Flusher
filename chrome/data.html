@@ -1,25 +1,24 @@
 <!-- CSS Overlay -->
 <style id="css-overlay">
-  #chat-flusher-messages {
+  #flusher-messages {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     align-items: flex-end;
     height: 100%;
     overflow-y: auto;
   }
 
-  .chat-flusher-username {
+  .flusher-username {
     font-weight: 700;
   }
 
-  .chat-message .font-bold {
+  .flusher-message .font-bold {
     padding-right: 0.25em;
   }
 
-  .chat-message {
+  .flusher-message {
     position: absolute;
-    background-color: rgba(34, 34, 34, 0.6);
-    border-radius: 9px;
+    background: rgba(34, 34, 34, 0.6);
     max-width: calc(100% - 20px);
     height: 2em;
     display: flex;
@@ -29,40 +28,73 @@
     font-size: .875rem;
     line-height: 1.25rem;
     font-weight: 500;
+    top: calc(var(--row) * (2em + var(--extra-per-row) + var(--padding-extra)));
+    /* z-index: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); */
+    /* mix-blend-mode: screen; */
+  }
+
+  #flusher-messages[spaced="true"] .flusher-message {
+    --extra-per-row: 4px;
+    --padding-extra: 2px;
+  }
+
+  .flusher-message {
+    --extra-per-row: 0px;
+    --padding-extra: 0px;
+  }
+
+  .flusher-message-first {
+    /* z-index: 2;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); */
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+  }
+
+  .flusher-message-last {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  .flusher-content-text {
+    vertical-align: middle;
+  }
+
+  .flusher-content,
+  .flusher-username {
     white-space: nowrap;
+  }
+
+  .flusher-content {
     overflow: hidden;
     text-overflow: ellipsis;
+    color: rgb(255, 255, 255);
   }
 
-  .chat-flusher-badge,
-  .chat-flusher-content,
-  .chat-message-content {
-    display: flex;
-    align-items: center;
-  }
-
-  .badge-overlay {
+  .flusher-badge {
     max-width: 16px;
     max-height: 16px;
     margin-right: 5px;
     fill: rgb(83, 252, 24);
   }
 
-  .chat-flusher-animation {
+  .flusher-emote {
+    padding: 0 0.1em;
+    height: 1.5rem;
+    vertical-align: middle;
+  }
+
+  .last-flusher-emote {
+    padding-right: 0;
+    height: 1.5rem;
+    vertical-align: middle;
+  }
+
+  .flusher-animation {
     animation: slide-in 16s linear;
   }
 
-  .emote-image {
-    display: inline-block;
-    max-width: 1.5rem;
-    max-height: 1.5rem;
-    vertical-align: middle;
-    padding: 0 0.3em;
-  }
 
-  .last-emote-image {
-    padding-right: 0;
-  }
 
   @keyframes slide-in {
     0% {
@@ -70,14 +102,14 @@
     }
 
     100% {
-      transform: translateX(var(--chat-flusher-width));
+      transform: translateX(var(--flusher-width));
     }
   }
 </style>
 
 <!-- CSS Menu -->
 <style id="css-menu">
-  #chat-flusher {
+  #flusher {
     position: absolute;
     top: 0;
     left: 0;
@@ -92,7 +124,7 @@
     fill: rgb(83, 252, 24) !important;
   }
 
-  .chat-flusher-menu {
+  #flusher-menu {
     position: absolute;
     bottom: 2.5rem;
     right: .5rem;
@@ -109,21 +141,21 @@
     border-radius: 5px;
   }
 
-  .chat-flusher-menu-title {
+  .flusher-menu-title {
     padding-right: 1rem;
   }
 
-  .chat-flusher-toggle:hover {
+  .flusher-toggle:hover {
     fill: rgb(83, 252, 24);
   }
 </style>
 
 <!-- HTML Menu -->
-<div id="chat-flusher-menu" class="chat-flusher-menu" style="display: none;">
+<div id="flusher-menu" style="display: none;">
   <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
-    <div class="flex h-8 items-center space-x-2.5"><!---->
-      <div class="chat-flusher-menu-title">Kick Chat Flusher</div>
-    </div><button id="chat-flusher-menu-close" data-v-f8fbb063="" data-v-c5b639f8=""
+    <div class="flex h-8 items-center space-x-2.5">
+      <div class="flusher-menu-title">Chat Flusher</div>
+    </div><button id="flusher-menu-close" data-v-f8fbb063="" data-v-c5b639f8=""
       class="variant-text size-xs base-icon-button">
       <div data-v-f8fbb063="" style="width: 12px; height: 12px;" class="base-icon icon"><svg width="12" height="12"
           viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -133,44 +165,65 @@
         </svg></div>
     </button>
   </div>
+
   <div data-v-c5b639f8="" class="chat-actions-content">
-    <div data-v-b5e51fb7="" class="chat-actions-menu-list">
+    <div id="flusher-enable" data-v-b5e51fb7="" class="chat-actions-menu-list">
       <div data-v-ccfd580e="" data-v-b5e51fb7="" class="chat-actions-item">
-        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Chat Flusher
+        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flusher
         </div>
         <div data-v-ccfd580e="" class="flex h-10 w-fit items-center justify-end">
           <div data-v-edcdae70="" data-v-b5e51fb7="" id="base-toggle-wrapper" class="toggle-size-sm">
-            <div data-chat-toggle-type="enable" data-v-edcdae70 class="base-toggle">
+            <div data-v-edcdae70 class="base-toggle">
               <div data-v-edcdae70="" class="base-toggle-indicator"></div>
             </div>
           </div>
         </div>
       </div>
-      <div data-v-ccfd580e="" data-v-b5e51fb7="" class="chat-actions-item">
+
+      <div id="flusher-spaced" data-v-b5e51fb7="" class="chat-actions-menu-list">
+        <div data-v-ccfd580e="" data-v-b5e51fb7="" class="chat-actions-item">
+          <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spaced
+          </div>
+          <div data-v-ccfd580e="" class="flex h-10 w-fit items-center justify-end">
+            <div data-v-edcdae70="" data-v-b5e51fb7="" id="base-toggle-wrapper" class="toggle-size-sm">
+              <div data-v-edcdae70 class="base-toggle">
+                <div data-v-edcdae70="" class="base-toggle-indicator"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <!-- <div data-v-ccfd580e="" data-v-b5e51fb7="" class="chat-actions-item">
         <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam
         </div>
         <div data-v-ccfd580e="" class="flex h-10 w-fit items-center justify-end">
           <div data-v-edcdae70="" data-v-b5e51fb7="" id="base-toggle-wrapper" class="toggle-size-sm">
-            <div data-chat-toggle-type="spam" data-v-edcdae70 class="base-toggle">
+            <div data-flusher-toggle-type="spam" data-v-edcdae70 class="base-toggle">
               <div data-v-edcdae70="" class="base-toggle-indicator"></div>
             </div>
           </div>
         </div>
+      </div> -->
+
+      <div id="flusher-spam" data-v-ccfd580e="" data-v-b5e51fb7=""
+        class="chat-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam</div>
+        <div data-v-ccfd580e="" class="flex h-10 w-fit items-center justify-end">
+          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
+        </div>
       </div>
+
       <!-- <div data-v-ccfd580e="" data-v-b5e51fb7=""
         class="chat-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Developer
-        </div>
+        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spacing</div>
         <div data-v-ccfd580e="" class="flex h-10 w-fit items-center justify-end">
-          <div data-v-ccfd580e="" style="width: 16px; height: 16px;" class="base-icon"><svg version="1.2"
-              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
-              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
-            </svg></div>
+          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
         </div>
       </div> -->
-      <div id="chat-flusher-home" data-v-ccfd580e="" data-v-b5e51fb7=""
+
+      <div id="flusher-home" data-v-ccfd580e="" data-v-b5e51fb7=""
         class="chat-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Homepage
+        <div data-v-ccfd580e="" class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Homepage
         </div>
         <div data-v-ccfd580e="" class="flex h-10 w-fit items-center justify-end"><!---->
           <div data-v-ccfd580e="" style="width: 16px; height: 16px;" class="base-icon"><svg width="16" height="16"
@@ -185,8 +238,3 @@
     </div>
   </div>
 </div>
-
-<!-- showbox.html -->
-<!-- <script>
-  /* script */
-</script> -->
