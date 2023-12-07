@@ -19,11 +19,12 @@ window.onload = () => {
 		isVod = false,
 		chatEnabled = true,
 		spacedEnabled = true,
+		backgroundEnabled = true,
 		spamState = null,
 		elementHeight = null,
-		maxRows = null,
-		existingSocket = null,
+		maxRows = 99,
 		lastRow = null,
+		existingSocket = null,
 		chatEnabledVisible = true,
 		lastFollowersCount = null,
 		chatFlusherMessages = null,
@@ -49,7 +50,7 @@ window.onload = () => {
 		isProcessingMessages = true;
 
 		const data = messageQueue.shift();
-		if (data === undefined) return;
+		if ((lastRow === null || lastRow >= maxRows) || (data === undefined)) return;
 
 		const eventType = data.event ?? "";
 
@@ -93,10 +94,9 @@ window.onload = () => {
 		selectRow(data.message, data.key);
 
 		const queueLength = elementQueue.length;
-
-		let wait = Math.trunc(2000 / queueLength);
-		if (queueLength < 3) {
-			wait = 1000;
+		let wait = isVod ? Math.trunc(4000 / queueLength) : Math.trunc(2000 / queueLength);
+		if (queueLength < 4) {
+			wait = 250;
 		}
 
 		setTimeout(function () {
@@ -130,36 +130,29 @@ window.onload = () => {
 							return;
 						}
 
-						if (parentWidth == null || parentWidth == 0) {
-							const data = {
-								event: "App\\Events\\ChatMessageEvent",
-								data: {
-									content: "thanks for testing this extension",
-									sender: {
-										username: "KickChatFlusher",
-										identity: {
-											color: "#E9113C",
-										}
-									}
-								}
-							};
-
-							if (chatFlusherMessages === null) return;
-							messageQueue.push(data);
-
-							/* setInterval(() => {
-							}, 500); */
-
-							console.info('Chat Overlay Created: ' + window.location.href);
-						}
-
+						const oldWidth = parentWidth;
 						parentWidth = Math.trunc(width) * 2;
 						parentHeight = Math.trunc(height);
 
-						elementHeight = null;
+						chatFlusherMessages.style.setProperty('--flusher-width', `-${parentWidth}px`);
+
+						const chatContainer = document.querySelector('#chatroom .justify-center.absolute');
+						const documentWidth = document.documentElement.clientWidth;
+						if ((chatContainer !== null && chatEnabled) && documentWidth === (parentWidth / 2)) {
+							chatContainer.click();
+						}
+
 						clearChat();
 
-						chatFlusherMessages.style.setProperty('--flusher-width', `-${parentWidth}px`);
+						elementHeight = null;
+						createIntroMessage(false);
+
+						if (oldWidth == null || oldWidth == 0) {
+							if (chatFlusherMessages === null) return;
+							/* test(); */
+							createIntroMessage(true);
+							console.info('Chat Overlay Created: ' + window.location.href);
+						}
 					}
 				}, 750);
 			}
@@ -192,7 +185,7 @@ window.onload = () => {
 
 		if (chatFlusherMessages !== null) {
 			chatFlusherMessages.setAttribute("spaced", spacedEnabled);
-
+			chatFlusherMessages.setAttribute("background", backgroundEnabled);
 			while (chatFlusherMessages.firstChild) {
 				chatFlusherMessages.removeChild(chatFlusherMessages.firstChild);
 			}
@@ -202,7 +195,6 @@ window.onload = () => {
 		lastPositionPerRow.length = 0;
 		rowQueue.length = 0;
 		timeoutIds.length = 0;
-
 
 		if (chatFlusherMessages !== null)
 			chatFlusherMessages.style.display = 'flex';
@@ -274,6 +266,152 @@ window.onload = () => {
 		initializeChat();
 	}
 
+	function createMenu(menuHtml) {
+		const menu = document.getElementById('flusher-menu');
+		if (menu === null) {
+			const settingsMenu = menuHtml.querySelector('#flusher-menu-settings');
+
+			const closeBtn = menuHtml.querySelector('#flusher-menu-close');
+			closeBtn.addEventListener('click', function (event) {
+				menuHtml.style.display = "none";
+				settingsMenu.style.display = 'none';
+				baseMenu.style.display = 'none';
+				svgToggle();
+			});
+
+			const homeBtn = menuHtml.querySelector('#flusher-home');
+			homeBtn.addEventListener('click', function (event) {
+				menuHtml.style.display = "none";
+				settingsMenu.style.display = 'none';
+				baseMenu.style.display = 'none';
+				window.open('https://github.com/r0808914/Kick-Chat-Flusher/issues', '_blank');
+			});
+
+			const chatEnabledValue = localStorage.getItem('flusher-enable');
+			chatEnabled = chatEnabledValue ? JSON.parse(chatEnabledValue) : true;
+
+			const spamStateValue = localStorage.getItem('flusher-spam');
+			spamState = spamStateValue ? JSON.parse(spamStateValue) : 0;
+
+			const spaceEnabledValue = localStorage.getItem('flusher-spaced');
+			spacedEnabled = spaceEnabledValue ? JSON.parse(spaceEnabledValue) : true;
+
+			const backgroundEnabledValue = localStorage.getItem('flusher-background');
+			backgroundEnabled = backgroundEnabledValue ? JSON.parse(backgroundEnabledValue) : true;
+
+			const spamBtn = menuHtml.querySelector('#flusher-spam');
+			const spanInsideSpam = spamBtn.querySelector('span');
+			spanInsideSpam.textContent = spamStates[spamState];
+
+			spamBtn.addEventListener('click', function (event) {
+				spamState = (spamState + 1) % spamStates.length;
+				localStorage.setItem('flusher-spam', JSON.stringify(spamState));
+				spanInsideSpam.textContent = spamStates[spamState];
+				clearChat();
+			});
+
+			const baseMenu = menuHtml.querySelector('#flusher-menu-base');
+
+			const settingsBtn = menuHtml.querySelector('#flusher-settings');
+			settingsBtn.addEventListener('click', function (event) {
+				settingsMenu.style.display = 'block';
+				baseMenu.style.display = 'none';
+			});
+
+			const settingsBackBtn = menuHtml.querySelector('#flusher-settings-back');
+			settingsBackBtn.addEventListener('click', function (event) {
+				settingsMenu.style.display = 'none';
+				baseMenu.style.display = 'block';
+			});
+
+			const settingsCloseBtn = menuHtml.querySelector('#flusher-settings-close');
+			settingsCloseBtn.addEventListener('click', function (event) {
+				menuHtml.style.display = 'none';
+				settingsMenu.style.display = 'none';
+				baseMenu.style.display = 'none';
+			});
+
+			const flusherToggle = menuHtml.querySelector('#flusher-enable .flusher-toggle');
+			flusherToggle.addEventListener('click', function (event) {
+				const element = event.currentTarget;
+				element.classList.toggle(toggledClass);
+				if (element.classList.contains(toggledClass)) {
+					localStorage.setItem('flusher-enable', JSON.stringify(true));
+					svgToggle();
+					chatEnabled = true;
+				} else {
+					localStorage.setItem('flusher-enable', JSON.stringify(false));
+					svgToggle();
+					chatEnabled = false;
+					clearChat();
+				}
+			});
+
+			if (chatEnabled) flusherToggle.classList.toggle(toggledClass);
+
+			const spaceToggle = menuHtml.querySelector('#flusher-spaced .flusher-toggle');
+			spaceToggle.addEventListener('click', function (event) {
+				const element = event.currentTarget;
+				element.classList.toggle(toggledClass);
+				if (element.classList.contains(toggledClass)) {
+					localStorage.setItem('flusher-spaced', JSON.stringify(true));
+					spacedEnabled = true;
+					clearChat();
+				} else {
+					localStorage.setItem('flusher-spaced', JSON.stringify(false));
+					spacedEnabled = false;
+					clearChat();
+				}
+			});
+
+			if (spacedEnabled) spaceToggle.classList.toggle(toggledClass);
+
+			const backgroundToggle = menuHtml.querySelector('#flusher-background .flusher-toggle');
+			backgroundToggle.addEventListener('click', function (event) {
+				const element = event.currentTarget;
+				element.classList.toggle(toggledClass);
+				if (element.classList.contains(toggledClass)) {
+					localStorage.setItem('flusher-background', JSON.stringify(true));
+					backgroundEnabled = true;
+					clearChat();
+				} else {
+					localStorage.setItem('flusher-background', JSON.stringify(false));
+					backgroundEnabled = false;
+					clearChat();
+				}
+			});
+
+			if (backgroundEnabled) backgroundToggle.classList.toggle(toggledClass);
+
+			const parent = document.querySelector('.vjs-control-bar');
+			parent.append(menuHtml);
+		}
+		createToggle();
+	}
+
+	function test() {
+		const data = {
+			event: "App\\Events\\ChatMessageEvent",
+			data: {
+				content: "test message",
+				sender: {
+					username: "test user",
+					identity: {
+						color: "#E9113C",
+					}
+				}
+			}
+		};
+
+		if (chatFlusherMessages === null) return;
+		/* createMessage(data.data); */
+		/* messageQueue.push(data); */
+
+		setInterval(() => {
+			messageQueue.push(data);
+		}, 500);
+	}
+
 	function createChat() {
 		if (chatFlusherMessages !== null) return;
 		chatFlusherMessages = 0;
@@ -318,77 +456,7 @@ window.onload = () => {
 
 				const menuHtml = parsedDocument.getElementById('flusher-menu');
 				if (menuHtml) {
-					const closeBtn = menuHtml.querySelector('#flusher-menu-close');
-					closeBtn.addEventListener('click', function (event) {
-						menuHtml.style.display = "none";
-						svgToggle();
-					});
-
-					const homeBtn = menuHtml.querySelector('#flusher-home');
-					homeBtn.addEventListener('click', function (event) {
-						menuHtml.style.display = "none";
-						window.open('https://github.com/r0808914/Kick-chat-flusher', '_blank');
-					});
-
-					const chatEnabledValue = localStorage.getItem('flusher-enable');
-					chatEnabled = chatEnabledValue ? JSON.parse(chatEnabledValue) : true;
-
-					const spamStateValue = localStorage.getItem('flusher-spam');
-					spamState = spamStateValue ? JSON.parse(spamStateValue) : 2;
-
-					const spaceEnabledValue = localStorage.getItem('flusher-spaced');
-					spacedEnabled = spaceEnabledValue ? JSON.parse(spaceEnabledValue) : true;
-
-					const spamBtn = menuHtml.querySelector('#flusher-spam');
-					const spanInsideSpam = spamBtn.querySelector('span');
-					spanInsideSpam.textContent = spamStates[spamState];
-
-					spamBtn.addEventListener('click', function (event) {
-						spamState = (spamState + 1) % spamStates.length;
-						localStorage.setItem('flusher-spam', JSON.stringify(spamState));
-						spanInsideSpam.textContent = spamStates[spamState];
-						clearChat();
-					});
-
-					const flusherToggle = menuHtml.querySelector('#flusher-enable .base-toggle');
-					flusherToggle.addEventListener('click', function (event) {
-						const element = event.currentTarget;
-						element.classList.toggle(toggledClass);
-						if (element.classList.contains(toggledClass)) {
-							localStorage.setItem('flusher-enable', JSON.stringify(true));
-							svgToggle();
-							chatEnabled = true;
-						} else {
-							localStorage.setItem('flusher-enable', JSON.stringify(false));
-							svgToggle();
-							chatEnabled = false;
-							clearChat();
-						}
-					});
-
-					if (chatEnabled) flusherToggle.classList.toggle(toggledClass);
-
-					const spaceToggle = menuHtml.querySelector('#flusher-spaced .base-toggle');
-					spaceToggle.addEventListener('click', function (event) {
-						const element = event.currentTarget;
-						element.classList.toggle(toggledClass);
-						if (element.classList.contains(toggledClass)) {
-							localStorage.setItem('flusher-spaced', JSON.stringify(true));
-							spacedEnabled = true;
-							clearChat();
-						} else {
-							localStorage.setItem('flusher-spaced', JSON.stringify(false));
-							spacedEnabled = false;
-							clearChat();
-						}
-					});
-
-					if (chatEnabled) spaceToggle.classList.toggle(toggledClass);
-
-					const parent = document.querySelector('.vjs-control-bar');
-					parent.append(menuHtml);
-
-					createToggle();
+					createMenu(menuHtml);
 				}
 			}
 		};
@@ -450,17 +518,22 @@ window.onload = () => {
 		toggleButton.append(spanIconPlaceholder, svgElement, spanControlText);
 
 		const existingButton = document.querySelector('.vjs-fullscreen-control');
-		existingButton.parentNode.insertBefore(toggleButton, existingButton.nextSibling);
+		existingButton.parentNode.insertBefore(toggleButton, existingButton);
 
 		svgToggle();
 
 		toggleButton.addEventListener('click', function () {
-			var popupMenu = document.getElementById("flusher-menu");
+			const popupMenu = document.getElementById("flusher-menu");
+			const baseMenu = document.querySelector('#flusher-menu-base');
+			const settingsMenu = document.querySelector('#flusher-menu-settings');
 			if (popupMenu.style.display === "block") {
-				popupMenu.style.display = "none";
+				popupMenu.style.display = 'none';
+				settingsMenu.style.display = 'none';
+				baseMenu.style.display = 'none';
 				svgToggle();
 			} else {
-				popupMenu.style.display = "block";
+				baseMenu.style.display = 'block';
+				popupMenu.style.display = 'block';
 				svgToggle();
 			}
 		});
@@ -555,33 +628,29 @@ window.onload = () => {
 		const lastItem = lastPositionPerRow[rowIndex];
 		lastPositionPerRow[rowIndex] = messageContainer;
 
-		let overlap = 0;
+		chatFlusherMessages.appendChild(messageContainer);
+		const messageWidth = messageContainer.offsetWidth;
+		messageContainer.style.marginRight = `-${messageWidth}px`;
+		messageContainer.classList.add('flusher-animation');
 
+		let overlap = 0;
 		if (lastItem !== undefined) {
 			const rect1 = messageContainer.getBoundingClientRect();
 			const rect2 = lastItem.getBoundingClientRect();
-
-			let difference = null;
-			if (spacedEnabled) {
-				difference = rect2.right - rect1.left + 6;
+			overlap = spacedEnabled ? rect2.right - rect1.left + 5 : rect2.right - rect1.left - 2;
+			if (overlap > 10) {
+				const chatContainer = document.querySelector('#chatroom .justify-center.absolute');
+				if (chatContainer !== null) {
+					chatContainer.click();
+				}
+				messageContainer.style.marginRight = `-${Math.max(messageWidth + overlap - 1, 0)}px`;
 			} else {
-				difference = rect2.right - rect1.left - 4;
+				messageContainer.style.marginRight = `-${Math.max(messageWidth + overlap, 0)}px`;
 			}
-
-			overlap = difference;
-			console.log(difference);
-			messageContainer.style.marginRight = `-${(messageContainer.offsetWidth + difference)}px`;
-
-			// Adjust z-index during animation
-			/* messageContainer.addEventListener('animationiteration', () => {
-				messageContainer.style.zIndex = '10';
-			}, { once: true }); */
 		}
-		messageContainer.classList.add('flusher-animation');
+		/* const isSpaced = spacedEnabled ? 6 : -4; */
+		let timeNeeded = Math.round((messageWidth + overlap) / parentWidth * 16000) + 10;
 
-		const isSpaced = spacedEnabled ? 8 : 0;
-
-		let timeNeeded = Math.round((messageContainer.offsetWidth + isSpaced + overlap) / parentWidth * 16000);
 		const timeoutId = setTimeout(async () => {
 			checkQueue(rowIndex, messageContainer);
 			const index = timeoutIds.indexOf(timeoutId);
@@ -607,39 +676,24 @@ window.onload = () => {
 	}
 
 	function prepareAnimation(messageContainer, rowIndex, messageKey) {
-		chatFlusherMessages.appendChild(messageContainer);
-
-		//const topPosition = (rowIndex === 0) ? (isSpaced ? 2 : 0) : rowIndex * (messageContainer.clientHeight + (isSpaced ? 6 : 0)) + (isSpaced ? 2 : 0);
-		if (elementHeight === null) {
-			elementHeight = messageContainer.clientHeight;
-			chatFlusherMessages.style.setProperty('--flusher-message-height', `${elementHeight}px`);
-			maxRows = Math.ceil(parentHeight / elementHeight);
-			console.log('maxRows: ' + maxRows);
+		if (spacedEnabled) {
+			messageContainer.classList.add('flusher-message-first');
+			messageContainer.classList.add('flusher-message-last');
 		}
-		if (rowIndex <= maxRows) {
-			messageContainer.style.setProperty('--row', rowIndex);
-			messageContainer.classList.add("flusher-message");
-			messageContainer.style.marginRight = `-${messageContainer.offsetWidth}px`;
+		messageContainer.style.setProperty('--row', rowIndex);
+		messageContainer.classList.add("flusher-message");
 
-			if (spacedEnabled) {
-				messageContainer.classList.add('flusher-message-first');
-				messageContainer.classList.add('flusher-message-last');
-			}
-
-			messageContainer.addEventListener("animationend", async function () {
-				chatFlusherMessages.removeChild(messageContainer);
-				delete displayedMessages[messageKey];
-			});
-			return messageContainer;
-		}
-		else {
+		messageContainer.addEventListener("animationend", async function () {
 			try {
 				chatFlusherMessages.removeChild(messageContainer);
 				delete displayedMessages[messageKey];
+				lastRow = rowIndex - 1;
 			} finally {
 				return null;
 			}
-		}
+		});
+
+		return messageContainer;
 	}
 
 	async function appendMessage(messageKey, messageContainer) {
@@ -665,7 +719,7 @@ window.onload = () => {
 		const messageContainer = document.createElement("div");
 
 		const badgeSpan = document.createElement("span");
-		badgeSpan.classList.add("flusher-badge");
+		badgeSpan.classList.add("flusher-badges");
 
 		const badgeElements = await getBadges(data);
 		badgeElements.forEach(badgeElement => {
@@ -829,6 +883,35 @@ window.onload = () => {
 		appendMessage(messageKey, giftedContent);
 	}
 
+	async function createIntroMessage(show) {
+		const now = new Date();
+		const messageKey = getMessageKey(`-intro${now.getMinutes()}`);
+
+		const giftedContent = document.createElement("div");
+		giftedContent.classList.add("flusher-message");
+
+		const emojiSpan = document.createElement('span');
+		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
+
+		const introSpan = document.createElement("span");
+		introSpan.textContent = `thanks for testing this extension (version 0.7)`;
+		const introMessageSpan = document.createElement("span");
+		introMessageSpan.style.color = "#00FF00";
+
+		introMessageSpan.append(emojiSpan, introSpan);
+
+		giftedContent.appendChild(introMessageSpan);
+		const prepared = prepareAnimation(giftedContent, 0, messageKey);
+		if (show) {
+			selectRow(prepared, messageKey);
+		} else {
+			chatFlusherMessages.appendChild(prepared);
+			elementHeight = prepared.clientHeight;
+			maxRows = Math.ceil(parentHeight / elementHeight);
+			chatFlusherMessages.removeChild(prepared);
+		}
+	}
+
 	async function createFollowersMessage(data) {
 		const followersCount = data.followersCount;
 		const messageKey = getMessageKey('-followers-', followersCount);
@@ -869,11 +952,9 @@ window.onload = () => {
 		const badges = data.sender.identity.badges || [];
 		const badgeElements = [];
 
-		let firstChatIdentity = document.querySelector(`.flusher-entry-username[data-flusher-entry-user-id="${data.sender.id}"]`);
-
+		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
 		if (firstChatIdentity !== null) {
-			let identity = firstChatIdentity.closest('.flusher-message-identity');
-
+			let identity = firstChatIdentity.closest('.chat-message-identity');
 			identity.querySelectorAll('div.badge-tooltip').forEach(function (baseBadge, index) {
 				let badge = badges[index];
 				if (badge === undefined) return;
@@ -921,6 +1002,7 @@ window.onload = () => {
 				console.warn('badge not found: ' + badgeText);
 			});
 		}
+
 		return badgeElements;
 	}
 
