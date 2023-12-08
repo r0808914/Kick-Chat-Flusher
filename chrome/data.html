@@ -17,7 +17,7 @@
 
   .flusher-message {
     position: absolute;
-    background: rgba(34, 34, 34, 0.6);
+    background: rgba(28, 28, 28, 0.7);
     max-width: calc(100% - 20px);
     height: 2em;
     display: flex;
@@ -32,6 +32,20 @@
     top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
   }
 
+  .flusher-red {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border: 1px solid red;
+  }
+
+  .flusher-green {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border: 1px solid green;
+  }
+
   #flusher-messages[spaced="true"] .flusher-message {
     --extra-per-row: 5px;
     --padding-extra: 2px;
@@ -39,8 +53,8 @@
 
   #flusher-messages[background="false"] .flusher-message {
     background: none;
-    text-shadow: 2px 7px 5px rgba(0,0,0,0.3), 
-    0px -4px 10px rgba(255,255,255,0.3);
+    text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+      0px -4px 10px rgba(255, 255, 255, 0.3);
   }
 
   #flusher-messages[spaced="false"] .flusher-message-first {
@@ -79,14 +93,15 @@
   }
 
   .flusher-badges,
-  .flusher-username,
-  .flusher-content {
+  .flusher-username {
     display: flex;
     align-items: center;
     white-space: nowrap;
   }
 
   .flusher-content {
+    align-items: center;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     color: rgb(255, 255, 255);
