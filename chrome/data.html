@@ -1,4 +1,17 @@
 <style id="css-overlay">
+  /* Style for the log overlay container */
+  #log-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-family: Arial, sans-serif;
+    transition: opacity 0.5s;
+    opacity: 0;
+  }
+
   #flusher-messages {
     display: flex;
     flex-direction: column;
@@ -20,6 +33,7 @@
     background: rgba(28, 28, 28, 0.7);
     max-width: calc(100% - 20px);
     height: 2em;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     will-change: transform;
@@ -27,8 +41,8 @@
     font-size: .875rem;
     line-height: 1.25rem;
     font-weight: 500;
-    --extra-per-row: 0px;
-    --padding-extra: 0px;
+    --extra-per-row: 5px;
+    --padding-extra: 2px;
     top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
   }
 
@@ -44,48 +58,6 @@
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     border: 1px solid green;
-  }
-
-  #flusher-messages[spaced="true"] .flusher-message {
-    --extra-per-row: 5px;
-    --padding-extra: 2px;
-  }
-
-  #flusher-messages[background="false"] .flusher-message {
-    background: none;
-    text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
-      0px -4px 10px rgba(255, 255, 255, 0.3);
-  }
-
-  #flusher-messages[spaced="false"] .flusher-message-first {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 8px;
-  }
-
-  #flusher-messages[spaced="false"] .flusher-message-last {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 8px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0px;
-  }
-
-  #flusher-messages[spaced="false"] .flusher-message-first.flusher-message-last {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 8px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 8px;
-  }
-
-  #flusher-messages[spaced="true"] .flusher-message-first {
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-  }
-
-  #flusher-messages[spaced="true"] .flusher-message-last {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
   }
 
   .flusher-content-text {
@@ -329,13 +301,6 @@
             </div>
           </div>
         </div>
-        <div id="flusher-spam"
-          class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam</div>
-          <div class="flex h-10 w-fit items-center justify-end">
-            <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
-          </div>
-        </div>
         <div id="flusher-settings"
           class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
           <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Settings</div>
@@ -370,7 +335,14 @@
       </button>
     </div>
     <div class="chat-actions-content">
-      <div id="flusher-spaced" class="flusher-actions-item">
+      <div id="flusher-spam"
+        class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
+        </div>
+      </div>
+      <div id="flusher-spaced" class="flusher-actions-item" style="display: none;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spaced</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="flusher-toggle-size-sm">
@@ -380,7 +352,7 @@
           </div>
         </div>
       </div>
-      <div id="flusher-background" class="flusher-actions-item">
+      <div id="flusher-background" class="flusher-actions-item" style="display: none;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Background
         </div>
         <div class="flex h-10 w-fit items-center justify-end">
