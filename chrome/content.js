@@ -399,7 +399,6 @@ window.onload = () => {
 				const parsedDocument = parser.parseFromString(xhr.responseText, 'text/html');
 
 				const overlayStyles = parsedDocument.getElementById('css-overlay');
-
 				if (overlayStyles) {
 					const overlayStyle = document.createElement('style');
 					overlayStyle.textContent = overlayStyles.textContent;
@@ -409,7 +408,6 @@ window.onload = () => {
 
 				const menuStyles = parsedDocument.getElementById('css-menu');
 				const menuStylesDom = document.getElementById('flusher-css');
-
 				if (menuStyles && !menuStylesDom) {
 					const menuStyle = document.createElement('style');
 					menuStyle.textContent = menuStyles.textContent;
@@ -437,7 +435,7 @@ window.onload = () => {
 	}
 
 	function bindRequests() {
-		const chatFlusherStyles = document.getElementById("flusher-styles");
+		const chatFlusherStyles = document.getElementById("flusher-css");
 		if (chatFlusherStyles === null) {
 			document.addEventListener('visibilitychange', handleVisibilityChange);
 			interceptChatRequests();
@@ -660,7 +658,6 @@ window.onload = () => {
 					messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 					messageContainer.classList.add('flusher-animation');
 					firstDigit > 2 ? debouncedScroll() : null;
-					firstDigit > 2 ? console.log(firstDigit) : null;
 				}
 
 				/* queue ended */
@@ -668,12 +665,10 @@ window.onload = () => {
 					if (overlap > -8) {	/* append last queue */
 						messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 						messageContainer.classList.add('flusher-animation');
-
 					} else {	/* new queue */
 						messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
 						/* messageContainer.style.backgroundColor = "red"; */
 						messageContainer.classList.add('flusher-animation');
-
 						overlap = 0;
 					}
 				}
@@ -688,8 +683,6 @@ window.onload = () => {
 			messageWidth = messageContainer.offsetWidth;
 			messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
 			messageContainer.classList.add('flusher-animation');
-
-			overlap = 0;
 			requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
 		}
 	}
