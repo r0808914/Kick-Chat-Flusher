@@ -639,15 +639,16 @@ window.onload = () => {
 		let messageWidth;
 		const lastContainer = lastItem !== undefined ? lastItem.container : undefined;
 
+		chatFlusherMessages.appendChild(messageContainer);
+		messageWidth = messageContainer.offsetWidth;
+		messageContainer.style.marginRight = `-${messageWidth}px`;
+		const rect1 = messageContainer.getBoundingClientRect();
+
 		/* existing row */
 		if (lastContainer !== undefined) {
 			requestAnimationFrame(() => {
-				chatFlusherMessages.appendChild(messageContainer);
-				messageWidth = messageContainer.offsetWidth;
-				messageContainer.style.marginRight = `-${messageWidth}px`;
-				const rect1 = messageContainer.getBoundingClientRect();
-				const rect2 = lastContainer.getBoundingClientRect();
 
+				const rect2 = lastContainer.getBoundingClientRect();
 				overlap = rect2.right - rect1.left;
 
 				/* queue running */
@@ -658,6 +659,7 @@ window.onload = () => {
 					messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 					messageContainer.classList.add('flusher-animation');
 					firstDigit > 2 ? debouncedScroll() : null;
+					firstDigit > 1 ? messageContainer.style.backgroundColor = 'red' : null;
 				}
 
 				/* queue ended */
@@ -679,8 +681,6 @@ window.onload = () => {
 
 		/* new row */
 		else {
-			chatFlusherMessages.appendChild(messageContainer);
-			messageWidth = messageContainer.offsetWidth;
 			messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
 			messageContainer.classList.add('flusher-animation');
 			requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);

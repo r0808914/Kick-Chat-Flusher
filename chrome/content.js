@@ -10,7 +10,7 @@ window.onload = () => {
 
 	const toggledClass = 'toggled-on';
 	const spamStates = ['Auto', 'ON', 'OFF'];
-	const space = 25;
+	const space = 5;
 
 	let displayedMessages = new Set();
 
@@ -47,7 +47,7 @@ window.onload = () => {
 		return { key: keyValue, ignore: ignore };
 	}
 
-	async function processMessageQueue() {
+	 function processMessageQueue() {
 		if (!chatEnabled && isProcessingMessages) return;
 		isProcessingMessages = true;
 
@@ -83,7 +83,7 @@ window.onload = () => {
 		}, 25);
 	}
 
-	async function processElementQueue() {
+	 function processElementQueue() {
 		if (isProcessingElements || !chatEnabled) return;
 		isProcessingElements = true;
 
@@ -105,7 +105,7 @@ window.onload = () => {
 		}, wait);
 	}
 
-	async function checkResize(video) {
+	 function checkResize(video) {
 		let resizeTimer;
 
 		resizeObserver = new ResizeObserver(entries => {
@@ -549,7 +549,7 @@ window.onload = () => {
 		}
 	}
 
-	async function selectRow(messageContainer, messageKey) {
+	 function selectRow(messageContainer, messageKey) {
 		let selectedRow = 0;
 		const positions = lastPositionPerRow.length;
 		if (positions > 0) {
@@ -582,7 +582,7 @@ window.onload = () => {
 		lastRow = selectedRow;
 	}
 
-	async function checkRow(messageContainer, rowIndex, messageKey) {
+	function checkRow(messageContainer, rowIndex, messageKey) {
 		if ((rowIndex + 1) > lastRow) {
 			for (let i = 0; i < rowIndex; i++) {
 				if (lastPositionPerRow[i] === undefined || lastPositionPerRow[i].run === true) {
@@ -624,72 +624,76 @@ window.onload = () => {
 			}
 		}
 
-		const timeoutId = setTimeout(async () => {
+		const timeoutId = setTimeout( () => {
 			scrolling = false;
 		}, 5000);
 
 		timeoutIds.push(timeoutId);
 	}
 
-	async function startAnimation(rowIndex, messageContainer, messageKey) {
+	function startAnimation(rowIndex, messageContainer, messageKey) {
 		const lastItem = lastPositionPerRow[rowIndex];
 		lastPositionPerRow[rowIndex] = { container: messageContainer, run: false };
 
 		let overlap = 0;
-		let messageWidth;
 		const lastContainer = lastItem !== undefined ? lastItem.container : undefined;
+
+		// messageContainer.classList.add('flusher-red');
 
 		/* existing row */
 		if (lastContainer !== undefined) {
-			requestAnimationFrame(() => {
-				chatFlusherMessages.appendChild(messageContainer);
-				messageWidth = messageContainer.offsetWidth;
-				messageContainer.style.marginRight = `-${messageWidth}px`;
-				const rect1 = messageContainer.getBoundingClientRect();
 				const rect2 = lastContainer.getBoundingClientRect();
-
-				overlap = rect2.right - rect1.left;
 
 				/* queue running */
 				if (lastItem.run === false) {
-					const numString = Math.abs(overlap).toString();
-					const firstDigit = parseInt(numString[0], 10);
-					overlap = overlap / overlap >= 10 ? firstDigit : 0;
-					messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
-					messageContainer.classList.add('flusher-animation');
-					firstDigit > 2 ? debouncedScroll() : null;
+					overlap = (rect2.right) - (parentWidth / 2 + chatFlusherMessages.getBoundingClientRect().left);
+					console.log('overlap: ' + overlap);
+
+					if (overlap < 0) {
+						messageContainer.classList.add('flusher-red');
+						chatFlusherMessages.appendChild(messageContainer);
+						const messageWidth = messageContainer.offsetWidth;
+						messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
+						messageContainer.classList.add('flusher-animation');
+						requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
+					} if (overlap >= 0) {
+						/* messageContainer.classList.add('flusher-green'); */
+						chatFlusherMessages.appendChild(messageContainer);
+						const messageWidth = messageContainer.offsetWidth;
+						messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
+						messageContainer.classList.add('flusher-animation');
+						requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
+					}
 				}
 
 				/* queue ended */
 				else {
+					chatFlusherMessages.appendChild(messageContainer);
+					const messageWidth = messageContainer.offsetWidth;
+					messageContainer.style.marginRight = `-${messageWidth + space}px`;
+					messageContainer.classList.add('flusher-animation');
 					if (overlap > -8) {	/* append last queue */
-						messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
-						messageContainer.classList.add('flusher-animation');
 					} else {	/* new queue */
-						messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
-						/* messageContainer.style.backgroundColor = "red"; */
-						messageContainer.classList.add('flusher-animation');
 						overlap = 0;
 					}
+					requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
 				}
-
-				requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey)
-			});
 		}
 
 		/* new row */
 		else {
 			chatFlusherMessages.appendChild(messageContainer);
-			messageWidth = messageContainer.offsetWidth;
-			messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
+			const messageWidth = messageContainer.offsetWidth;
+			messageContainer.style.marginRight = `-${messageWidth + space}px`;
 			messageContainer.classList.add('flusher-animation');
 			requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
 		}
 	}
 
-	async function requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey) {
-		let timeNeeded = Math.round((messageWidth + space + overlap - 20) / parentWidth * 16000);
-		const timeoutId = setTimeout(async () => {
+	function requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey) {
+		let timeNeeded = Math.ceil((messageWidth + space + overlap) / parentWidth * 16000);
+
+		const timeoutId = setTimeout( () => {
 			checkQueue(rowIndex, messageContainer, messageKey);
 			const index = timeoutIds.indexOf(timeoutId);
 			if (index !== -1) {
@@ -700,7 +704,7 @@ window.onload = () => {
 		timeoutIds.push(timeoutId);
 	}
 
-	async function checkQueue(rowIndex, messageContainer, messageKey) {
+	function checkQueue(rowIndex, messageContainer, messageKey) {
 		if (rowQueue[rowIndex] === undefined) return;
 		const queueItem = rowQueue[rowIndex].shift();
 		if (queueItem !== undefined) {
@@ -714,7 +718,7 @@ window.onload = () => {
 	function prepareAnimation(messageContainer, rowIndex, messageKey) {
 		messageContainer.style.setProperty('--row', rowIndex);
 		messageContainer.classList.add('flusher-message');
-		messageContainer.addEventListener("animationend", async function () {
+		messageContainer.addEventListener("animationend",  function () {
 			try {
 				chatFlusherMessages.removeChild(messageContainer);
 				displayedMessages.delete(messageKey);
@@ -724,13 +728,13 @@ window.onload = () => {
 		return messageContainer;
 	}
 
-	async function appendMessage(messageKey, messageContainer) {
+	 function appendMessage(messageKey, messageContainer) {
 		if (chatFlusherMessages === null) return;
 		elementQueue.push({ key: messageKey, message: messageContainer });
 		processElementQueue();
 	}
 
-	async function createMessage(data) {
+	 function createMessage(data) {
 		const sender = data.sender;
 		const username = sender.username;
 		const color = sender.identity.color;
@@ -747,7 +751,7 @@ window.onload = () => {
 		const badgeSpan = document.createElement("span");
 		badgeSpan.classList.add("flusher-badges");
 
-		const badgeElements = await getBadges(data);
+		const badgeElements = getBadges(data);
 		badgeElements.forEach(badgeElement => {
 			badgeSpan.appendChild(badgeElement.cloneNode(true));
 		});
@@ -806,7 +810,7 @@ window.onload = () => {
 		appendMessage(messageKey, messageContainer);
 	}
 
-	async function createUserBanMessage(data) {
+	 function createUserBanMessage(data) {
 		const now = new Date();
 		const bannedUser = data.user.username;
 
@@ -834,7 +838,7 @@ window.onload = () => {
 		appendMessage(messageKey, banMessageContent);
 	}
 
-	async function createSubMessage(data) {
+	 function createSubMessage(data) {
 		const now = new Date();
 
 		const username = data.username;
@@ -860,7 +864,7 @@ window.onload = () => {
 		appendMessage(messageKey, subscriptionMessageContent);
 	}
 
-	async function createHostMessage(data) {
+	 function createHostMessage(data) {
 		const now = new Date();
 
 		const hostUsername = data.host_username;
@@ -888,7 +892,7 @@ window.onload = () => {
 		appendMessage(messageKey, hostMessageContent);
 	}
 
-	async function createGiftedMessage(data) {
+	 function createGiftedMessage(data) {
 		const now = new Date();
 
 		const gifterUsername = data.gifter_username;
@@ -915,7 +919,7 @@ window.onload = () => {
 		appendMessage(messageKey, giftedContent);
 	}
 
-	async function createIntroMessage(show) {
+	 function createIntroMessage(show) {
 		const now = new Date();
 		const messageKeyData = getMessageKey(`-intro`, now.getTime());
 		const messageKey = messageKeyData.key;
@@ -944,7 +948,7 @@ window.onload = () => {
 		}
 	}
 
-	async function createFollowersMessage(data) {
+	 function createFollowersMessage(data) {
 		const followersCount = data.followersCount;
 
 		const messageKeyData = getMessageKey('-followers-', followersCount);
@@ -1041,7 +1045,7 @@ window.onload = () => {
 		return badgeElements;
 	}
 
-	async function getBadges(data) {
+	 function getBadges(data) {
 		const badges = data.sender.identity.badges || [];
 
 		let badgeArray = [];
@@ -1070,7 +1074,7 @@ window.onload = () => {
 			badgeCount = badgeArray.length;
 			attempts++;
 
-			await new Promise(resolve => setTimeout(resolve, 750));
+			new Promise(resolve => setTimeout(resolve, 750));
 		}
 
 		return badgeArray;
