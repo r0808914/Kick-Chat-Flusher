@@ -1,5 +1,39 @@
 <style id="css-overlay">
-  #flusher-messages {
+  .flusher-username {
+    font-weight: 700;
+  }
+
+  #flusher-messages[layout="horizontal"] .flusher-message .font-bold {
+    padding-right: 0.25em;
+  }
+
+  #flusher-messages[layout="horizontal"] .flusher-message {
+    height: 2em;
+    display: flex;
+    position: absolute;
+    max-width: calc(100% - 20px);
+    will-change: transform;
+    background: rgba(28, 28, 28, 0.7);
+    --extra-per-row: 5px;
+    --padding-extra: 2px;
+    top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
+  }
+
+  #flusher-messages[layout="vertical"] {
+    flex-direction: column-reverse;
+    overflow-y: hidden;
+    text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.4),
+      0px -4px 10px rgba(255, 255, 255, 0.4);
+    width: 25%;
+    height: 50%;
+    position: absolute;
+  }
+
+  #flusher-messages[layout="vertical"][position="bottom"] {
+    bottom: 0;
+  }
+
+  #flusher-messages[layout="horizontal"] {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -7,30 +41,13 @@
     overflow-y: auto;
   }
 
-  .flusher-username {
-    font-weight: 700;
-  }
-
-  .flusher-message .font-bold {
-    padding-right: 0.25em;
-  }
-
   .flusher-message {
-    position: absolute;
-    background: rgba(28, 28, 28, 0.7);
-    max-width: calc(100% - 20px);
-    height: 2em;
     border-radius: 8px;
-    display: flex;
     align-items: center;
-    /* will-change: transform; */
     padding: 0 .5rem;
     font-size: .875rem;
     line-height: 1.25rem;
     font-weight: 500;
-    --extra-per-row: 5px;
-    --padding-extra: 2px;
-    top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
   }
 
   .flusher-red {
@@ -51,18 +68,30 @@
     vertical-align: middle;
   }
 
-  .flusher-badges,
-  .flusher-username {
+  #flusher-messages[layout="horizontal"] .flusher-badges,
+  #flusher-messages[layout="horizontal"] .flusher-username {
     display: flex;
+    vertical-align: middle;
     align-items: center;
     white-space: nowrap;
   }
 
-  .flusher-content {
+  #flusher-messages[layout="vertical"] .flusher-badges,
+  #flusher-messages[layout="vertical"] .flusher-username {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  #flusher-messages[layout="horizontal"] .flusher-message .flusher-content {
     align-items: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: rgb(255, 255, 255);
+  }
+
+  #flusher-messages[layout="vertical"] .flusher-message .flusher-content {
+    align-items: center;
     color: rgb(255, 255, 255);
   }
 
@@ -73,13 +102,27 @@
     fill: rgb(83, 252, 24);
   }
 
-  .flusher-emote {
+  #flusher-messages[layout="horizontal"] .flusher-emote {
     padding: 0 0.2em;
     height: 1.5rem;
     vertical-align: middle;
   }
 
-  .last-flusher-emote {
+  #flusher-messages[layout="vertical"] .flusher-emote {
+    padding: 0 0.2em;
+    max-height: 1.4rem;
+    vertical-align: middle;
+  }
+
+  #flusher-messages[layout="vertical"] .last-flusher-emote {
+    padding-left: 0.2em;
+    padding-right: 0;
+    height: 1.4rem;
+    vertical-align: middle;
+  }
+
+  #flusher-messages[layout="horizontal"] .last-flusher-emote {
+    padding-left: 0.2em;
     padding-right: 0;
     height: 1.5rem;
     vertical-align: middle;
@@ -286,6 +329,20 @@
                 <div class="flusher-toggle-indicator"></div>
               </div>
             </div>
+          </div>
+        </div>
+        <div id="flusher-layout"
+          class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flush</div>
+          <div class="flex h-10 w-fit items-center justify-end">
+            <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
+          </div>
+        </div>
+        <div id="flusher-position" style="display: none;"
+          class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Position</div>
+          <div class="flex h-10 w-fit items-center justify-end">
+            <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
           </div>
         </div>
         <div id="flusher-settings"

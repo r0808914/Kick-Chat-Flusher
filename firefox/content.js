@@ -10,7 +10,9 @@ window.onload = () => {
 
 	const toggledClass = 'toggled-on';
 	const spamStates = ['Auto', 'ON', 'OFF'];
-	const space = 25;
+	const positionStates = ['TOP', 'BOTTOM'];
+	const layoutStates = ['ON', 'OFF'];
+	const space = 4;
 
 	let displayedMessages = new Set();
 
@@ -19,9 +21,11 @@ window.onload = () => {
 	let loading = false,
 		isVod = false,
 		scrolling = false,
+		layoutState = null,
 		chatEnabled = true,
 		isFullscreen = false,
 		spamState = null,
+		positionState = null,
 		elementHeight = null,
 		maxRows = 99,
 		lastRow = 0,
@@ -32,6 +36,7 @@ window.onload = () => {
 		currentUrl;
 
 	let parentWidth = null,
+		parentWidth2 = null,
 		parentHeight = null;
 
 	let isProcessingElements = false,
@@ -42,14 +47,14 @@ window.onload = () => {
 	function getMessageKey(key, value) {
 		const keyValue = key + "-" + value;
 		const dupe = displayedMessages.has(keyValue);
+
 		const ignore = ((spamState === 2 && dupe) || (spamState === 0 && dupe && lastRow > 1)) ? true : false;
 		if (!ignore) displayedMessages.add(keyValue);
 		return { key: keyValue, ignore: ignore };
 	}
 
-	async function processMessageQueue() {
-		if (!chatEnabled && isProcessingMessages) return;
-		isProcessingMessages = true;
+	function processMessageQueue() {
+		if (!chatEnabled) return;
 
 		const data = messageQueue.shift();
 		if ((lastRow === null || lastRow >= maxRows) || (data === undefined)) return;
@@ -77,13 +82,10 @@ window.onload = () => {
 			console.error("Error parsing message data: ", error);
 		}
 
-		setTimeout(function () {
-			isProcessingMessages = false;
-			processMessageQueue();
-		}, 25);
+		processMessageQueue();
 	}
 
-	async function processElementQueue() {
+	function processElementQueue() {
 		if (isProcessingElements || !chatEnabled) return;
 		isProcessingElements = true;
 
@@ -93,20 +95,43 @@ window.onload = () => {
 			return;
 		}
 
-		selectRow(data.message, data.key);
+		layoutState == 1 ? appendVertical(data.message, data.key) : selectRow(data.message, data.key);
 
-		const queueLength = elementQueue.length;
-		let wait = isVod ? Math.trunc(4000 / queueLength) : 50;
-		if (queueLength < 4 && isVod) wait = 1000;
+		if (layoutState == 1) {
+			const queueLength = elementQueue.length;
+			let wait = isVod ? Math.trunc(4000 / queueLength) : 100;
+			if (queueLength < 4 && isVod) wait = 1000;
 
-		setTimeout(function () {
+			setTimeout(function () {
+				isProcessingElements = false;
+				processElementQueue();
+			}, wait);
+		} else {
 			isProcessingElements = false;
 			processElementQueue();
-		}, wait);
+		}
 	}
 
-	async function checkResize(video) {
+	function appendVertical(messageContainer, messageKey) {
+		var maxMessages = 20;
+
+		messageContainer.classList.add('flusher-message');
+		chatFlusherMessages.insertBefore(messageContainer, chatFlusherMessages.firstChild);
+
+		while (chatFlusherMessages.children.length > maxMessages) {
+			displayedMessages.delete(messageKey);
+			chatFlusherMessages.removeChild(chatFlusherMessages.lastChild);
+		}
+		/* if (chatFlusherMessages.children.length < maxMessages) {
+			messageContainer.classList.add('flusher-message');
+		chatFlusherMessages.insertBefore(messageContainer, chatFlusherMessages.firstChild);
+		} */
+	}
+
+	function checkResize() {
 		let resizeTimer;
+
+		const video = document.querySelector('video');
 
 		resizeObserver = new ResizeObserver(entries => {
 			if (chatFlusherMessages !== null)
@@ -135,6 +160,8 @@ window.onload = () => {
 						parentHeight = Math.trunc(height);
 
 						chatFlusherMessages.style.setProperty('--flusher-width', `-${parentWidth}px`);
+						chatFlusherMessages.setAttribute('layout', layoutStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
+						chatFlusherMessages.setAttribute('position', positionStates[positionState] === 'TOP' ? 'top' : 'bottom');
 
 						const documentWidth = document.documentElement.clientWidth;
 						if (documentWidth < ((parentWidth / 2) + 10)) {
@@ -150,10 +177,12 @@ window.onload = () => {
 						elementHeight = null;
 						createIntroMessage(false);
 
+						parentWidth2 = (width + chatFlusherMessages.getBoundingClientRect().left)
+
 						if (oldWidth == null || oldWidth == 0) {
 							if (chatFlusherMessages === null) return;
 							/* test(); */
-							createIntroMessage(true);
+							if (chatEnabled && layoutState === 0) createIntroMessage(true);
 							isVod = currentUrl.includes('/video/');
 							console.info(`Chat Overlay Created (${isVod ? 'VOD' : 'LIVE'}): ` + window.location.href + ' (report bugs / collaborate: https://github.com/r0808914/Kick-Chat-Flusher)');
 						}
@@ -248,6 +277,7 @@ window.onload = () => {
 			resizeObserver.disconnect();
 
 		parentWidth = null;
+		parentWidth2 = null;
 		isVod = false;
 
 		clearChat();
@@ -296,6 +326,12 @@ window.onload = () => {
 			const spamStateValue = localStorage.getItem('flusher-spam');
 			spamState = spamStateValue ? JSON.parse(spamStateValue) : 0;
 
+			const layoutStateValue = localStorage.getItem('flusher-layout');
+			layoutState = layoutStateValue ? JSON.parse(layoutStateValue) : 0;
+
+			const positionStateValue = localStorage.getItem('flusher-position');
+			positionState = positionStateValue ? JSON.parse(positionStateValue) : 1;
+
 			const spamBtn = menuHtml.querySelector('#flusher-spam');
 			const spanInsideSpam = spamBtn.querySelector('span');
 			spanInsideSpam.textContent = spamStates[spamState];
@@ -306,6 +342,32 @@ window.onload = () => {
 				spanInsideSpam.textContent = spamStates[spamState];
 				clearChat();
 			});
+
+			const layoutBtn = menuHtml.querySelector('#flusher-layout');
+			const spanInsideLayout = layoutBtn.querySelector('span');
+			spanInsideLayout.textContent = layoutStates[layoutState];
+
+			layoutBtn.addEventListener('click', function (event) {
+				layoutState = (layoutState + 1) % layoutStates.length;
+				localStorage.setItem('flusher-layout', JSON.stringify(layoutState));
+				spanInsideLayout.textContent = layoutStates[layoutState];
+				chatFlusherMessages.setAttribute('layout', layoutStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
+				layoutStates[layoutState] == 'OFF' ? positionBtn.style.display = 'flex' : positionBtn.style.display = 'none';
+				clearChat();
+			});
+
+			const positionBtn = menuHtml.querySelector('#flusher-position');
+			const spanInsidePosition = positionBtn.querySelector('span');
+			spanInsidePosition.textContent = positionStates[positionState] === 'TOP' ? 'Top' : 'Bottom';
+
+			positionBtn.addEventListener('click', function (event) {
+				positionState = (positionState + 1) % positionStates.length;
+				localStorage.setItem('flusher-position', JSON.stringify(positionState));
+				spanInsidePosition.textContent = positionStates[positionState] === 'TOP' ? 'Top' : 'Bottom';
+				chatFlusherMessages.setAttribute('position', positionStates[positionState] === 'TOP' ? 'top' : 'bottom');
+			});
+
+			layoutStates[layoutState] == 'OFF' ? positionBtn.style.display = 'flex' : positionBtn.style.display = 'none';
 
 			const baseMenu = menuHtml.querySelector('#flusher-menu-base');
 
@@ -372,7 +434,7 @@ window.onload = () => {
 
 		setInterval(() => {
 			messageQueue.push(data);
-		}, 500);
+		}, 3000);
 	}
 
 	function createChat() {
@@ -428,9 +490,7 @@ window.onload = () => {
 		chatFlusherMessages = chatFlusherMessagesContainer;
 		shadowRoot.appendChild(chatFlusherMessages);
 
-		const video = document.querySelector('video');
-		checkResize(video);
-
+		checkResize();
 		bindRequests();
 	}
 
@@ -439,11 +499,9 @@ window.onload = () => {
 		if (chatFlusherStyles === null) {
 			document.addEventListener('visibilitychange', handleVisibilityChange);
 			interceptChatRequests();
-		}
-
-		if (existingSocket === null) {
+		} if (existingSocket === null) {
 			existingSocket = window.Echo.connector.pusher;
-			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
+			existingSocket.connection.bind("message", boundHandleChatMessageEvent);		
 		}
 	}
 
@@ -549,7 +607,7 @@ window.onload = () => {
 		}
 	}
 
-	async function selectRow(messageContainer, messageKey) {
+	function selectRow(messageContainer, messageKey) {
 		let selectedRow = 0;
 		const positions = lastPositionPerRow.length;
 		if (positions > 0) {
@@ -582,7 +640,7 @@ window.onload = () => {
 		lastRow = selectedRow;
 	}
 
-	async function checkRow(messageContainer, rowIndex, messageKey) {
+	function checkRow(messageContainer, rowIndex, messageKey) {
 		if ((rowIndex + 1) > lastRow) {
 			for (let i = 0; i < rowIndex; i++) {
 				if (lastPositionPerRow[i] === undefined || lastPositionPerRow[i].run === true) {
@@ -624,7 +682,7 @@ window.onload = () => {
 			}
 		}
 
-		const timeoutId = setTimeout(async () => {
+		const timeoutId = setTimeout(() => {
 			scrolling = false;
 		}, 5000);
 
@@ -639,16 +697,15 @@ window.onload = () => {
 		let messageWidth;
 		const lastContainer = lastItem !== undefined ? lastItem.container : undefined;
 
-		chatFlusherMessages.appendChild(messageContainer);
-		messageWidth = messageContainer.offsetWidth;
-		messageContainer.style.marginRight = `-${messageWidth}px`;
-		const rect1 = messageContainer.getBoundingClientRect();
-
 		/* existing row */
 		if (lastContainer !== undefined) {
 			requestAnimationFrame(() => {
-
+				chatFlusherMessages.appendChild(messageContainer);
+				messageWidth = messageContainer.offsetWidth;
+				messageContainer.style.marginRight = `-${messageWidth}px`;
+				const rect1 = messageContainer.getBoundingClientRect();
 				const rect2 = lastContainer.getBoundingClientRect();
+
 				overlap = rect2.right - rect1.left;
 
 				/* queue running */
@@ -658,8 +715,7 @@ window.onload = () => {
 					overlap = overlap / overlap >= 10 ? firstDigit : 0;
 					messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 					messageContainer.classList.add('flusher-animation');
-					firstDigit > 2 ? debouncedScroll() : null;
-					firstDigit > 1 ? messageContainer.style.backgroundColor = 'red' : null;
+					/* firstDigit > 2 ? debouncedScroll() : null; */
 				}
 
 				/* queue ended */
@@ -667,10 +723,12 @@ window.onload = () => {
 					if (overlap > -8) {	/* append last queue */
 						messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 						messageContainer.classList.add('flusher-animation');
+
 					} else {	/* new queue */
 						messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
 						/* messageContainer.style.backgroundColor = "red"; */
 						messageContainer.classList.add('flusher-animation');
+
 						overlap = 0;
 					}
 				}
@@ -681,15 +739,21 @@ window.onload = () => {
 
 		/* new row */
 		else {
+			chatFlusherMessages.appendChild(messageContainer);
+			messageWidth = messageContainer.offsetWidth;
 			messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
 			messageContainer.classList.add('flusher-animation');
+
+			overlap = 0;
 			requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
 		}
 	}
 
 	async function requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey) {
-		let timeNeeded = Math.round((messageWidth + space + overlap - 20) / parentWidth * 16000);
-		const timeoutId = setTimeout(async () => {
+		messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
+		let timeNeeded = Math.ceil((messageWidth + space + overlap) / parentWidth * 16000);
+
+		const timeoutId = setTimeout(() => {
 			checkQueue(rowIndex, messageContainer, messageKey);
 			const index = timeoutIds.indexOf(timeoutId);
 			if (index !== -1) {
@@ -700,7 +764,7 @@ window.onload = () => {
 		timeoutIds.push(timeoutId);
 	}
 
-	async function checkQueue(rowIndex, messageContainer, messageKey) {
+	function checkQueue(rowIndex, messageContainer, messageKey) {
 		if (rowQueue[rowIndex] === undefined) return;
 		const queueItem = rowQueue[rowIndex].shift();
 		if (queueItem !== undefined) {
@@ -714,9 +778,9 @@ window.onload = () => {
 	function prepareAnimation(messageContainer, rowIndex, messageKey) {
 		messageContainer.style.setProperty('--row', rowIndex);
 		messageContainer.classList.add('flusher-message');
-		messageContainer.addEventListener("animationend", async function () {
+		messageContainer.addEventListener("animationend", function () {
 			try {
-				chatFlusherMessages.removeChild(messageContainer);
+				chatFlusherMessages.removeChild(this);
 				displayedMessages.delete(messageKey);
 			} catch { }
 		});
@@ -724,7 +788,7 @@ window.onload = () => {
 		return messageContainer;
 	}
 
-	async function appendMessage(messageKey, messageContainer) {
+	function appendMessage(messageKey, messageContainer) {
 		if (chatFlusherMessages === null) return;
 		elementQueue.push({ key: messageKey, message: messageContainer });
 		processElementQueue();
@@ -806,7 +870,7 @@ window.onload = () => {
 		appendMessage(messageKey, messageContainer);
 	}
 
-	async function createUserBanMessage(data) {
+	function createUserBanMessage(data) {
 		const now = new Date();
 		const bannedUser = data.user.username;
 
@@ -834,7 +898,7 @@ window.onload = () => {
 		appendMessage(messageKey, banMessageContent);
 	}
 
-	async function createSubMessage(data) {
+	function createSubMessage(data) {
 		const now = new Date();
 
 		const username = data.username;
@@ -860,7 +924,7 @@ window.onload = () => {
 		appendMessage(messageKey, subscriptionMessageContent);
 	}
 
-	async function createHostMessage(data) {
+	function createHostMessage(data) {
 		const now = new Date();
 
 		const hostUsername = data.host_username;
@@ -888,7 +952,7 @@ window.onload = () => {
 		appendMessage(messageKey, hostMessageContent);
 	}
 
-	async function createGiftedMessage(data) {
+	function createGiftedMessage(data) {
 		const now = new Date();
 
 		const gifterUsername = data.gifter_username;
@@ -915,7 +979,7 @@ window.onload = () => {
 		appendMessage(messageKey, giftedContent);
 	}
 
-	async function createIntroMessage(show) {
+	function createIntroMessage(show) {
 		const now = new Date();
 		const messageKeyData = getMessageKey(`-intro`, now.getTime());
 		const messageKey = messageKeyData.key;
@@ -927,7 +991,7 @@ window.onload = () => {
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const introSpan = document.createElement("span");
-		introSpan.textContent = `thanks for testing (version 0.7.2)`;
+		introSpan.textContent = `thanks for testing (version 0.7.3)`;
 		const introMessageSpan = document.createElement("span");
 
 		introMessageSpan.append(emojiSpan, introSpan);
@@ -944,7 +1008,7 @@ window.onload = () => {
 		}
 	}
 
-	async function createFollowersMessage(data) {
+	function createFollowersMessage(data) {
 		const followersCount = data.followersCount;
 
 		const messageKeyData = getMessageKey('-followers-', followersCount);
