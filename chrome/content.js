@@ -10,6 +10,7 @@ window.onload = () => {
 
 	const toggledClass = 'toggled-on';
 	const spamStates = ['Auto', 'ON', 'OFF'];
+	const backgroundStates = ['SMALL', 'LARGE', 'OFF'];
 	const positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
 	const sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
 	const toggleStates = ['ON', 'OFF'];
@@ -43,31 +44,34 @@ window.onload = () => {
 		parentHeight = null;
 
 	let isProcessingElements = false;
+	let isProcessingMessages = false;
 
 	const boundHandleChatMessageEvent = handleChatMessageEvent.bind(this);
 
 	function getMessageKey(key, value) {
 		const keyValue = key + "-" + value;
 		const dupe = displayedMessages.has(keyValue);
-
 		const ignore = ((spamState === 2 && dupe) || (spamState === 0 && dupe && lastRow > 1)) ? true : false;
 		if (!ignore) displayedMessages.add(keyValue);
 		return { key: keyValue, ignore: ignore };
 	}
 
 	async function processMessageQueue() {
-		if (!chatEnabled) return;
-
+		if (!chatEnabled || isProcessingMessages) return;
+		isProcessingMessages = true;
 		const data = messageQueue.shift();
-		if ((lastRow === null || lastRow >= maxRows) || (data === undefined)) return;
+		if ((lastRow === null || lastRow >= maxRows) || (data === undefined)) {
+			isProcessingMessages = false;
+			return;
+		}
 
 		const eventType = data.event ?? "";
 
 		try {
 			if (eventType === "App\\Events\\ChatMessageEvent") {
-				createMessage(data.data);
+				layoutState === 0 ? await createMessage(data.data) : createMessage(data.data);
 			} else if (data.type === "message") {
-				createMessage(data);
+				layoutState === 0 ? await createMessage(data) : createMessage(data);
 			} else if (eventType === "App\\Events\\UserBannedEvent") {
 				createUserBanMessage(data.data);
 			} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
@@ -78,10 +82,15 @@ window.onload = () => {
 				createHostMessage(data.data);
 			} else if (eventType === "App\\Events\\SubscriptionEvent") {
 				createSubMessage(data.data);
+			} else {
+				isProcessingMessages = false;
+				processMessageQueue();
 			}
 
 		} catch (error) {
 			console.error("Error parsing message data: ", error);
+			isProcessingMessages = false;
+			processMessageQueue();
 		}
 	}
 
@@ -95,12 +104,12 @@ window.onload = () => {
 			return;
 		}
 
-		layoutState == 1 ? appendVertical(data.message, data.key) : selectRow(data.message, data.key);
+		layoutState == 1 ? appendVertical(data.message, data.key, data.timestamp) : selectRow(data.message, data.key);
 
-		if (isVod) {
+		if (isVod || layoutState === 0) {
 			const queueLength = elementQueue.length;
 			let wait = Math.trunc(4000 / queueLength);
-			if (queueLength < 4 && isVod) wait = 1000;
+			if (queueLength < 4 && isVod && layoutState === 0) wait = 1000;
 			setTimeout(function () {
 				isProcessingElements = false;
 				processElementQueue();
@@ -111,9 +120,38 @@ window.onload = () => {
 		}
 	}
 
-	function appendVertical(messageContainer, messageKey) {
+	function appendVertical(messageContainer, messageKey, timestamp) {
 		messageContainer.classList.add('flusher-message');
-		chatFlusherMessages.insertBefore(messageContainer, chatFlusherMessages.firstChild);
+
+		timestamp = new Date(timestamp);
+		messageContainer.dataset.timestamp = timestamp;
+
+		const lastItem = chatFlusherMessages.firstChild;
+
+		if (lastItem) {
+			const lastTimestamp = new Date(lastItem.dataset.timestamp);
+
+			if (timestamp < lastTimestamp) {
+				chatFlusherMessages.append(messageContainer);
+			} else {
+				let current = lastItem;
+				while (current) {
+					const currentTimestamp = new Date(current.dataset.timestamp);
+
+					if (timestamp > currentTimestamp) {
+						chatFlusherMessages.insertBefore(messageContainer, current);
+						break;
+					}
+					current = current.previousSibling;
+				}
+
+				if (!current) {
+					chatFlusherMessages.insertBefore(messageContainer, chatFlusherMessages.firstChild);
+				}
+			}
+		} else {
+			chatFlusherMessages.append(messageContainer);
+		}
 
 		while (chatFlusherMessages.children.length > maxRows) {
 			displayedMessages.delete(messageKey);
@@ -156,7 +194,7 @@ window.onload = () => {
 						chatFlusherMessages.setAttribute('layout', toggleStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
 						chatFlusherMessages.setAttribute('position', positionStates[positionState].replace(/\s/g, ""));
 						chatFlusherMessages.setAttribute('size', sizeStates[sizeState].replace(/\s/g, ""));
-						chatFlusherMessages.setAttribute('background', toggleStates[backgroundState]);
+						chatFlusherMessages.setAttribute('background', backgroundStates[backgroundState]);
 
 						const documentWidth = document.documentElement.clientWidth;
 						if (documentWidth < ((parentWidth / 2) + 10)) {
@@ -171,8 +209,6 @@ window.onload = () => {
 
 						elementHeight = null;
 						createIntroMessage(false);
-
-						parentWidth2 = (width + chatFlusherMessages.getBoundingClientRect().left)
 
 						if (oldWidth == null || oldWidth == 0) {
 							if (chatFlusherMessages === null) return;
@@ -227,6 +263,9 @@ window.onload = () => {
 		if (chatFlusherMessages !== null)
 			chatFlusherMessages.style.display = 'flex';
 
+		isProcessingElements = false;
+		isProcessingMessages = false;
+
 		chatEnabled = isEnabled;
 	}
 
@@ -272,7 +311,6 @@ window.onload = () => {
 			resizeObserver.disconnect();
 
 		parentWidth = null;
-		parentWidth2 = null;
 		isVod = false;
 
 		clearChat();
@@ -331,7 +369,7 @@ window.onload = () => {
 			positionState = positionStateValue ? JSON.parse(positionStateValue) : 1;
 
 			const sizeStateValue = localStorage.getItem('flusher-size');
-			sizeState = sizeStateValue ? JSON.parse(sizeStateValue) : 1;
+			sizeState = sizeStateValue ? JSON.parse(sizeStateValue) : 2;
 
 			const backgroundStateValue = localStorage.getItem('flusher-background');
 			backgroundState = backgroundStateValue ? JSON.parse(backgroundStateValue) : 0;
@@ -382,17 +420,18 @@ window.onload = () => {
 				localStorage.setItem('flusher-size', JSON.stringify(sizeState));
 				sizeInsidePosition.textContent = toTitleCase(sizeStates[sizeState]);
 				chatFlusherMessages.setAttribute('size', sizeStates[sizeState].replace(/\s/g, ""));
+				setVerticalWidth();
 			});
 
 			const backgroundBtn = layoutMenu.querySelector('#flusher-background');
 			const backgroundInsidePosition = backgroundBtn.querySelector('span');
-			backgroundInsidePosition.textContent = toggleStates[backgroundState];
+			backgroundInsidePosition.textContent = toTitleCase(backgroundStates[backgroundState]);
 
 			backgroundBtn.addEventListener('click', function (event) {
-				backgroundState = (backgroundState + 1) % toggleStates.length;
+				backgroundState = (backgroundState + 1) % backgroundStates.length;
 				localStorage.setItem('flusher-background', JSON.stringify(backgroundState));
-				backgroundInsidePosition.textContent = toggleStates[backgroundState];
-				chatFlusherMessages.setAttribute('background', toggleStates[backgroundState]);
+				backgroundInsidePosition.textContent = toTitleCase(backgroundStates[backgroundState]);
+				chatFlusherMessages.setAttribute('background', backgroundStates[backgroundState]);
 				clearChat();
 			});
 
@@ -468,6 +507,7 @@ window.onload = () => {
 	}
 
 	function toTitleCase(str) {
+		if (str === 'OFF' || str === 'ON') return str;
 		return str.toLowerCase().replace(/\b\w/g, function (char) {
 			return char.toUpperCase();
 		});
@@ -529,9 +569,9 @@ window.onload = () => {
 		const data = {
 			event: "App\\Events\\ChatMessageEvent",
 			data: {
-				content: "test message",
+				content: "Test Message",
 				sender: {
-					username: "test user",
+					username: "Test User",
 					identity: {
 						color: "#E9113C",
 					}
@@ -540,12 +580,11 @@ window.onload = () => {
 		};
 
 		if (chatFlusherMessages === null) return;
-		/* createMessage(data.data); */
-		/* messageQueue.push(data); */
 
 		setInterval(() => {
 			messageQueue.push(data);
-		}, 3000);
+			processMessageQueue();
+		}, 10);
 	}
 
 	function createChat() {
@@ -823,9 +862,9 @@ window.onload = () => {
 
 				/* queue running */
 				if (lastItem.run === false) {
-					/* const numString = Math.abs(overlap).toString();
+					const numString = Math.abs(overlap).toString();
 					const firstDigit = parseInt(numString[0], 10);
-					overlap = overlap / overlap >= 10 ? firstDigit : 0; */
+					overlap = overlap / overlap >= 10 ? firstDigit : 0;
 					messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 					messageContainer.classList.add('flusher-animation');
 					/* firstDigit > 2 ? debouncedScroll() : null; */
@@ -900,10 +939,16 @@ window.onload = () => {
 		return messageContainer;
 	}
 
-	function appendMessage(messageKey, messageContainer) {
-		if (chatFlusherMessages === null) return;
-		elementQueue.push({ key: messageKey, message: messageContainer });
+	function appendMessage(messageKey, messageContainer, timestamp) {
+		if (chatFlusherMessages === null) {
+			isProcessingMessages = false;
+			return;
+		}
+
+		elementQueue.push({ key: messageKey, message: messageContainer, timestamp: timestamp });
 		processElementQueue();
+		isProcessingMessages = false;
+		processMessageQueue();
 	}
 
 	async function createMessage(data) {
@@ -915,7 +960,11 @@ window.onload = () => {
 		const reduced = reduceRepeatedSentences(content);
 
 		const messageKeyData = getMessageKey(sender.id, reduced);
-		if (messageKeyData.ignore === true) return;
+		if (messageKeyData.ignore === true) {
+			isProcessingMessages = false;
+			processMessageQueue();
+			return;
+		}
 		const messageKey = messageKeyData.key;
 
 		const messageContainer = document.createElement("div");
@@ -979,7 +1028,7 @@ window.onload = () => {
 
 		badgeSpan.firstChild ? messageContainer.append(badgeSpan) : null;
 		messageContainer.append(usernameSpan, boldSpan, contentSpan);
-		appendMessage(messageKey, messageContainer);
+		appendMessage(messageKey, messageContainer, data.created_at);
 	}
 
 	function createUserBanMessage(data) {
@@ -1007,7 +1056,7 @@ window.onload = () => {
 		banMessageSpan.append(bannedUserSpan, emoji, banText, emoji.cloneNode(true), bannedBySpan);
 
 		banMessageContent.appendChild(banMessageSpan);
-		appendMessage(messageKey, banMessageContent);
+		appendMessage(messageKey, banMessageContent, null);
 	}
 
 	function createSubMessage(data) {
@@ -1033,7 +1082,7 @@ window.onload = () => {
 		subSpan.append(emojiSpan, subscriptionMessageSpan);
 
 		subscriptionMessageContent.append(subSpan);
-		appendMessage(messageKey, subscriptionMessageContent);
+		appendMessage(messageKey, subscriptionMessageContent, null);
 	}
 
 	function createHostMessage(data) {
@@ -1043,7 +1092,11 @@ window.onload = () => {
 		const viewersCount = data.number_viewers;
 
 		const messageKeyData = getMessageKey(`-host${now.getMinutes()}-`, hostUsername + ' ' + viewersCount);
-		if (messageKeyData.ignore === true) return;
+		if (messageKeyData.ignore === true) {
+			isProcessingMessages = false;
+			processMessageQueue();
+			return;
+		}
 		const messageKey = messageKeyData.key;
 
 		const hostMessageContent = document.createElement("div");
@@ -1061,7 +1114,7 @@ window.onload = () => {
 		hostMessageSpan.append(emojiSpan, viewersCountSpan);
 
 		hostMessageContent.appendChild(hostMessageSpan);
-		appendMessage(messageKey, hostMessageContent);
+		appendMessage(messageKey, hostMessageContent, null);
 	}
 
 	function createGiftedMessage(data) {
@@ -1071,7 +1124,11 @@ window.onload = () => {
 		const giftedUsernames = data.gifted_usernames;
 
 		const messageKeyData = getMessageKey(`-gift${now.getMinutes()}-`, gifterUsername + '-' + giftedUsernames[0]);
-		if (messageKeyData.ignore === true) return;
+		if (messageKeyData.ignore === true) {
+			isProcessingMessages = false;
+			processMessageQueue();
+			return;
+		}
 		const messageKey = messageKeyData.key;
 
 		const giftedContent = document.createElement("div");
@@ -1088,7 +1145,7 @@ window.onload = () => {
 		giftedSpan.append(emojiSpan, gifterUsernameSpan);
 
 		giftedContent.appendChild(giftedSpan);
-		appendMessage(messageKey, giftedContent);
+		appendMessage(messageKey, giftedContent, null);
 	}
 
 	function createIntroMessage(show) {
@@ -1103,7 +1160,7 @@ window.onload = () => {
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const introSpan = document.createElement("span");
-		introSpan.textContent = `thanks for testing (version 0.8.1)`;
+		introSpan.textContent = `thanks for testing (version 0.8.2)`;
 		const introMessageSpan = document.createElement("span");
 
 		introMessageSpan.append(emojiSpan, introSpan);
@@ -1113,10 +1170,27 @@ window.onload = () => {
 		if (show) {
 			selectRow(prepared, messageKey);
 		} else {
-			chatFlusherMessages.appendChild(prepared);
+			document.body.appendChild(prepared);
 			elementHeight = prepared.clientHeight;
 			maxRows = Math.ceil(parentHeight / elementHeight);
-			chatFlusherMessages.removeChild(prepared);
+			document.body.removeChild(prepared);
+			setVerticalWidth();
+		}
+	}
+
+	function setVerticalWidth() {
+		switch (sizeStates[sizeState]) {
+			case 'LARGE':
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 13}px`);
+				break;
+			case 'NORMAL':
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 11}px`);
+				break;
+			case 'SMALL':
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 9}px`);
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -1124,12 +1198,18 @@ window.onload = () => {
 		const followersCount = data.followersCount;
 
 		const messageKeyData = getMessageKey('-followers-', followersCount);
-		if (messageKeyData.ignore === true) return;
+		if (messageKeyData.ignore === true) {
+			isProcessingMessages = false;
+			processMessageQueue();
+			return;
+		}
 		const messageKey = messageKeyData.key;
 
 		if (lastFollowersCount !== null) {
 			const followersDiff = followersCount - lastFollowersCount;
 			if (followersDiff === 0) {
+				isProcessingMessages = false;
+				processMessageQueue();
 				return;
 			}
 
@@ -1146,7 +1226,7 @@ window.onload = () => {
 			followersSpan.append(emojiSpan, followersMessageSpan)
 
 			messageContent.append(followersSpan);
-			appendMessage(messageKey, messageContent);
+			appendMessage(messageKey, messageContent, null);
 		}
 
 		lastFollowersCount = followersCount;
@@ -1162,6 +1242,8 @@ window.onload = () => {
 	function checkForBadges(data) {
 		const badges = data.sender.identity.badges || [];
 		const badgeElements = [];
+
+		isProcessingMessages = false;
 
 		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
 		if (firstChatIdentity !== null) {

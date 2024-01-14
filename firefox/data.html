@@ -42,17 +42,23 @@
     /* -webkit-text-stroke: 0.5px black; 
     -webkit-font-smoothing: antialiased; */
     text-shadow: 1px 1px 1px black;
-    width: 25%;
+    width: var(--flusher-vertical-width);
+    max-width: var(--flusher-vertical-width);
     position: absolute;
   }
 
-  #flusher-messages[layout="vertical"][background="ON"] .flusher-message {
+  #flusher-messages[layout="vertical"][background="LARGE"] .flusher-message {
+    background: var(--flusher-background-color);
+    width: 90%;
+  }
+
+  #flusher-messages[layout="vertical"][background="SMALL"] .flusher-message {
     background: var(--flusher-background-color);
   }
 
   #flusher-messages[layout="vertical"] .flusher-message {
     word-break: break-word;
-    max-width: 100%;
+    max-width: 90%;
     margin-top: 3px;
     padding: .2rem .5rem;
     line-height: 1rem;
