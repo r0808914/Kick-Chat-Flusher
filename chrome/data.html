@@ -31,6 +31,7 @@
     background: var(--flusher-background-color);
     --extra-per-row: 5px;
     --padding-extra: 2px;
+    /* text-shadow: 1px 1px black; */
     top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
   }
 
@@ -38,8 +39,9 @@
     flex-direction: column-reverse;
     overflow-y: hidden;
     overflow-x: hidden;
-    text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.4),
-      0px -4px 10px rgba(255, 255, 255, 0.4);
+    /* -webkit-text-stroke: 0.5px black; 
+    -webkit-font-smoothing: antialiased; */
+    text-shadow: 1px 1px 1px black;
     width: 25%;
     position: absolute;
   }

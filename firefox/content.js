@@ -83,8 +83,6 @@ window.onload = () => {
 		} catch (error) {
 			console.error("Error parsing message data: ", error);
 		}
-
-		processMessageQueue();
 	}
 
 	function processElementQueue() {
@@ -99,11 +97,10 @@ window.onload = () => {
 
 		layoutState == 1 ? appendVertical(data.message, data.key) : selectRow(data.message, data.key);
 
-		if (layoutState == 1) {
+		if (isVod) {
 			const queueLength = elementQueue.length;
-			let wait = isVod ? Math.trunc(4000 / queueLength) : 100;
+			let wait = Math.trunc(4000 / queueLength);
 			if (queueLength < 4 && isVod) wait = 1000;
-
 			setTimeout(function () {
 				isProcessingElements = false;
 				processElementQueue();
@@ -813,10 +810,12 @@ window.onload = () => {
 
 		/* existing row */
 		if (lastContainer !== undefined) {
+
 			requestAnimationFrame(() => {
 				chatFlusherMessages.appendChild(messageContainer);
 				messageWidth = messageContainer.offsetWidth;
 				messageContainer.style.marginRight = `-${messageWidth}px`;
+
 				const rect1 = messageContainer.getBoundingClientRect();
 				const rect2 = lastContainer.getBoundingClientRect();
 
@@ -824,9 +823,9 @@ window.onload = () => {
 
 				/* queue running */
 				if (lastItem.run === false) {
-					const numString = Math.abs(overlap).toString();
+					/* const numString = Math.abs(overlap).toString();
 					const firstDigit = parseInt(numString[0], 10);
-					overlap = overlap / overlap >= 10 ? firstDigit : 0;
+					overlap = overlap / overlap >= 10 ? firstDigit : 0; */
 					messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 					messageContainer.classList.add('flusher-animation');
 					/* firstDigit > 2 ? debouncedScroll() : null; */
@@ -842,7 +841,6 @@ window.onload = () => {
 						messageContainer.style.marginRight = `-${(messageWidth + space)}px`;
 						/* messageContainer.style.backgroundColor = "red"; */
 						messageContainer.classList.add('flusher-animation');
-
 						overlap = 0;
 					}
 				}
@@ -1255,7 +1253,7 @@ window.onload = () => {
 	}
 
 	function handleVisibilityChange() {
-		if (document.hidden) {
+		if (document.hidden && layoutState !== 1) {
 			chatEnabledVisible = chatEnabled
 			chatEnabled = false;
 			clearChat();
