@@ -1,6 +1,21 @@
 <style id="css-overlay">
+  #flusher-messages {
+    --flusher-background-color: rgba(28, 28, 28, 0.7);
+    --flusher-green: rgb(83, 252, 24);
+  }
+
   .flusher-username {
     font-weight: 700;
+  }
+
+  .flusher-grab {
+    cursor: grab;
+    user-select: none;
+    pointer-events: auto;
+  }
+
+  .flusher-no-grab {
+    pointer-events: none;
   }
 
   #flusher-messages[layout="horizontal"] .flusher-message .font-bold {
@@ -13,7 +28,7 @@
     position: absolute;
     max-width: calc(100% - 20px);
     will-change: transform;
-    background: rgba(28, 28, 28, 0.7);
+    background: var(--flusher-background-color);
     --extra-per-row: 5px;
     --padding-extra: 2px;
     top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
@@ -22,15 +37,69 @@
   #flusher-messages[layout="vertical"] {
     flex-direction: column-reverse;
     overflow-y: hidden;
+    overflow-x: hidden;
     text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.4),
       0px -4px 10px rgba(255, 255, 255, 0.4);
     width: 25%;
-    height: 50%;
     position: absolute;
   }
 
-  #flusher-messages[layout="vertical"][position="bottom"] {
+  #flusher-messages[layout="vertical"][background="ON"] .flusher-message {
+    background: var(--flusher-background-color);
+  }
+
+  #flusher-messages[layout="vertical"] .flusher-message {
+    word-break: break-word;
+    max-width: 100%;
+    margin-top: 3px;
+    padding: .2rem .5rem;
+    line-height: 1rem;
+  }
+
+  #flusher-messages[layout="vertical"][size="SMALL"] {
+    height: 25%;
+  }
+
+  #flusher-messages[layout="vertical"][size="NORMAL"] {
+    height: 50%;
+  }
+
+  #flusher-messages[layout="vertical"][size="LARGE"] {
+    height: 100%;
+  }
+
+  #flusher-messages[layout="vertical"][position="TOPLEFT"] {
+    align-items: flex-start;
+  }
+
+  #flusher-messages[layout="vertical"][position="LEFT"] {
+    top: 50%;
+    transform: translateY(-50%);
+    align-items: flex-start;
+  }
+
+  #flusher-messages[layout="vertical"][position="BOTTOMLEFT"] {
     bottom: 0;
+    align-items: flex-start;
+  }
+
+  #flusher-messages[layout="vertical"][position="TOPRIGHT"] {
+    top: 0;
+    right: 0;
+    align-items: flex-start;
+  }
+
+  #flusher-messages[layout="vertical"][position="RIGHT"] {
+    top: 50%;
+    transform: translateY(-50%);
+    right: 0;
+    align-items: flex-start;
+  }
+
+  #flusher-messages[layout="vertical"][position="BOTTOMRIGHT"] {
+    bottom: 0;
+    right: 0;
+    align-items: flex-start;
   }
 
   #flusher-messages[layout="horizontal"] {
@@ -46,7 +115,6 @@
     align-items: center;
     padding: 0 .5rem;
     font-size: .875rem;
-    line-height: 1.25rem;
     font-weight: 500;
   }
 
@@ -76,13 +144,20 @@
     white-space: nowrap;
   }
 
+  #flusher-messages[layout="vertical"]:hover {
+    outline: 1px solid var(--flusher-green);
+  }
+
   #flusher-messages[layout="vertical"] .flusher-badges,
   #flusher-messages[layout="vertical"] .flusher-username {
     display: inline-block;
     vertical-align: middle;
   }
 
+
+
   #flusher-messages[layout="horizontal"] .flusher-message .flusher-content {
+    line-height: 1.25rem;
     align-items: center;
     white-space: nowrap;
     overflow: hidden;
@@ -99,7 +174,7 @@
     max-width: 16px;
     max-height: 16px;
     margin-right: 5px;
-    fill: rgb(83, 252, 24);
+    fill: var(--flusher-green);
   }
 
   #flusher-messages[layout="horizontal"] .flusher-emote {
@@ -338,11 +413,14 @@
             <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
           </div>
         </div>
-        <div id="flusher-position" style="display: none;"
+        <div id="flusher-layoutMenu"
           class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Position</div>
+          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Layout</div>
           <div class="flex h-10 w-fit items-center justify-end">
-            <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
+            <div style="width: 16px; height: 16px;" class="flusher-icon"><svg version="1.2"
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+              </svg></div>
           </div>
         </div>
         <div id="flusher-settings"
@@ -426,6 +504,50 @@
                 d="M5.52869 11.5287L10.9999 6.06125V9.5H12.4999V3.5H6.49994V5H9.93869L4.47119 10.4712L5.52869 11.5287Z"
                 fill="currentColor"></path>
             </svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="flusher-menu-layout" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button id="flusher-layout-back" class="-ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon"><svg version="1.2"
+              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg></div>
+        </button>
+        <div class="pr-3">Layout</div>
+      </div>
+      <button id="flusher-layout-close" class="variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon"><svg width="12" height="12" viewBox="0 0 12 13"
+            fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z"
+              fill="currentColor"></path>
+          </svg></div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div id="flusher-position"
+        class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Position</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
+        </div>
+      </div>
+      <div id="flusher-size"
+        class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Size</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
+        </div>
+      </div>
+      <div id="flusher-background"
+        class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Background</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
         </div>
       </div>
     </div>

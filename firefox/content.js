@@ -10,22 +10,26 @@ window.onload = () => {
 
 	const toggledClass = 'toggled-on';
 	const spamStates = ['Auto', 'ON', 'OFF'];
-	const positionStates = ['TOP', 'BOTTOM'];
-	const layoutStates = ['ON', 'OFF'];
+	const positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
+	const sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
+	const toggleStates = ['ON', 'OFF'];
 	const space = 4;
 
 	let displayedMessages = new Set();
 
 	let resizeObserver = null;
 
+	let layoutState = null,
+		spamState = null,
+		backgroundState = null,
+		positionState = null,
+		sizeState = null
+
 	let loading = false,
 		isVod = false,
 		scrolling = false,
-		layoutState = null,
 		chatEnabled = true,
 		isFullscreen = false,
-		spamState = null,
-		positionState = null,
 		elementHeight = null,
 		maxRows = 99,
 		lastRow = 0,
@@ -36,11 +40,9 @@ window.onload = () => {
 		currentUrl;
 
 	let parentWidth = null,
-		parentWidth2 = null,
 		parentHeight = null;
 
-	let isProcessingElements = false,
-		isProcessingMessages = false;
+	let isProcessingElements = false;
 
 	const boundHandleChatMessageEvent = handleChatMessageEvent.bind(this);
 
@@ -53,7 +55,7 @@ window.onload = () => {
 		return { key: keyValue, ignore: ignore };
 	}
 
-	function processMessageQueue() {
+	async function processMessageQueue() {
 		if (!chatEnabled) return;
 
 		const data = messageQueue.shift();
@@ -113,19 +115,13 @@ window.onload = () => {
 	}
 
 	function appendVertical(messageContainer, messageKey) {
-		var maxMessages = 20;
-
 		messageContainer.classList.add('flusher-message');
 		chatFlusherMessages.insertBefore(messageContainer, chatFlusherMessages.firstChild);
 
-		while (chatFlusherMessages.children.length > maxMessages) {
+		while (chatFlusherMessages.children.length > maxRows) {
 			displayedMessages.delete(messageKey);
 			chatFlusherMessages.removeChild(chatFlusherMessages.lastChild);
 		}
-		/* if (chatFlusherMessages.children.length < maxMessages) {
-			messageContainer.classList.add('flusher-message');
-		chatFlusherMessages.insertBefore(messageContainer, chatFlusherMessages.firstChild);
-		} */
 	}
 
 	function checkResize() {
@@ -160,8 +156,10 @@ window.onload = () => {
 						parentHeight = Math.trunc(height);
 
 						chatFlusherMessages.style.setProperty('--flusher-width', `-${parentWidth}px`);
-						chatFlusherMessages.setAttribute('layout', layoutStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
-						chatFlusherMessages.setAttribute('position', positionStates[positionState] === 'TOP' ? 'top' : 'bottom');
+						chatFlusherMessages.setAttribute('layout', toggleStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
+						chatFlusherMessages.setAttribute('position', positionStates[positionState].replace(/\s/g, ""));
+						chatFlusherMessages.setAttribute('size', sizeStates[sizeState].replace(/\s/g, ""));
+						chatFlusherMessages.setAttribute('background', toggleStates[backgroundState]);
 
 						const documentWidth = document.documentElement.clientWidth;
 						if (documentWidth < ((parentWidth / 2) + 10)) {
@@ -303,11 +301,13 @@ window.onload = () => {
 		const menu = document.getElementById('flusher-menu');
 		if (menu === null) {
 			const settingsMenu = menuHtml.querySelector('#flusher-menu-settings');
+			const layoutMenu = menuHtml.querySelector('#flusher-menu-layout');
 
 			const closeBtn = menuHtml.querySelector('#flusher-menu-close');
 			closeBtn.addEventListener('click', function (event) {
 				menuHtml.style.display = "none";
 				settingsMenu.style.display = 'none';
+				layoutMenu.style.display = 'none';
 				baseMenu.style.display = 'none';
 				svgToggle();
 			});
@@ -325,12 +325,19 @@ window.onload = () => {
 
 			const spamStateValue = localStorage.getItem('flusher-spam');
 			spamState = spamStateValue ? JSON.parse(spamStateValue) : 0;
+			if (spamState === 0 && layoutState === 1) spamState = 2;
 
 			const layoutStateValue = localStorage.getItem('flusher-layout');
-			layoutState = layoutStateValue ? JSON.parse(layoutStateValue) : 0;
+			layoutState = layoutStateValue ? JSON.parse(layoutStateValue) : 1;
 
 			const positionStateValue = localStorage.getItem('flusher-position');
 			positionState = positionStateValue ? JSON.parse(positionStateValue) : 1;
+
+			const sizeStateValue = localStorage.getItem('flusher-size');
+			sizeState = sizeStateValue ? JSON.parse(sizeStateValue) : 1;
+
+			const backgroundStateValue = localStorage.getItem('flusher-background');
+			backgroundState = backgroundStateValue ? JSON.parse(backgroundStateValue) : 0;
 
 			const spamBtn = menuHtml.querySelector('#flusher-spam');
 			const spanInsideSpam = spamBtn.querySelector('span');
@@ -338,6 +345,7 @@ window.onload = () => {
 
 			spamBtn.addEventListener('click', function (event) {
 				spamState = (spamState + 1) % spamStates.length;
+				if (spamState === 0 && layoutState === 1) spamState++;
 				localStorage.setItem('flusher-spam', JSON.stringify(spamState));
 				spanInsideSpam.textContent = spamStates[spamState];
 				clearChat();
@@ -345,29 +353,51 @@ window.onload = () => {
 
 			const layoutBtn = menuHtml.querySelector('#flusher-layout');
 			const spanInsideLayout = layoutBtn.querySelector('span');
-			spanInsideLayout.textContent = layoutStates[layoutState];
+			spanInsideLayout.textContent = toggleStates[layoutState];
 
 			layoutBtn.addEventListener('click', function (event) {
-				layoutState = (layoutState + 1) % layoutStates.length;
+				layoutState = (layoutState + 1) % toggleStates.length;
 				localStorage.setItem('flusher-layout', JSON.stringify(layoutState));
-				spanInsideLayout.textContent = layoutStates[layoutState];
-				chatFlusherMessages.setAttribute('layout', layoutStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
-				layoutStates[layoutState] == 'OFF' ? positionBtn.style.display = 'flex' : positionBtn.style.display = 'none';
+				spanInsideLayout.textContent = toggleStates[layoutState];
+				chatFlusherMessages.setAttribute('layout', toggleStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
+				toggleStates[layoutState] == 'OFF' ? layoutMenuBtn.style.display = 'flex' : layoutMenuBtn.style.display = 'none';
+				togglePointerEvents();
 				clearChat();
 			});
 
-			const positionBtn = menuHtml.querySelector('#flusher-position');
+			const positionBtn = layoutMenu.querySelector('#flusher-position');
 			const spanInsidePosition = positionBtn.querySelector('span');
-			spanInsidePosition.textContent = positionStates[positionState] === 'TOP' ? 'Top' : 'Bottom';
+			spanInsidePosition.textContent = toTitleCase(positionStates[positionState]);
 
 			positionBtn.addEventListener('click', function (event) {
 				positionState = (positionState + 1) % positionStates.length;
 				localStorage.setItem('flusher-position', JSON.stringify(positionState));
-				spanInsidePosition.textContent = positionStates[positionState] === 'TOP' ? 'Top' : 'Bottom';
-				chatFlusherMessages.setAttribute('position', positionStates[positionState] === 'TOP' ? 'top' : 'bottom');
+				spanInsidePosition.textContent = toTitleCase(positionStates[positionState]);
+				chatFlusherMessages.setAttribute('position', positionStates[positionState].replace(/\s/g, ""));
 			});
 
-			layoutStates[layoutState] == 'OFF' ? positionBtn.style.display = 'flex' : positionBtn.style.display = 'none';
+			const sizeBtn = layoutMenu.querySelector('#flusher-size');
+			const sizeInsidePosition = sizeBtn.querySelector('span');
+			sizeInsidePosition.textContent = toTitleCase(sizeStates[sizeState]);
+
+			sizeBtn.addEventListener('click', function (event) {
+				sizeState = (sizeState + 1) % sizeStates.length;
+				localStorage.setItem('flusher-size', JSON.stringify(sizeState));
+				sizeInsidePosition.textContent = toTitleCase(sizeStates[sizeState]);
+				chatFlusherMessages.setAttribute('size', sizeStates[sizeState].replace(/\s/g, ""));
+			});
+
+			const backgroundBtn = layoutMenu.querySelector('#flusher-background');
+			const backgroundInsidePosition = backgroundBtn.querySelector('span');
+			backgroundInsidePosition.textContent = toggleStates[backgroundState];
+
+			backgroundBtn.addEventListener('click', function (event) {
+				backgroundState = (backgroundState + 1) % toggleStates.length;
+				localStorage.setItem('flusher-background', JSON.stringify(backgroundState));
+				backgroundInsidePosition.textContent = toggleStates[backgroundState];
+				chatFlusherMessages.setAttribute('background', toggleStates[backgroundState]);
+				clearChat();
+			});
 
 			const baseMenu = menuHtml.querySelector('#flusher-menu-base');
 
@@ -389,6 +419,32 @@ window.onload = () => {
 				settingsMenu.style.display = 'none';
 				baseMenu.style.display = 'none';
 			});
+
+			const layoutCloseBtn = menuHtml.querySelector('#flusher-layout-close');
+			layoutCloseBtn.addEventListener('click', function (event) {
+				menuHtml.style.display = 'none';
+				layoutMenu.style.display = 'none';
+				baseMenu.style.display = 'none';
+			});
+
+			const layoutMenuBtn = menuHtml.querySelector('#flusher-layoutMenu');
+			layoutMenuBtn.addEventListener('click', function (event) {
+				layoutMenu.style.display = 'block';
+				baseMenu.style.display = 'none';
+			});
+
+			const layoutBackBtn = menuHtml.querySelector('#flusher-layout-back');
+			layoutBackBtn.addEventListener('click', function (event) {
+				layoutMenu.style.display = 'none';
+				baseMenu.style.display = 'block';
+			});
+			if (toggleStates[layoutState] === 'OFF') {
+				layoutMenuBtn.style.display = 'flex';
+			} else {
+				layoutMenuBtn.style.display = 'none';
+			}
+
+			togglePointerEvents();
 
 			const flusherToggle = menuHtml.querySelector('#flusher-enable .flusher-toggle');
 			flusherToggle.addEventListener('click', function (event) {
@@ -412,6 +468,64 @@ window.onload = () => {
 			parent.append(menuHtml);
 		}
 		createToggle();
+	}
+
+	function toTitleCase(str) {
+		return str.toLowerCase().replace(/\b\w/g, function (char) {
+			return char.toUpperCase();
+		});
+	}
+
+	function togglePointerEvents() {
+		if (layoutState === 1) {
+			chatFlusherMessages.classList.remove('flusher-no-grab');
+			chatFlusherMessages.classList.add('flusher-grab');
+
+			dragElement(chatFlusherMessages);
+			lastRow = 2;
+
+			if (spamState === 0 && layoutState === 1) spamState = 2;
+			localStorage.setItem('flusher-spam', JSON.stringify(spamState));
+			/* spanInsideSpam.textContent = spamStates[spamState]; */
+
+		} else {
+			chatFlusherMessages.classList.remove('flusher-grab');
+			chatFlusherMessages.classList.add('flusher-no-grab');
+		}
+
+		function dragElement(elmnt) {
+			var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+			if (document.getElementById(elmnt.id + "header")) {
+				document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+			} else {
+				elmnt.onmousedown = dragMouseDown;
+			}
+
+			function dragMouseDown(e) {
+				e = e || window.event;
+				e.preventDefault();
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+				document.onmouseup = closeDragElement;
+				document.onmousemove = elementDrag;
+			}
+
+			function elementDrag(e) {
+				e = e || window.event;
+				e.preventDefault();
+				pos1 = pos3 - e.clientX;
+				pos2 = pos4 - e.clientY;
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+				elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+				elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+			}
+
+			function closeDragElement() {
+				document.onmouseup = null;
+				document.onmousemove = null;
+			}
+		}
 	}
 
 	function test() {
@@ -501,7 +615,7 @@ window.onload = () => {
 			interceptChatRequests();
 		} if (existingSocket === null) {
 			existingSocket = window.Echo.connector.pusher;
-			existingSocket.connection.bind("message", boundHandleChatMessageEvent);		
+			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
 		}
 	}
 
@@ -991,7 +1105,7 @@ window.onload = () => {
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const introSpan = document.createElement("span");
-		introSpan.textContent = `thanks for testing (version 0.7.3)`;
+		introSpan.textContent = `thanks for testing (version 0.8.1)`;
 		const introMessageSpan = document.createElement("span");
 
 		introMessageSpan.append(emojiSpan, introSpan);
