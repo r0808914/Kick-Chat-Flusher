@@ -41,7 +41,7 @@
     overflow-y: hidden;
     overflow-x: hidden;
     width: var(--flusher-vertical-width);
-    max-width: var(--flusher-vertical-width);
+    /* max-width: var(--flusher-vertical-width); */
     position: absolute;
   }
 
@@ -158,7 +158,8 @@
     white-space: nowrap;
   }
 
-  #flusher-messages[layout="vertical"]:hover {
+  #flusher-messages[layout="vertical"][enabled="true"]:hover {
+    resize: both;
     outline: 1px solid var(--flusher-green);
   }
 
@@ -167,8 +168,6 @@
     display: inline-block;
     vertical-align: middle;
   }
-
-
 
   #flusher-messages[layout="horizontal"] .flusher-message .flusher-content {
     line-height: 1.25rem;
@@ -411,7 +410,7 @@
     <div class="chat-actions-content">
       <div class="chat-actions-menu-list">
         <div id="flusher-enable" class="flusher-actions-item">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flusher</div>
+          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Overlay</div>
           <div class="flex h-10 w-fit items-center justify-end">
             <div class="flusher-toggle-size-sm">
               <div class="flusher-toggle">
@@ -420,13 +419,23 @@
             </div>
           </div>
         </div>
-        <div id="flusher-layout"
+        <div id="flusher-flush" class="flusher-actions-item">
+          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flush</div>
+          <div class="flex h-10 w-fit items-center justify-end">
+            <div class="flusher-toggle-size-sm">
+              <div class="flusher-toggle">
+                <div class="flusher-toggle-indicator"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- <div id="flusher-layout"
           class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
           <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flush</div>
           <div class="flex h-10 w-fit items-center justify-end">
             <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
           </div>
-        </div>
+        </div> -->
         <div id="flusher-layoutMenu"
           class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
           <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Layout</div>

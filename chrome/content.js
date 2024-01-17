@@ -13,14 +13,12 @@ window.onload = () => {
 	const backgroundStates = ['SMALL', 'LARGE', 'OFF'];
 	const positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
 	const sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
-	const toggleStates = ['ON', 'OFF'];
-	const space = 4;
 
 	let displayedMessages = new Set();
 
 	let resizeObserver = null;
 
-	let layoutState = null,
+	let flushState = null,
 		spamState = null,
 		backgroundState = null,
 		positionState = null,
@@ -32,6 +30,7 @@ window.onload = () => {
 		chatEnabled = true,
 		isFullscreen = false,
 		elementHeight = null,
+		intervalScroll = null,
 		maxRows = 99,
 		lastRow = 0,
 		existingSocket = null,
@@ -43,8 +42,8 @@ window.onload = () => {
 	let parentWidth = null,
 		parentHeight = null;
 
-	let isProcessingElements = false;
-	let isProcessingMessages = false;
+	let isProcessingElements = false,
+		isProcessingMessages = false;
 
 	const boundHandleChatMessageEvent = handleChatMessageEvent.bind(this);
 
@@ -69,9 +68,10 @@ window.onload = () => {
 
 		try {
 			if (eventType === "App\\Events\\ChatMessageEvent") {
-				layoutState === 0 ? await createMessage(data.data) : createMessage(data.data);
+				/* flushState ? createMessage(data.data) : await createMessage(data.data); */
+				createMessage(data.data)
 			} else if (data.type === "message") {
-				layoutState === 0 ? await createMessage(data) : createMessage(data);
+				createMessage(data)
 			} else if (eventType === "App\\Events\\UserBannedEvent") {
 				createUserBanMessage(data.data);
 			} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
@@ -104,12 +104,12 @@ window.onload = () => {
 			return;
 		}
 
-		layoutState == 1 ? appendVertical(data.message, data.key, data.timestamp) : selectRow(data.message, data.key);
+		flushState ? selectRow(data.message, data.key) : appendVertical(data.message, data.key, data.timestamp);
 
-		if (isVod || layoutState === 0) {
+		if (isVod || flushState) {
 			const queueLength = elementQueue.length;
 			let wait = Math.trunc(4000 / queueLength);
-			if (queueLength < 4 && isVod && layoutState === 0) wait = 1000;
+			if (queueLength < 4 && isVod && flushState) wait = 1000;
 			setTimeout(function () {
 				isProcessingElements = false;
 				processElementQueue();
@@ -191,18 +191,26 @@ window.onload = () => {
 						parentHeight = Math.trunc(height);
 
 						chatFlusherMessages.style.setProperty('--flusher-width', `-${parentWidth}px`);
-						chatFlusherMessages.setAttribute('layout', toggleStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
+						chatFlusherMessages.setAttribute('layout', flushState ? 'horizontal' : 'vertical');
+						chatFlusherMessages.setAttribute('enabled', chatEnabled);
 						chatFlusherMessages.setAttribute('position', positionStates[positionState].replace(/\s/g, ""));
 						chatFlusherMessages.setAttribute('size', sizeStates[sizeState].replace(/\s/g, ""));
 						chatFlusherMessages.setAttribute('background', backgroundStates[backgroundState]);
+
+						toggleEnableMenu();
 
 						const documentWidth = document.documentElement.clientWidth;
 						if (documentWidth < ((parentWidth / 2) + 10)) {
 							isFullscreen = true;
 							scrolling = false;
 							debouncedScroll();
+							intervalScroll = setInterval(debouncedScroll, 10000);
 						} else {
 							isFullscreen = false;
+							if (intervalScroll !== null) {
+								clearInterval(intervalScroll);
+								intervalScroll = null;
+							}
 						}
 
 						clearChat();
@@ -213,7 +221,7 @@ window.onload = () => {
 						if (oldWidth == null || oldWidth == 0) {
 							if (chatFlusherMessages === null) return;
 							/* test(); */
-							if (chatEnabled && layoutState === 0) createIntroMessage(true);
+							/* if (chatEnabled && flushState) createIntroMessage(true); */
 							isVod = currentUrl.includes('/video/');
 							console.info(`Chat Overlay Created (${isVod ? 'VOD' : 'LIVE'}): ` + window.location.href + ' (report bugs / collaborate: https://github.com/r0808914/Kick-Chat-Flusher)');
 						}
@@ -360,10 +368,10 @@ window.onload = () => {
 
 			const spamStateValue = localStorage.getItem('flusher-spam');
 			spamState = spamStateValue ? JSON.parse(spamStateValue) : 0;
-			if (spamState === 0 && layoutState === 1) spamState = 2;
+			if (spamState === 0 && flushState) spamState = 2;
 
-			const layoutStateValue = localStorage.getItem('flusher-layout');
-			layoutState = layoutStateValue ? JSON.parse(layoutStateValue) : 1;
+			const flushStateValue = localStorage.getItem('flusher-flush');
+			flushState = flushStateValue ? JSON.parse(flushStateValue) : false;
 
 			const positionStateValue = localStorage.getItem('flusher-position');
 			positionState = positionStateValue ? JSON.parse(positionStateValue) : 0;
@@ -380,23 +388,9 @@ window.onload = () => {
 
 			spamBtn.addEventListener('click', function (event) {
 				spamState = (spamState + 1) % spamStates.length;
-				if (spamState === 0 && layoutState === 1) spamState++;
+				if (spamState === 0 && !flushState) spamState++;
 				localStorage.setItem('flusher-spam', JSON.stringify(spamState));
 				spanInsideSpam.textContent = spamStates[spamState];
-				clearChat();
-			});
-
-			const layoutBtn = menuHtml.querySelector('#flusher-layout');
-			const spanInsideLayout = layoutBtn.querySelector('span');
-			spanInsideLayout.textContent = toggleStates[layoutState];
-
-			layoutBtn.addEventListener('click', function (event) {
-				layoutState = (layoutState + 1) % toggleStates.length;
-				localStorage.setItem('flusher-layout', JSON.stringify(layoutState));
-				spanInsideLayout.textContent = toggleStates[layoutState];
-				chatFlusherMessages.setAttribute('layout', toggleStates[layoutState] === 'OFF' ? 'vertical' : 'horizontal');
-				toggleStates[layoutState] == 'OFF' ? layoutMenuBtn.style.display = 'flex' : layoutMenuBtn.style.display = 'none';
-				togglePointerEvents();
 				clearChat();
 			});
 
@@ -474,96 +468,150 @@ window.onload = () => {
 				layoutMenu.style.display = 'none';
 				baseMenu.style.display = 'block';
 			});
-			if (toggleStates[layoutState] === 'OFF') {
-				layoutMenuBtn.style.display = 'flex';
-			} else {
-				layoutMenuBtn.style.display = 'none';
-			}
 
-			togglePointerEvents();
+			flushState ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
 
 			const flusherToggle = menuHtml.querySelector('#flusher-enable .flusher-toggle');
 			flusherToggle.addEventListener('click', function (event) {
 				const element = event.currentTarget;
 				element.classList.toggle(toggledClass);
-				if (element.classList.contains(toggledClass)) {
-					localStorage.setItem('flusher-enable', JSON.stringify(true));
-					svgToggle();
-					chatEnabled = true;
-				} else {
-					localStorage.setItem('flusher-enable', JSON.stringify(false));
-					svgToggle();
-					chatEnabled = false;
-					clearChat();
-				}
+
+				chatEnabled = element.classList.contains(toggledClass);
+
+				clearChat();
+				svgToggle();
+				toggleEnableMenu();
+				togglePointerEvents();
+
+				chatFlusherMessages.setAttribute('enabled', chatEnabled);
+				localStorage.setItem('flusher-enable', JSON.stringify(chatEnabled));
 			});
 
 			if (chatEnabled) flusherToggle.classList.toggle(toggledClass);
 
+			const flushToggle = menuHtml.querySelector('#flusher-flush .flusher-toggle');
+			flushToggle.addEventListener('click', function (event) {
+				const element = event.currentTarget;
+				element.classList.toggle(toggledClass);
+
+				flushState = element.classList.contains(toggledClass);
+				flushState ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
+
+				togglePointerEvents();
+				clearChat();
+				chatFlusherMessages.setAttribute('layout', flushState ? 'horizontal' : 'vertical');
+				localStorage.setItem('flusher-flush', JSON.stringify(flushState));
+
+			});
+
+			if (flushState) flushToggle.classList.toggle(toggledClass);
+
 			const parent = document.querySelector('.vjs-control-bar');
 			parent.append(menuHtml);
+
+			togglePointerEvents();
+			createToggle();
+
+			function toTitleCase(str) {
+				if (str === 'OFF' || str === 'ON') return str;
+				return str.toLowerCase().replace(/\b\w/g, function (char) {
+					return char.toUpperCase();
+				});
+			}
 		}
-		createToggle();
 	}
 
-	function toTitleCase(str) {
-		if (str === 'OFF' || str === 'ON') return str;
-		return str.toLowerCase().replace(/\b\w/g, function (char) {
-			return char.toUpperCase();
+	function toggleEnableMenu() {
+		var elementsToToggle = ['flusher-flush', 'flusher-layoutMenu', 'flusher-settings'];
+		elementsToToggle.forEach(function (id) {
+			var element = document.getElementById(id);
+			if (element) {
+				chatEnabled ? element.style.display = 'flex' : element.style.display = 'none';
+			}
 		});
 	}
 
+
 	function togglePointerEvents() {
-		if (layoutState === 1) {
-			chatFlusherMessages.classList.remove('flusher-no-grab');
-			chatFlusherMessages.classList.add('flusher-grab');
-
-			dragElement(chatFlusherMessages);
-			lastRow = 2;
-
-			if (spamState === 0 && layoutState === 1) spamState = 2;
-			localStorage.setItem('flusher-spam', JSON.stringify(spamState));
-			/* spanInsideSpam.textContent = spamStates[spamState]; */
-
-		} else {
+		if (flushState || !chatEnabled) {
 			chatFlusherMessages.classList.remove('flusher-grab');
 			chatFlusherMessages.classList.add('flusher-no-grab');
+			return;
 		}
+		lastRow = 2;
+		if (spamState === 0 && !flushState) spamState = 2;
+		dragElement(chatFlusherMessages);
+		localStorage.setItem('flusher-spam', JSON.stringify(spamState));
+		document.querySelector('#flusher-spam span').textContent = spamStates[spamState];
+		chatFlusherMessages.classList.remove('flusher-no-grab');
+		chatFlusherMessages.classList.add('flusher-grab');
+	}
 
-		function dragElement(elmnt) {
-			var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-			if (document.getElementById(elmnt.id + "header")) {
-				document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+	function dragElement(elmnt) {
+		var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+		var isResizing = false;
+
+		elmnt.onmousedown = function (e) {
+			e = e || window.event;
+			e.preventDefault();
+
+			if (isInResizeHandle(e)) {
+				isResizing = true;
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+				document.onmouseup = closeResize;
+				document.onmousemove = resizeElement;
 			} else {
-				elmnt.onmousedown = dragMouseDown;
-			}
-
-			function dragMouseDown(e) {
-				e = e || window.event;
-				e.preventDefault();
 				pos3 = e.clientX;
 				pos4 = e.clientY;
 				document.onmouseup = closeDragElement;
-				document.onmousemove = elementDrag;
+				document.onmousemove = dragElement;
 			}
+		};
 
-			function elementDrag(e) {
-				e = e || window.event;
-				e.preventDefault();
-				pos1 = pos3 - e.clientX;
-				pos2 = pos4 - e.clientY;
-				pos3 = e.clientX;
-				pos4 = e.clientY;
-				elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-				elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-			}
+		function dragElement(e) {
+			e = e || window.event;
+			e.preventDefault();
+			pos1 = pos3 - e.clientX;
+			pos2 = pos4 - e.clientY;
+			pos3 = e.clientX;
+			pos4 = e.clientY;
 
-			function closeDragElement() {
-				document.onmouseup = null;
-				document.onmousemove = null;
-			}
+			elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+			elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+		}
+
+		function resizeElement(e) {
+			e = e || window.event;
+			e.preventDefault();
+			elmnt.style.width = (elmnt.offsetWidth - (pos3 - e.clientX)) + "px";
+			elmnt.style.height = (elmnt.offsetHeight - (pos4 - e.clientY)) + "px";
+			pos3 = e.clientX;
+			pos4 = e.clientY;
+		}
+
+		function closeDragElement() {
+			document.onmouseup = null;
+			document.onmousemove = null;
+		}
+
+		function closeResize() {
+			isResizing = false;
+			document.onmouseup = null;
+			document.onmousemove = null;
+		}
+
+		function isInResizeHandle(e) {
+			var rect = elmnt.getBoundingClientRect();
+			var handleSize = 10;
+			return (
+				e.clientX >= rect.right - handleSize &&
+				e.clientY >= rect.bottom - handleSize
+			);
 		}
 	}
+
+
 
 	function test() {
 		const data = {
@@ -790,31 +838,6 @@ window.onload = () => {
 		lastRow = selectedRow;
 	}
 
-	function checkRow(messageContainer, rowIndex, messageKey) {
-		if ((rowIndex + 1) > lastRow) {
-			for (let i = 0; i < rowIndex; i++) {
-				if (lastPositionPerRow[i] === undefined || lastPositionPerRow[i].run === true) {
-					if (messageContainer !== null) {
-						lastPositionPerRow[rowIndex] = undefined;
-						messageContainer.style.setProperty('--row', i);
-						startAnimation(i, messageContainer, messageKey);
-					}
-					return;
-				}
-				if (rowQueue[i].length < 1) {
-					if (messageContainer !== null) {
-						lastPositionPerRow[rowIndex] = undefined;
-						messageContainer.style.setProperty('--row', i);
-						rowQueue[i].push({ key: messageKey, index: i, message: messageContainer });
-					}
-					return;
-				}
-			}
-		}
-
-		startAnimation(rowIndex, messageContainer, messageKey);
-	}
-
 	function debouncedScroll() {
 		if (scrolling === true) return;
 		scrolling = true;
@@ -840,6 +863,8 @@ window.onload = () => {
 	}
 
 	async function startAnimation(rowIndex, messageContainer, messageKey) {
+		const space = 4;
+
 		const lastItem = lastPositionPerRow[rowIndex];
 		lastPositionPerRow[rowIndex] = { container: messageContainer, run: false };
 
@@ -898,31 +923,56 @@ window.onload = () => {
 			overlap = 0;
 			requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey);
 		}
-	}
 
-	async function requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey) {
-		messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
-		let timeNeeded = Math.ceil((messageWidth + space + overlap) / parentWidth * 16000);
+		async function requestNext(messageWidth, overlap, rowIndex, messageContainer, messageKey) {
+			messageContainer.style.marginRight = `-${(messageWidth + overlap + space)}px`;
+			let timeNeeded = Math.ceil((messageWidth + space + overlap) / parentWidth * 16000);
 
-		const timeoutId = setTimeout(() => {
-			checkQueue(rowIndex, messageContainer, messageKey);
-			const index = timeoutIds.indexOf(timeoutId);
-			if (index !== -1) {
-				timeoutIds.splice(index, 1);
+			const timeoutId = setTimeout(() => {
+				checkQueue(rowIndex, messageContainer, messageKey);
+				const index = timeoutIds.indexOf(timeoutId);
+				if (index !== -1) {
+					timeoutIds.splice(index, 1);
+				}
+			}, timeNeeded);
+
+			timeoutIds.push(timeoutId);
+		}
+
+		function checkQueue(rowIndex, messageContainer, messageKey) {
+			if (rowQueue[rowIndex] === undefined) return;
+			const queueItem = rowQueue[rowIndex].shift();
+			if (queueItem !== undefined) {
+				checkRow(queueItem.message, rowIndex, messageKey);
+			} else {
+				lastRow = lastRow - 1;
+				lastPositionPerRow[rowIndex] = { container: messageContainer, run: true };
 			}
-		}, timeNeeded);
+		}
 
-		timeoutIds.push(timeoutId);
-	}
+		function checkRow(messageContainer, rowIndex, messageKey) {
+			if ((rowIndex + 1) > lastRow) {
+				for (let i = 0; i < rowIndex; i++) {
+					if (lastPositionPerRow[i] === undefined || lastPositionPerRow[i].run === true) {
+						if (messageContainer !== null) {
+							lastPositionPerRow[rowIndex] = undefined;
+							messageContainer.style.setProperty('--row', i);
+							startAnimation(i, messageContainer, messageKey);
+						}
+						return;
+					}
+					if (rowQueue[i].length < 1) {
+						if (messageContainer !== null) {
+							lastPositionPerRow[rowIndex] = undefined;
+							messageContainer.style.setProperty('--row', i);
+							rowQueue[i].push({ key: messageKey, index: i, message: messageContainer });
+						}
+						return;
+					}
+				}
+			}
 
-	function checkQueue(rowIndex, messageContainer, messageKey) {
-		if (rowQueue[rowIndex] === undefined) return;
-		const queueItem = rowQueue[rowIndex].shift();
-		if (queueItem !== undefined) {
-			checkRow(queueItem.message, rowIndex, messageKey);
-		} else {
-			lastRow = lastRow - 1;
-			lastPositionPerRow[rowIndex] = { container: messageContainer, run: true };
+			startAnimation(rowIndex, messageContainer, messageKey);
 		}
 	}
 
@@ -989,7 +1039,7 @@ window.onload = () => {
 		const contentSpan = document.createElement("span");
 		contentSpan.classList.add("flusher-content");
 
-		const emoteRegex = /\[emote:(\d+):(\w+)\]/g;
+		const emoteRegex = /\[emote:(\d+):([\w-]+)\]/g;
 		let lastIndex = 0;
 		let match;
 
@@ -1345,7 +1395,7 @@ window.onload = () => {
 	}
 
 	function handleVisibilityChange() {
-		if (document.hidden && layoutState !== 1) {
+		if (document.hidden && flushState) {
 			chatEnabledVisible = chatEnabled
 			chatEnabled = false;
 			clearChat();
