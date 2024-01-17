@@ -1,6 +1,6 @@
 <style id="css-overlay">
   #flusher-messages {
-    --flusher-background-color: rgba(28, 28, 28, 0.7);
+    /* --flusher-background-color: rgba(27, 27, 27, 0.5); */
     --flusher-green: rgb(83, 252, 24);
   }
 
@@ -23,45 +23,52 @@
   }
 
   #flusher-messages[layout="horizontal"] .flusher-message {
+    --extra-per-row: 5px;
+    --padding-extra: 2px;
     height: 2em;
     display: flex;
     position: absolute;
     max-width: calc(100% - 20px);
     will-change: transform;
     background: var(--flusher-background-color);
-    --extra-per-row: 5px;
-    --padding-extra: 2px;
-    /* text-shadow: 1px 1px black; */
     top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
+    font-weight: 500;
+    background: rgba(27, 27, 27, 0.6);
   }
 
   #flusher-messages[layout="vertical"] {
     flex-direction: column-reverse;
     overflow-y: hidden;
     overflow-x: hidden;
-    /* -webkit-text-stroke: 0.5px black; 
-    -webkit-font-smoothing: antialiased; */
-    text-shadow: 1px 1px 1px black;
     width: var(--flusher-vertical-width);
     max-width: var(--flusher-vertical-width);
     position: absolute;
   }
 
   #flusher-messages[layout="vertical"][background="LARGE"] .flusher-message {
-    background: var(--flusher-background-color);
+    background: rgba(27, 27, 27, 0.5);
     width: 90%;
+    margin-top: 3px;
+    text-shadow: 1px 1px 1px black;
   }
 
   #flusher-messages[layout="vertical"][background="SMALL"] .flusher-message {
-    background: var(--flusher-background-color);
+    background: rgba(27, 27, 27, 0.5);
+    margin-top: 3px;
+    text-shadow: 1px 1px 1px black;
+  }
+
+  #flusher-messages[layout="vertical"][background="OFF"] .flusher-message {
+    text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
   }
 
   #flusher-messages[layout="vertical"] .flusher-message {
     word-break: break-word;
     max-width: 90%;
-    margin-top: 3px;
     padding: .2rem .5rem;
     line-height: 1rem;
+    font-weight: 600;
+    /* transition: left 1s ease-in-out; */
   }
 
   #flusher-messages[layout="vertical"][size="SMALL"] {
@@ -123,7 +130,6 @@
     align-items: center;
     padding: 0 .5rem;
     font-size: .875rem;
-    font-weight: 500;
   }
 
   .flusher-red {

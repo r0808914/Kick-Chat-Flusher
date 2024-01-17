@@ -366,10 +366,10 @@ window.onload = () => {
 			layoutState = layoutStateValue ? JSON.parse(layoutStateValue) : 1;
 
 			const positionStateValue = localStorage.getItem('flusher-position');
-			positionState = positionStateValue ? JSON.parse(positionStateValue) : 1;
+			positionState = positionStateValue ? JSON.parse(positionStateValue) : 0;
 
 			const sizeStateValue = localStorage.getItem('flusher-size');
-			sizeState = sizeStateValue ? JSON.parse(sizeStateValue) : 2;
+			sizeState = sizeStateValue ? JSON.parse(sizeStateValue) : 1;
 
 			const backgroundStateValue = localStorage.getItem('flusher-background');
 			backgroundState = backgroundStateValue ? JSON.parse(backgroundStateValue) : 0;
@@ -584,7 +584,7 @@ window.onload = () => {
 		setInterval(() => {
 			messageQueue.push(data);
 			processMessageQueue();
-		}, 10);
+		}, 2500);
 	}
 
 	function createChat() {
@@ -1036,6 +1036,11 @@ window.onload = () => {
 		const bannedUser = data.user.username;
 
 		const messageKey = getMessageKey(`-ban${now.getMinutes()}-`, bannedUser);
+		if (messageKey.ignore === true) {
+			isProcessingMessages = false;
+			processMessageQueue();
+			return;
+		}
 
 		const banMessageContent = document.createElement("div");
 		banMessageContent.classList.add("flusher-message", "flusher-red");
@@ -1160,7 +1165,7 @@ window.onload = () => {
 		emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
 
 		const introSpan = document.createElement("span");
-		introSpan.textContent = `thanks for testing (version 0.8.2)`;
+		introSpan.textContent = `thanks for testing (version 0.8.3)`;
 		const introMessageSpan = document.createElement("span");
 
 		introMessageSpan.append(emojiSpan, introSpan);
@@ -1181,10 +1186,10 @@ window.onload = () => {
 	function setVerticalWidth() {
 		switch (sizeStates[sizeState]) {
 			case 'LARGE':
-				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 13}px`);
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
 				break;
 			case 'NORMAL':
-				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 11}px`);
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
 				break;
 			case 'SMALL':
 				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 9}px`);
@@ -1227,9 +1232,14 @@ window.onload = () => {
 
 			messageContent.append(followersSpan);
 			appendMessage(messageKey, messageContent, null);
-		}
 
-		lastFollowersCount = followersCount;
+			lastFollowersCount = followersCount;
+
+		} else {
+			lastFollowersCount = followersCount;
+			isProcessingMessages = false;
+			processMessageQueue();
+		}
 	}
 
 	function reduceRepeatedSentences(input) {
