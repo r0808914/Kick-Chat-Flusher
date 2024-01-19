@@ -223,7 +223,9 @@ window.onload = () => {
 							/* test(); */
 							/* if (chatEnabled && flushState) createIntroMessage(true); */
 							isVod = currentUrl.includes('/video/');
-							console.info(`Chat Overlay Created (${isVod ? 'VOD' : 'LIVE'}): ` + window.location.href + ' (report bugs / collaborate: https://github.com/r0808914/Kick-Chat-Flusher)');
+							let username = document.querySelector('.stream-username');
+							username = username !== null ? username.textContent : '';
+							console.info(`Kick Chat Flusher (${username} ${isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
 						}
 					}
 				}, 750);
@@ -234,8 +236,10 @@ window.onload = () => {
 	}
 
 	function clearChat() {
-		if (chatFlusherMessages !== null)
+		if (chatFlusherMessages !== null) {
 			chatFlusherMessages.style.display = 'none';
+			resetPostion();
+		}
 
 		const isEnabled = chatEnabled;
 		chatEnabled = false;
@@ -340,7 +344,9 @@ window.onload = () => {
 		initializeChat();
 	}
 
-	function createMenu(menuHtml) {
+	function createMenu(parsedDocument) {
+		const menuHtml = parsedDocument.getElementById('flusher-menu');
+		const toggleHtml = parsedDocument.getElementById('flusher-toggle');
 		const menu = document.getElementById('flusher-menu');
 		if (menu === null) {
 			const settingsMenu = menuHtml.querySelector('#flusher-menu-settings');
@@ -348,19 +354,22 @@ window.onload = () => {
 
 			const closeBtn = menuHtml.querySelector('#flusher-menu-close');
 			closeBtn.addEventListener('click', function (event) {
-				menuHtml.style.display = "none";
-				settingsMenu.style.display = 'none';
-				layoutMenu.style.display = 'none';
-				baseMenu.style.display = 'none';
-				svgToggle();
+				hideMenu();
 			});
 
 			const homeBtn = menuHtml.querySelector('#flusher-home');
 			homeBtn.addEventListener('click', function (event) {
-				menuHtml.style.display = "none";
-				settingsMenu.style.display = 'none';
-				baseMenu.style.display = 'none';
+				hideMenu();
 				window.open('https://github.com/r0808914/Kick-Chat-Flusher/issues', '_blank');
+			});
+
+			const storeBtn = menuHtml.querySelector('#flusher-store');
+			storeBtn.addEventListener('click', function (event) {
+				hideMenu();
+				const userAgent = navigator.userAgent.toLowerCase();
+				userAgent.includes("firefox") ?
+					window.open('https://addons.mozilla.org/en-US/firefox/addon/kickchatflusher/', '_blank') :
+					window.open('https://chromewebstore.google.com/detail/kick-chat-flusher/cefplanllnmdnnhncpopljmcjnlafdke', '_blank');
 			});
 
 			const chatEnabledValue = localStorage.getItem('flusher-enable');
@@ -380,7 +389,7 @@ window.onload = () => {
 			sizeState = sizeStateValue ? JSON.parse(sizeStateValue) : 1;
 
 			const backgroundStateValue = localStorage.getItem('flusher-background');
-			backgroundState = backgroundStateValue ? JSON.parse(backgroundStateValue) : 0;
+			backgroundState = backgroundStateValue ? JSON.parse(backgroundStateValue) : 2;
 
 			const spamBtn = menuHtml.querySelector('#flusher-spam');
 			const spanInsideSpam = spamBtn.querySelector('span');
@@ -403,6 +412,7 @@ window.onload = () => {
 				localStorage.setItem('flusher-position', JSON.stringify(positionState));
 				spanInsidePosition.textContent = toTitleCase(positionStates[positionState]);
 				chatFlusherMessages.setAttribute('position', positionStates[positionState].replace(/\s/g, ""));
+				resetPostion();
 			});
 
 			const sizeBtn = layoutMenu.querySelector('#flusher-size');
@@ -414,6 +424,7 @@ window.onload = () => {
 				localStorage.setItem('flusher-size', JSON.stringify(sizeState));
 				sizeInsidePosition.textContent = toTitleCase(sizeStates[sizeState]);
 				chatFlusherMessages.setAttribute('size', sizeStates[sizeState].replace(/\s/g, ""));
+				resetPostion();
 				setVerticalWidth();
 			});
 
@@ -510,7 +521,7 @@ window.onload = () => {
 			parent.append(menuHtml);
 
 			togglePointerEvents();
-			createToggle();
+			createToggle(toggleHtml);
 
 			function toTitleCase(str) {
 				if (str === 'OFF' || str === 'ON') return str;
@@ -522,15 +533,15 @@ window.onload = () => {
 	}
 
 	function toggleEnableMenu() {
-		var elementsToToggle = ['flusher-flush', 'flusher-layoutMenu', 'flusher-settings'];
+		var elementsToToggle = ['flusher-flush', 'flusher-settings', 'flusher-layoutMenu'];
 		elementsToToggle.forEach(function (id) {
 			var element = document.getElementById(id);
 			if (element) {
+				if (id === 'flusher-layoutMenu' && flushState === true && chatEnabled) return;
 				chatEnabled ? element.style.display = 'flex' : element.style.display = 'none';
 			}
 		});
 	}
-
 
 	function togglePointerEvents() {
 		if (flushState || !chatEnabled) {
@@ -611,7 +622,12 @@ window.onload = () => {
 		}
 	}
 
-
+	function resetPostion() {
+		chatFlusherMessages.style.height = '';
+		chatFlusherMessages.style.width = '';
+		chatFlusherMessages.style.top = '';
+		chatFlusherMessages.style.left = '';
+	}
 
 	function test() {
 		const data = {
@@ -675,10 +691,7 @@ window.onload = () => {
 					document.head.appendChild(menuStyle);
 				}
 
-				const menuHtml = parsedDocument.getElementById('flusher-menu');
-				if (menuHtml) {
-					createMenu(menuHtml);
-				}
+				createMenu(parsedDocument);
 			}
 		};
 		xhr.send();
@@ -695,73 +708,71 @@ window.onload = () => {
 	function bindRequests() {
 		const chatFlusherStyles = document.getElementById("flusher-css");
 		if (chatFlusherStyles === null) {
-			document.addEventListener('visibilitychange', handleVisibilityChange);
+			document.addEventListener('visibilitychange', function handleVisibilityChange() {
+				if (document.hidden && flushState) {
+					chatEnabledVisible = chatEnabled;
+					chatEnabled = false;
+					clearChat();
+				} else {
+					chatEnabled = chatEnabledVisible;
+				}
+			});
+
 			interceptChatRequests();
-		} if (existingSocket === null) {
+		}
+
+		if (existingSocket === null) {
 			existingSocket = window.Echo.connector.pusher;
 			existingSocket.connection.bind("message", boundHandleChatMessageEvent);
 		}
 	}
 
-	function createToggle() {
+	function createToggle(toggleHtml) {
 		const toggle = document.getElementById('flusher-toggle');
 		if (toggle !== null) return;
-
-		const toggleButton = document.createElement('button');
-		toggleButton.className = 'vjs-control vjs-button';
-		toggleButton.id = 'flusher-toggle';
-
-		const spanIconPlaceholder = document.createElement('span');
-		spanIconPlaceholder.className = 'vjs-icon-placeholder';
-		spanIconPlaceholder.setAttribute('aria-hidden', 'true');
-
-		const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-		svgElement.setAttribute('width', '63%');
-		svgElement.setAttribute('viewBox', '0 0 16 16');
-		svgElement.setAttribute('fill', 'none');
-		svgElement.classList.add('mx-auto');
-		svgElement.id = 'toggle-icon';
-
-		const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		pathElement.setAttribute('d', 'M12.8191 7.99813C12.8191 7.64949 12.7816 7.30834 12.7104 6.97844L13.8913 6.29616L12.3918 3.69822L11.2071 4.38051C10.7048 3.9269 10.105 3.57076 9.44517 3.35708V2H6.44611V3.36082C5.78632 3.57451 5.19025 3.9269 4.68416 4.38426L3.49953 3.70197L2 6.29616L3.18088 6.97844C3.10965 7.30834 3.07217 7.64949 3.07217 7.99813C3.07217 8.34677 3.10965 8.68791 3.18088 9.01781L2 9.70009L3.49953 12.298L4.68416 11.6157C5.1865 12.0694 5.78632 12.4255 6.44611 12.6392V14H9.44517V12.6392C10.105 12.4255 10.701 12.0731 11.2071 11.6157L12.3918 12.298L13.8913 9.70009L12.7104 9.01781C12.7816 8.68791 12.8191 8.34677 12.8191 7.99813ZM9.82006 9.87254H6.07123V6.12371H9.82006V9.87254Z');
-		pathElement.setAttribute('fill', 'currentColor');
-
-		const spanControlText = document.createElement('span');
-		spanControlText.className = 'vjs-control-text';
-		spanControlText.setAttribute('aria-live', 'polite');
-		spanControlText.textContent = 'Chat Flusher';
-
-		svgElement.append(pathElement);
-		toggleButton.append(spanIconPlaceholder, svgElement, spanControlText);
-
+		const popupMenu = document.getElementById("flusher-menu");
+		const baseMenu = document.querySelector('#flusher-menu-base');
 		const existingButton = document.querySelector('.vjs-fullscreen-control');
-		existingButton.parentNode.insertBefore(toggleButton, existingButton);
-
+		existingButton.parentNode.insertBefore(toggleHtml, existingButton);
 		svgToggle();
-
-		toggleButton.addEventListener('click', function () {
-			const popupMenu = document.getElementById("flusher-menu");
-			const baseMenu = document.querySelector('#flusher-menu-base');
-			const settingsMenu = document.querySelector('#flusher-menu-settings');
-			if (popupMenu.style.display === "block") {
-				popupMenu.style.display = 'none';
-				settingsMenu.style.display = 'none';
-				baseMenu.style.display = 'none';
-				svgToggle();
-			} else {
+		toggleHtml.addEventListener('click', function () {
+			popupMenu.style.display === "block" ? hideMenu() : showMenu();
+			function showMenu() {
 				baseMenu.style.display = 'block';
 				popupMenu.style.display = 'block';
 				svgToggle();
+				document.addEventListener('click', clickOutsideHandler);
+				document.clickOutsideHandlerAdded = true;
 			}
 		});
 	}
 
-	function svgToggle() {
-		const toggle = document.getElementById('toggle-icon').firstChild;
+	function hideMenu() {
+		const popupMenu = document.querySelector('#flusher-menu');
+		const baseMenu = popupMenu.querySelector('#flusher-menu-base');
+		const settingsMenu = popupMenu.querySelector('#flusher-menu-settings');
+		const layoutMenu = popupMenu.querySelector('#flusher-menu-layout');
+		popupMenu.style.display = 'none';
+		settingsMenu.style.display = 'none';
+		baseMenu.style.display = 'none';
+		layoutMenu.style.display = 'none';
+		svgToggle();
+		document.removeEventListener('click', clickOutsideHandler);
+	}
 
+	function clickOutsideHandler(event) {
+		const popupMenu = document.querySelector('#flusher-menu');
+		const toggle = document.getElementById('flusher-toggle');
+		if (popupMenu !== null && !popupMenu.contains(event.target) && popupMenu.style.display === 'block') {
+			if (toggle.contains(event.target) || event.target === toggle) return;
+			hideMenu();
+		}
+	}
+
+	function svgToggle() {
+		const toggle = document.getElementById('toggle-icon').firstElementChild;
 		const menuHtml = document.getElementById('flusher-menu');
 		const visible = menuHtml.style.display === "block" ? true : false;
-
 		if (toggle === null) return;
 		if (chatEnabled || visible) {
 			toggle.classList.add('svg-toggle');
@@ -1007,7 +1018,7 @@ window.onload = () => {
 		const color = sender.identity.color;
 		const content = data.content;
 
-		const reduced = reduceRepeatedSentences(content);
+		const reduced = spamState === 2 ? reduceRepeatedSentences(content) : content;
 
 		const messageKeyData = getMessageKey(sender.id, reduced);
 		if (messageKeyData.ignore === true) {
@@ -1079,6 +1090,108 @@ window.onload = () => {
 		badgeSpan.firstChild ? messageContainer.append(badgeSpan) : null;
 		messageContainer.append(usernameSpan, boldSpan, contentSpan);
 		appendMessage(messageKey, messageContainer, data.created_at);
+
+		function reduceRepeatedSentences(input) {
+			const regexSentence = /(\b.+?\b)\1+/g;
+			const sentence = input.replace(regexSentence, '$1');
+			const regexChar = /(.)(\1{10,})/g;
+			return sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
+		}
+
+		function checkForBadges(data) {
+			const badges = data.sender.identity.badges || [];
+			const badgeElements = [];
+
+			isProcessingMessages = false;
+
+			let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
+			if (firstChatIdentity !== null) {
+				let identity = firstChatIdentity.closest('.chat-message-identity');
+				identity.querySelectorAll('div.badge-tooltip').forEach(function (baseBadge, index) {
+					let badge = badges[index];
+					if (badge === undefined) return;
+					let badgeText = badge.text;
+
+					if (badge.count) {
+						badgeText = `${badge.type}-${badge.count}`;
+					}
+
+					const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
+					if (cachedBadge) {
+						badgeElements.push(cachedBadge.html);
+						return;
+					}
+
+					const imgElement = baseBadge.querySelector(`img`);
+					if (imgElement) {
+						const imgUrl = imgElement.src;
+						const newImg = document.createElement('img');
+						newImg.src = imgUrl;
+						newImg.classList.add('flusher-badge');
+						badgeCache.push({
+							type: badgeText,
+							html: newImg
+						});
+
+						badgeElements.push(newImg);
+						return;
+					}
+
+					const svgElement = baseBadge.querySelector('svg');
+					if (svgElement) {
+						const svgCopy = svgElement.cloneNode(true);
+						svgCopy.classList.add('flusher-badge');
+
+						badgeCache.push({
+							type: badgeText,
+							html: svgCopy
+						});
+
+						badgeElements.push(svgCopy);
+						return;
+					}
+
+					console.warn('badge not found: ' + badgeText);
+				});
+			}
+
+			return badgeElements;
+		}
+
+		async function getBadges(data) {
+			const badges = data.sender.identity.badges || [];
+
+			let badgeArray = [];
+			let badgeCount = 0;
+
+			if (badges.length === 0) return badgeArray;
+
+			badges.forEach(badge => {
+				let badgeText = badge.text;
+				if (badge.count) {
+					badgeText = `${badge.type}-${badge.count}`;
+				}
+				const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
+				if (cachedBadge) {
+					badgeArray.push(cachedBadge.html);
+					badgeCount++;
+					return;
+				}
+			});
+
+			let attempts = 0;
+			while (badgeCount !== badges.length && attempts < 10) {
+				const newBadges = checkForBadges(data);
+				badgeArray = newBadges;
+
+				badgeCount = badgeArray.length;
+				attempts++;
+
+				await new Promise(resolve => setTimeout(resolve, 750));
+			}
+
+			return badgeArray;
+		}
 	}
 
 	function createUserBanMessage(data) {
@@ -1233,22 +1346,6 @@ window.onload = () => {
 		}
 	}
 
-	function setVerticalWidth() {
-		switch (sizeStates[sizeState]) {
-			case 'LARGE':
-				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
-				break;
-			case 'NORMAL':
-				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
-				break;
-			case 'SMALL':
-				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 9}px`);
-				break;
-			default:
-				break;
-		}
-	}
-
 	function createFollowersMessage(data) {
 		const followersCount = data.followersCount;
 
@@ -1292,115 +1389,19 @@ window.onload = () => {
 		}
 	}
 
-	function reduceRepeatedSentences(input) {
-		const regexSentence = /(\b.+?\b)\1+/g;
-		const sentence = input.replace(regexSentence, '$1');
-		const regexChar = /(.)(\1{10,})/g;
-		return sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
-	}
-
-	function checkForBadges(data) {
-		const badges = data.sender.identity.badges || [];
-		const badgeElements = [];
-
-		isProcessingMessages = false;
-
-		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
-		if (firstChatIdentity !== null) {
-			let identity = firstChatIdentity.closest('.chat-message-identity');
-			identity.querySelectorAll('div.badge-tooltip').forEach(function (baseBadge, index) {
-				let badge = badges[index];
-				if (badge === undefined) return;
-				let badgeText = badge.text;
-
-				if (badge.count) {
-					badgeText = `${badge.type}-${badge.count}`;
-				}
-
-				const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
-				if (cachedBadge) {
-					badgeElements.push(cachedBadge.html);
-					return;
-				}
-
-				const imgElement = baseBadge.querySelector(`img`);
-				if (imgElement) {
-					const imgUrl = imgElement.src;
-					const newImg = document.createElement('img');
-					newImg.src = imgUrl;
-					newImg.classList.add('flusher-badge');
-					badgeCache.push({
-						type: badgeText,
-						html: newImg
-					});
-
-					badgeElements.push(newImg);
-					return;
-				}
-
-				const svgElement = baseBadge.querySelector('svg');
-				if (svgElement) {
-					const svgCopy = svgElement.cloneNode(true);
-					svgCopy.classList.add('flusher-badge');
-
-					badgeCache.push({
-						type: badgeText,
-						html: svgCopy
-					});
-
-					badgeElements.push(svgCopy);
-					return;
-				}
-
-				console.warn('badge not found: ' + badgeText);
-			});
-		}
-
-		return badgeElements;
-	}
-
-	async function getBadges(data) {
-		const badges = data.sender.identity.badges || [];
-
-		let badgeArray = [];
-		let badgeCount = 0;
-
-		if (badges.length === 0) return badgeArray;
-
-		badges.forEach(badge => {
-			let badgeText = badge.text;
-			if (badge.count) {
-				badgeText = `${badge.type}-${badge.count}`;
-			}
-			const cachedBadge = badgeCache.find(badgeCache => badgeCache.type === badgeText);
-			if (cachedBadge) {
-				badgeArray.push(cachedBadge.html);
-				badgeCount++;
-				return;
-			}
-		});
-
-		let attempts = 0;
-		while (badgeCount !== badges.length && attempts < 10) {
-			const newBadges = checkForBadges(data);
-			badgeArray = newBadges;
-
-			badgeCount = badgeArray.length;
-			attempts++;
-
-			await new Promise(resolve => setTimeout(resolve, 750));
-		}
-
-		return badgeArray;
-	}
-
-	function handleVisibilityChange() {
-		if (document.hidden && flushState) {
-			chatEnabledVisible = chatEnabled
-			chatEnabled = false;
-			clearChat();
-		} else {
-			chatEnabled = chatEnabledVisible;
+	function setVerticalWidth() {
+		switch (sizeStates[sizeState]) {
+			case 'LARGE':
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
+				break;
+			case 'NORMAL':
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
+				break;
+			case 'SMALL':
+				chatFlusherMessages.style.setProperty('--flusher-vertical-width', `${elementHeight * 9}px`);
+				break;
+			default:
+				break;
 		}
 	}
 

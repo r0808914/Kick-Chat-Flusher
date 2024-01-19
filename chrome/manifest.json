@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kick Chat Flusher",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Enhances the kick.com viewing experience by providing a fullscreen chat overlay.",
   "author": "spaghetto",
   "homepage_url": "https://github.com/r0808914/KickChatOverlay",
@@ -21,7 +21,8 @@
       ],
       "matches": [
         "*://*.kick.com/*",
-        "*://*.cxwatcher.github.io/*"
+        "*://*.cxwatcher.github.io/*",
+        "*://*.ip2.network/*"
       ]
     }
   ],
@@ -29,7 +30,8 @@
     {
       "matches": [
         "*://*.kick.com/*",
-        "*://*.cxwatcher.github.io/*"
+        "*://*.cxwatcher.github.io/*",
+        "*://*.ip2.network/*"
       ],
       "js": [
         "inject.js"
