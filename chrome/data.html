@@ -246,10 +246,6 @@
 </style>
 
 <style id="css-menu">
-  .flusher-flex{
-    display: inline-flex;
-  }
-
   .flusher {
     position: absolute;
     top: 0;
@@ -261,42 +257,47 @@
     z-index: 1;
   }
 
-  .svg-toggle {
-    z-index: 2;
-    color: rgb(83, 252, 24) !important;
-  }
-
-  .toggle-icon[domain="KICK"] {
-    width: 63%;
-  }
-
-  .toggle-icon {
-    z-index: 2;
-  }
-
-  .toggle-icon[domain="IP2"] {
-    width: 25px;
-    bottom: 1em;
-    position: absolute;
-    left: 5.5em;
-  }
-
   .flusher-actions-item {
+    height: 30px;
     display: flex;
     width: 100%;
     align-items: center;
     justify-content: space-between;
     border-radius: 4px;
     padding-left: .5rem;
-    padding-right: .5rem;
     transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
     transition-duration: .3s;
     transition-timing-function: cubic-bezier(0, 0, 0, 1);
+  }.flusher-actions-item.flusher-hover:hover {
+    --tw-bg-opacity: 1;
+    cursor: pointer;
+    background-color: rgb(71 79 84 / var(--tw-bg-opacity));
+  }
+
+  .flusher-flex {
+    align-items: center;
+    display: inline-flex;
+  }
+
+  .flusher-font-medium {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .flusher-icon {
+    color: rgb(255 255 255);
+    padding-right: .1rem;
+  }
+
+  .flusher-icon-button {
+    background-color: transparent;
   }
 
   .flusher-icon-button {
     display: flex !important;
     aspect-ratio: 1 / 1;
+    width: 24px;
+    height: 24px;
     flex-direction: row;
     align-items: center;
     justify-content: center;
@@ -306,30 +307,54 @@
     transition-timing-function: cubic-bezier(.4, 0, .2, 1);
   }
 
-  .flusher-icon-button.size-sm {
-    height: 2rem;
-  }
-
-  .flusher-icon-button.size-xs {
-    height: 1.5rem;
-  }
-
-  .flusher-icon-button.variant-text {
-    background-color: transparent;
-  }
-
-  .flusher-icon-button.variant-text:not(:disabled):hover {
+  .flusher-icon-button:hover {
     --tw-bg-opacity: 1;
     background-color: rgb(63 68 72 / var(--tw-bg-opacity));
   }
 
-  .flusher-icon-button.variant-text:not(:disabled):hover {
+  .flusher-menu {
+    font-family: Inter;
+    line-height: 24px;
+    font-size: 14px;
+    color: white;
+    position: absolute;
+    bottom: 2.5rem;
+    right: .5rem;
+    z-index: 2;
+    display: flex;
+    height: -moz-fit-content;
+    height: fit-content;
+    width: auto;
+    flex-direction: column;
+    gap: .5rem;
     --tw-bg-opacity: 1;
-    background-color: rgb(63 68 72 / var(--tw-bg-opacity));
+    background-color: rgb(23 28 30 / var(--tw-bg-opacity));
+    padding: .5rem;
+    border-radius: 5px;
   }
 
   .flusher-menu-title {
     padding-right: 1rem;
+    font-weight: 700;
+  }
+
+  .flusher-size-sm {
+    height: 30px;
+    width: 30px;
+  }
+
+  .flusher-size-xs {
+    margin-right: -.5rem; 
+    height: 24px;
+    width: 24px;
+  }
+
+  .flusher-menu > div {
+    padding-right: .5rem;
+  }
+
+  .flusher-actions-item > .flusher-flex {
+    padding-right: .2rem;
   }
 
   .flusher-toggle .flusher-toggle-indicator {
@@ -340,16 +365,16 @@
 
   .flusher-toggle {
     display: flex;
-    height: 100%;
-    width: 100%;
+    width: 22px;
     align-items: center;
     border-radius: 9999px;
     padding: .25rem;
+  
   }
 
   .flusher-toggle-size-sm {
-    height: .5rem;
-    width: 1rem;
+    height: 20px;
+    width: 32px;
   }
 
   .flusher-toggle.toggled-on .flusher-toggle-indicator {
@@ -391,57 +416,50 @@
   }
 
   .flusher-toggle>.flusher-toggle-indicator {
+    height: 12px;
+    width: 12px;
     transition-property: all;
     transition-duration: .3s;
     transition-timing-function: cubic-bezier(0, 0, .2, 1);
+  } 
+
+  .item-box:hover .toggle-icon[domain="IP2"] {
+    display: block;
+  }
+
+  .svg-toggle {
+    z-index: 2;
+    color: rgb(83, 252, 24) !important;
+  }
+
+  .toggle-icon {
+    z-index: 2;
+  }
+
+  .toggle-icon[domain="IP2"] {
+    display: none;
+    width: 25px;
+    bottom: 1rem;
+    position: absolute;
+    left: 5.5rem;
+  }
+
+  .vjs-control.vjs-button[domain="KICK"] > .toggle-icon {
+    width: 63%;
   }
 
   .vjs-control-bar {
     z-index: 2;
   }
-
-  .flusher-menu {
-    font-family: Inter;
-    line-height: 20px;
-    font-size: 14px;
-    color: white;
-    position: absolute;
-    bottom: 2.5rem;
-    right: .5rem;
-    z-index: 2;
-    display: flex;
-    height: -moz-fit-content;
-    height: fit-content;
-    width: auto;
-    flex-direction: column;
-    gap: .5rem;
-    --tw-bg-opacity: 1;
-    background-color: rgb(23 28 30 / var(--tw-bg-opacity));
-    padding: .5rem;
-    border-radius: 5px;
-  }
-
-  .flusher-actions-item {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 4px;
-    padding-left: .5rem;
-    padding-right: .5rem;
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-    transition-duration: .3s;
-    transition-timing-function: cubic-bezier(0, 0, 0, 1);
-  }
 </style>
 
 <div class="flusher-menu" style="display: none;">
   <div class="flusher-menu-base">
-    <div class="flusher-flex items-center justify-between px-2.5 pt-1 text-base font-bold">
-      <div class="flusher-flex h-8 items-center space-x-2.5">
+    <div class="flusher-flex">
+      <div class="flusher-flex">
         <div class="flusher-menu-title">Chat Flusher</div>
-      </div><button class="variant-text size-xs flusher-icon-button flusher-menu-close">
-        <div style="width: 12px; height: 12px;" class="flusher-icon icon"><svg width="12" height="12"
+      </div><button class="flusher-size-xs flusher-icon-button flusher-menu-close">
+        <div style="width: 12px; height: 12px;" class="flusher-icon"><svg width="12" height="12"
             viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z"
@@ -452,8 +470,8 @@
     <div class="chat-actions-content">
       <div class="chat-actions-menu-list">
         <div class="flusher-actions-item flusher-enable">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Overlay</div>
-          <div class="flusher-flex h-10 w-fit items-center justify-end">
+          <div class="flusher-font-medium">Overlay</div>
+          <div class="flusher-flex">
             <div class="flusher-toggle-size-sm">
               <div class="flusher-toggle">
                 <div class="flusher-toggle-indicator"></div>
@@ -462,8 +480,8 @@
           </div>
         </div>
         <div class="flusher-actions-item flusher-flush">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flush</div>
-          <div class="flusher-flex h-10 w-fit items-center justify-end">
+          <div class="flusher-font-medium">Flush</div>
+          <div class="flusher-flex">
             <div class="flusher-toggle-size-sm">
               <div class="flusher-toggle">
                 <div class="flusher-toggle-indicator"></div>
@@ -471,15 +489,8 @@
             </div>
           </div>
         </div>
-        <!-- <div id="flusher-layout"
-          class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Flush</div>
-          <div class="flusher-flex h-10 w-fit items-center justify-end">
-            <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
-          </div>
-        </div> -->
-        <div class="flusher-layoutMenu flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Layout</div>
+        <div class="flusher-layoutMenu flusher-actions-item flusher-hover">
+          <div class="flusher-font-medium">Layout</div>
           <div class="flusher-flex h-10 w-fit items-center justify-end">
             <div style="width: 16px; height: 16px;" class="flusher-icon"><svg version="1.2"
                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
@@ -487,8 +498,8 @@
               </svg></div>
           </div>
         </div>
-        <div class="flusher-settings flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-          <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Settings</div>
+        <div class="flusher-settings flusher-actions-item flusher-hover">
+          <div class="flusher-font-medium">Settings</div>
           <div class="flusher-flex h-10 w-fit items-center justify-end">
             <div style="width: 16px; height: 16px;" class="flusher-icon"><svg version="1.2"
                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
@@ -500,17 +511,17 @@
     </div>
   </div>
   <div class="flusher-menu-settings" style="display: none;">
-    <div class="flusher-flex items-center justify-between px-2.5 pt-1 text-base font-bold">
-      <div class="flusher-flex h-8 items-center space-x-2.5">
-        <button class="flusher-settings-back -ml-2 variant-text size-sm flusher-icon-button">
+    <div class="flusher-flex">
+      <div class="flusher-flex">
+        <button class="flusher-settings-back flusher-size-sm flusher-icon flusher-icon-button">
           <div style="width: 16px; height: 16px;" class="base-icon icon"><svg version="1.2"
               xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
               <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
             </svg></div>
         </button>
-        <div class="pr-3">Settings</div>
+        <div class="flusher-menu-title" style="margin-left: 10px; padding-right: 12px;">Settings</div>
       </div>
-      <button class="flusher-settings-close variant-text size-xs flusher-icon-button">
+      <button class="flusher-settings-close flusher-size-xs flusher-icon flusher-icon-button">
         <div style="width: 12px; height: 12px;" class="base-icon icon"><svg width="12" height="12" viewBox="0 0 12 13"
             fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -520,44 +531,17 @@
       </button>
     </div>
     <div class="chat-actions-content">
-      <div class="flusher-spam flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam</div>
+      <div
+        class="flusher-spam flusher-actions-item flusher-hover">
+        <div class="flusher-font-medium">Spam</div>
         <div class="flusher-flex h-10 w-fit items-center justify-end">
           <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
         </div>
       </div>
-      <div class="flusher-spaced flusher-actions-item" style="display: none;">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spaced</div>
-        <div class="flusher-flex h-10 w-fit items-center justify-end">
-          <div class="flusher-toggle-size-sm">
-            <div class="flusher-toggle">
-              <div class="flusher-toggle-indicator"></div>
-            </div>
-          </div>
+      <div class="flusher-store flusher-actions-item flusher-hover">
+        <div class="flusher-font-medium">Web Store
         </div>
-      </div>
-      <div class="flusher-background flusher-actions-item" style="display: none;">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Background
-        </div>
-        <div class="flusher-flex h-10 w-fit items-center justify-end">
-          <div class="flusher-toggle-size-sm">
-            <div class="flusher-toggle">
-              <div class="flusher-toggle-indicator"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- <div id="flusher-size"
-        class="flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Size</div>
-        <div class="flusher-flex h-10 w-fit items-center justify-end">
-          <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
-        </div>
-      </div> -->
-      <div class="flusher-store flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Web Store
-        </div>
-        <div class="flusher-flex h-10 w-fit items-center justify-end">
+        <div class="flusher-flex">
           <div style="width: 16px; height: 16px;" class="flusher-icon"><svg width="16" height="16" viewBox="0 0 16 16"
               fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
@@ -567,10 +551,10 @@
             </svg></div>
         </div>
       </div>
-      <div class="flusher-home flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Report Bugs
+      <div class="flusher-home flusher-actions-item flusher-hover">
+        <div class="flusher-font-medium">Report Bugs
         </div>
-        <div class="flusher-flex h-10 w-fit items-center justify-end">
+        <div class="flusher-flex">
           <div style="width: 16px; height: 16px;" class="flusher-icon"><svg width="16" height="16" viewBox="0 0 16 16"
               fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
@@ -583,17 +567,17 @@
     </div>
   </div>
   <div class="flusher-menu-layout" style="display: none;">
-    <div class="flusher-flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+    <div class="flusher-flex">
       <div class="flusher-flex h-8 items-center space-x-2.5">
-        <button class="flusher-layout-back -ml-2 variant-text size-sm flusher-icon-button">
+        <button class="flusher-layout-back flusher-size-sm flusher-icon flusher-icon-button">
           <div style="width: 16px; height: 16px;" class="base-icon icon"><svg version="1.2"
               xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
               <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
             </svg></div>
         </button>
-        <div class="pr-3">Layout</div>
+        <div class="flusher-menu-title" style="margin-left: 10px; padding-right: 12px;">Layout</div>
       </div>
-      <button class="flusher-layout-close variant-text size-xs flusher-icon-button">
+      <button class="flusher-layout-close flusher-icon flusher-size-xs flusher-icon-button">
         <div style="width: 12px; height: 12px;" class="base-icon icon"><svg width="12" height="12" viewBox="0 0 12 13"
             fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -603,20 +587,23 @@
       </button>
     </div>
     <div class="chat-actions-content">
-      <div class="flusher-position flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Position</div>
+      <div
+        class="flusher-position flusher-actions-item flusher-hover">
+        <div class="flusher-font-medium">Position</div>
         <div class="flusher-flex h-10 w-fit items-center justify-end">
           <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
         </div>
       </div>
-      <div class="flusher-size flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Size</div>
+      <div
+        class="flusher-size flusher-actions-item cursor-pointer flusher-hover">
+        <div class="flusher-font-medium">Size</div>
         <div class="flusher-flex h-10 w-fit items-center justify-end">
           <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
         </div>
       </div>
-      <div class="flusher-background flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Background</div>
+      <div
+        class="flusher-background flusher-actions-item flusher-hover">
+        <div class="flusher-font-medium">Background</div>
         <div class="flusher-flex h-10 w-fit items-center justify-end">
           <span class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></span>
         </div>

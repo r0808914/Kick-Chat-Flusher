@@ -20,8 +20,7 @@ window.onload = () => {
 		scrolling = false,
 		isFullscreen = false,
 		intervalScroll = null,
-		socket = null,
-		currentUrl;
+		socket = null;
 
 	let isProcessingElements = false,
 		isProcessingMessages = false;
@@ -37,28 +36,28 @@ window.onload = () => {
 	}
 
 	async function processMessageQueue() {
-		if (isProcessingMessages) return;
-		isProcessingMessages = true;
-
-		let queueItem = messageQueue.shift();
-		const chatroom_id = queueItem?.chatroom_id;
-
-		if (!chatroom_id) {
-			isProcessingMessages = false;
-			return;
-		}
-
-		const lastRow = flushers[chatroom_id].lastRow;
-		const maxRows = flushers[chatroom_id].maxRows;
-
-		if ((lastRow === null || lastRow >= maxRows)) {
-			isProcessingMessages = false;
-			return;
-		}
-
-		const eventType = queueItem.event ?? queueItem.eventName;
-
 		try {
+			if (isProcessingMessages) return;
+			isProcessingMessages = true;
+
+			let queueItem = messageQueue.shift();
+			if (!queueItem) {
+				isProcessingMessages = false;
+				return;
+			}
+
+			queueItem.chatroom_id = external ? queueItem?.chatroom_id : 0;
+
+			const lastRow = flushers[queueItem.chatroom_id].lastRow;
+			const maxRows = flushers[queueItem.chatroom_id].maxRows;
+
+			if ((lastRow === null || lastRow >= maxRows)) {
+				isProcessingMessages = false;
+				return;
+			}
+
+			const eventType = queueItem.event ?? queueItem.eventName;
+
 			if (eventType === "App\\Events\\ChatMessageEvent") {
 				createMessage(queueItem)
 			} else if (queueItem.type === "message") {
@@ -77,38 +76,50 @@ window.onload = () => {
 				isProcessingMessages = false;
 				processMessageQueue();
 			}
-
-		} catch (error) {
-			console.error("Error parsing message data: ", error);
+		}
+		catch (error) {
 			isProcessingMessages = false;
 			processMessageQueue();
+			console.log(error);
 		}
 	}
 
 	function processElementQueue() {
-		if (isProcessingElements) return;
-		isProcessingElements = true;
+		try {
+			if (isProcessingElements) return;
+			isProcessingElements = true;
 
-		const queueItem = elementQueue.shift();
-		if (!queueItem) {
-			isProcessingElements = false;
-			return;
-		}
+			const queueItem = elementQueue.shift();
+			if (!queueItem) {
+				isProcessingElements = false;
+				return;
+			}
 
-		const flushState = flushers[queueItem.chatroom_id].flushState;
-		flushState ? selectRow(queueItem) : appendVertical(queueItem);
+			const flushState = flushers[queueItem.chatroom_id].flushState;
 
-		if (isVod || flushState) {
-			const queueLength = elementQueue.length;
-			let wait = Math.trunc(4000 / queueLength);
-			if (queueLength < 4 && isVod && flushState) wait = 1000;
-			setTimeout(function () {
+			if (!flushers[queueItem.chatroom_id].chatEnabled) {
+				isProcessingElements = false;
+				return;
+			}
+
+			flushState ? selectRow(queueItem) : appendVertical(queueItem);
+
+			if (isVod || flushState) {
+				const queueLength = elementQueue.length;
+				let wait = Math.trunc(4000 / queueLength);
+				if (queueLength < 4 && isVod && flushState) wait = 1000;
+				setTimeout(function () {
+					isProcessingElements = false;
+					processElementQueue();
+				}, wait);
+			} else {
 				isProcessingElements = false;
 				processElementQueue();
-			}, wait);
-		} else {
+			}
+		} catch (error) {
 			isProcessingElements = false;
 			processElementQueue();
+			console.log(error);
 		}
 	}
 
@@ -157,18 +168,20 @@ window.onload = () => {
 		flushers[id].resizeObserver = new ResizeObserver(entries => {
 			if (flusher !== null)
 				flusher.style.display = 'none';
-			loading = false;
 
 			for (let entry of entries) {
-				clearTimeout(flushers[id].resizeTimer);
+				if (flushers[id].resizeTimer) clearTimeout(flushers[id].resizeTimer);
 				flushers[id].resizeTimer = setTimeout(() => {
 					for (let entry of entries) {
 
 						const { width, height } = entry.contentRect;
+						currentUrl = window.location.href;
 
-						if (width === null || width === 0) {
+						if ((width === null || width === 0) && flushers[id].parentWidth) {
 							if (flusher !== null) {
+								console.log('remove chat');
 								flusher.remove();
+								delete flushers[id];
 								element.removeAttribute('flusher');
 								if (!external);
 								initializeChat();
@@ -207,19 +220,22 @@ window.onload = () => {
 							}
 						}
 
-						clearChat(flusher);
-
 						flushers[id].elementHeight = null;
+						flusher.style.display = 'flex';
 						createIntroMessage(false, flusher);
 
 						if (oldWidth == null || oldWidth == 0) {
 							if (element === null) return;
 							/* test(); */
 							/* if (chatEnabled && flushState) createIntroMessage(true); */
-							isVod = currentUrl.includes('/video/');
-							let username = external ? element.parentNode.querySelector('.iframe-lbl-div.notranslate') : document.querySelector('.stream-username');
-							username = username !== null ? username.textContent : '';
-							console.info(`Kick Chat Flusher (${username} ${isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
+							isVod = window.location.href.includes('/video/');
+							let channelName = external ? element.parentNode.querySelector('.iframe-lbl-div.notranslate') : document.querySelector('.stream-username');
+							flushers[id].channelName = channelName !== null ? channelName.textContent : '';
+							loading = false;
+							processMessageQueue();
+							console.info(`Kick Chat Flusher (${flushers[id].channelName} ${domain} ${isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
+						} else {
+							flushers[id].flushState ? clearChat(flusher) : resetPostion(flusher);
 						}
 					}
 				}, 750);
@@ -240,16 +256,8 @@ window.onload = () => {
 		const isEnabled = flushers[id].chatEnabled;
 		flushers[id].chatEnabled = false;
 
-		if (currentUrl !== window.location.href) {
-			currentUrl = window.location.href;
-			messageQueue.length = 0;
-		} else {
-			/* const lastMessage = messageQueue.pop();
-			messageQueue.length = 0;
-			messageQueue.push(lastMessage); */
-		}
-
 		elementQueue.length = 0;
+		messageQueue.length = 0;
 		flushers[id].lastRow = 0;
 		for (const id of timeoutIds) {
 			clearTimeout(id);
@@ -279,9 +287,7 @@ window.onload = () => {
 
 		timeoutIds.length = 0;
 
-		if (flusher !== null) {
-			flusher.style.display = 'flex';
-		}
+		if (flusher !== null) flusher.style.display = 'flex';
 
 		flushers[id].chatEnabled = isEnabled;
 
@@ -307,7 +313,10 @@ window.onload = () => {
 								const iframes = itemBoxElement.querySelectorAll('iframe');
 								iframes.forEach((iframe) => {
 									if (iframe.hasAttribute('flusher')) return;
-									if (!flushers.length) setupPusher();
+									if (!Object.keys(flushers).length) {
+										setupPusher();
+										visibilityChange();
+									}
 									observer.disconnect();
 									createChannel(iframe);
 								});
@@ -365,15 +374,13 @@ window.onload = () => {
 
 	function subscribeChannel(flusher, iframe) {
 		const id = flusher.getAttribute('flusher-chatroom');
-
 		const channel = socket.subscribe(`chatrooms.${id}.v2`);
 		channel.unbind_global();
 
 		channel.bind_global(function (eventName, data) {
 			document.body.contains(iframe) ? onMessage(id, data) : disposeChannel(id);
-
 			function onMessage(id, data) {
-				if (!flushers[id].chatEnabled || data === null) return;
+				if (!flushers[id].chatEnabled || data === null || loading) return;
 				messageQueue.push(data);
 				processMessageQueue();
 			}
@@ -381,12 +388,13 @@ window.onload = () => {
 	}
 
 	function disposeChannel(id) {
+		if (external) return;
 		socket.unsubscribe(`chatrooms.${id}.v2`);
-		/* flushers[id] = null; */
-		console.log(`chatrooms.${id}.v2` + ' disposed');
+		console.log(`dispose ${flushers[id].channelName}.${id}`);
 	}
 
 	function initializeChat() {
+		console.log('initializeChat');
 		if (loading) return;
 		loading = true;
 
@@ -395,12 +403,15 @@ window.onload = () => {
 			external = true;
 			startIp2();
 		} else {
+			if (flushers[0]?.flusher) {
+				loading = false;
+				return;
+			}
 			domain = "KICK";
 			resetConnection();
 
-			if (document.querySelector("video") !== null) {
-				const videoPlayer = document.querySelector("video");
-				createChat(videoPlayer);
+			if (document.querySelector("video") && document.querySelector(".video-js")) {
+				createChat(document.querySelector('video'), 0);
 				return;
 			}
 
@@ -408,9 +419,10 @@ window.onload = () => {
 				mutations.forEach(function (mutation) {
 					if (mutation.addedNodes) {
 						mutation.addedNodes.forEach(function (node) {
-							if (node.nodeName.toLowerCase() === "video") {
+							if (document.querySelector(".video-js")) {
 								observer.disconnect();
-								createChat(node);
+								createChat(document.querySelector('video'), 0);
+								return;
 							}
 						});
 					}
@@ -424,38 +436,40 @@ window.onload = () => {
 
 			setTimeout(function () {
 				observer.disconnect();
-				if (chatFlusherMessages !== null) return;
+				if (Object.keys(flushers).length) return;
 				loading = false;
-				bindRequests();
 			}, 5000);
 		}
 	}
 
 	function resetConnection() {
-		flushers.forEach((flusher) => {
-			clearChat(flusher);
-			if (!flusher.resizeObserver) flusher.resizeObserver.disconnect();
-		});
 
-		flushers = {};
+		bindRequests();
+		if (!flushers[0]?.flusher) return;
+		clearChat(flushers[0].flusher);
+		if (flushers[0].flusher && flushers[0].resizeObserver) {
+			flushers[0].resizeObserver.disconnect();
+		}
+		/* flushers = {}; */
 		isVod = false;
 	}
 
 	function handleChatMessageEvent(data) {
-		if (isVod || !flushers[id].chatEnabled || loading) return;
-		if (chatFlusherMessages !== null) {
-			messageQueue.push(data);
-			processMessageQueue();
-			return;
+		try {
+			if (isVod || !flushers[0].chatEnabled || loading) return;
+			if (flushers[0].flusher) {
+				data.data.chatroom_id = 0;
+				messageQueue.push(data.data);
+				processMessageQueue();
+				return;
+			}
+		} catch (error) {
+			if (!flushers[0]) initializeChat();
 		}
-
-		/* check if needed */
-		messageQueue.push(data);
-
-		initializeChat();
 	}
 
 	function createMenu(parsedDocument, element, flusher) {
+		element = external ? element : element.closest('.video-js');
 		const menuHtml = parsedDocument.querySelector('.flusher-menu').cloneNode(true);
 		const toggleHtml = parsedDocument.querySelector('.vjs-control.vjs-button').cloneNode(true);
 		const menu = element.querySelector('.flusher-menu');
@@ -518,7 +532,7 @@ window.onload = () => {
 
 			spamBtn.addEventListener('click', function (event) {
 				flushers[id].spamState = (flushers[id].spamState + 1) % spamStates.length;
-				if (flushers[id].spamState === 0 && !flushState) flushers[id].spamState++;
+				if (flushers[id].spamState === 0 && !flushers[id].flushState) flushers[id].spamState++;
 				localStorage.setItem('flusher-spam', JSON.stringify(flushers[id].spamState));
 				spanInsideSpam.textContent = spamStates[flushers[id].spamState];
 				clearChat(flusher);
@@ -611,9 +625,10 @@ window.onload = () => {
 				flushers[id].chatEnabled = newChatEnabled;
 
 				newChatEnabled ? subscribeChannel(flusher, element) : disposeChannel(id);
-				if (newChatEnabled && flusher.attributes['layout'].nodeValue === 'vertical') dragElement(element);
+				if (newChatEnabled && flusher.attributes['layout'].nodeValue === 'vertical') dragElement(flusher);
 
 				clearChat(flusher);
+
 				svgToggle(element, id);
 				toggleEnableMenu();
 				togglePointerEvents(flusher);
@@ -634,7 +649,7 @@ window.onload = () => {
 				flushers[id].flushState = newFlushState;
 
 				/* if (chatEnabled) subscribeChannel(flusher, element); */
-				if (flushers[id].chatEnabled && flusher.attributes['layout'].nodeValue !== 'vertical') dragElement(element);
+				if (flushers[id].chatEnabled && flusher.attributes['layout'].nodeValue !== 'vertical') dragElement(flusher);
 
 				togglePointerEvents(flusher);
 				clearChat(flusher);
@@ -827,11 +842,10 @@ window.onload = () => {
 						}
 
 						const toggle = createMenu(parsedDocument, element, flusher);
-
 						element.parentNode.insertBefore(chatFlusher, element);
 						shadowRoot.appendChild(flusher);
 						checkResize(element, toggle, flusher);
-						bindRequests();
+
 						resolve(flusher);
 					} else {
 						reject(new Error(`Failed to load data. Status: ${xhr.status}`));
@@ -843,42 +857,54 @@ window.onload = () => {
 		});
 	}
 
+	function visibilityChange() {
+		document.addEventListener('visibilitychange', function handleVisibilityChange() {
+			if (!Object.keys(flushers).length) return;
+			for (const key in flushers) {
+				if (!flushers[key].flushState) continue;
+
+				if (document.hidden) {
+					flushers[key].chatEnabledVisible = flushers[key].chatEnabled;
+					flushers[key].chatEnabled = false;
+					console.log(flushers[key].channelName + ' ' + document.hidden + ' ' + flushers[key].chatEnabledVisible);
+
+					clearChat(flushers[key].flusher);
+				} else {
+					console.log(' off ' + flushers[key].channelName + ' ' + document.hidden + ' ' + flushers[key].chatEnabledVisible);
+
+					flushers[key].chatEnabled = flushers[key].chatEnabledVisible;
+				}
+			}
+		});
+	}
+
 	function bindRequests(element) {
 		const chatFlusherStyles = document.getElementById("flusher-css");
-		if (chatFlusherStyles === null) {
-			document.addEventListener('visibilitychange', function handleVisibilityChange() {
-				if (document.hidden && flushers[id].flushState) {
-					chatEnabledVisible = flushers[id].chatEnabled;
-					flushers[id].chatEnabled = false;
-					flushers.forEach(flusher => clearChat(flusher[1]));
-				} else {
-					flushers[id].chatEnabled = chatEnabledVisible;
-				}
-			});
-
+		if (!chatFlusherStyles) {
+			visibilityChange();
 			interceptChatRequests();
-		}
 
-		if (!socket && !external) {
-			socket = window.Echo.connector.pusher;
-			socket.connection.bind("message", boundHandleChatMessageEvent);
-		}
+			if (!socket && !external) {
+				socket = window.Echo.connector.pusher;
+				socket.connection.bind("message", boundHandleChatMessageEvent);
+			}
 
-		function interceptChatRequests() {
-			let open = window.XMLHttpRequest.prototype.open;
-			window.XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
-				if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
-					this.addEventListener("load", function () {
-						let self = this;
-						const response = JSON.parse(self.responseText);
-						if (response.data && response.data.messages) {
-							parseRequest(response);
-						}
-					}, false);
-				}
+			function interceptChatRequests() {
+				let open = window.XMLHttpRequest.prototype.open;
+				window.XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
+					if (url.includes("/api/v2/channels/") && url.includes("/messages")) {
+						this.addEventListener("load", function () {
+							let self = this;
+							const response = JSON.parse(self.responseText);
+							if (response.data && response.data.messages) {
+								parseRequest(response);
+							}
+						}, false);
+					}
 
-				open.apply(this, arguments);
-			};
+					open.apply(this, arguments);
+				};
+			}
 		}
 	}
 
@@ -896,17 +922,19 @@ window.onload = () => {
 		const id = flusher.getAttribute('flusher-chatroom');
 
 		svgToggle(element, id);
-		btnHtml.addEventListener('click', function () {
+		btnHtml.addEventListener('click', function (event) {
+			event.stopPropagation(); // Stop the click event from propagating to document click handler
+			console.log('ok');
 			popupMenu.style.display === "block" ? hideMenu(parent, id) : showMenu();
-			function showMenu() {
-				baseMenu.style.display = 'block';
-				popupMenu.style.display = 'block';
-				svgToggle(element, id);
-				clickOutsideHandlerFunction = (event) => clickOutsideHandler(event, element, id);
-				document.addEventListener('click', clickOutsideHandlerFunction);
-				document.clickOutsideHandlerAdded = true;
-			}
 		});
+
+		function showMenu() {
+			baseMenu.style.display = 'block';
+			popupMenu.style.display = 'block';
+			svgToggle(element, id);
+			clickOutsideHandlerFunction = (event) => clickOutsideHandler(event, element, id);
+			document.addEventListener('click', clickOutsideHandlerFunction);
+		}
 		return btnHtml;
 	}
 
@@ -928,10 +956,10 @@ window.onload = () => {
 		const parent = external ? element.parentNode : element;
 		const popupMenu = parent.querySelector('.flusher-menu');
 		const toggle = parent.querySelector(external ? '.svg-toggle' : '.flusher-toggle');
-		/* if (popupMenu !== null && !popupMenu.contains(event.target) && popupMenu.style.display === 'block') {
+		if (popupMenu !== null && !popupMenu.contains(event.target) && popupMenu.style.display === 'block') {
 			if (toggle.contains(event.target) || event.target === toggle) return;
-			hideMenu(element,chatroom_id);
-		} */
+			hideMenu(element, chatroom_id);
+		}
 	}
 
 	function svgToggle(flusherParent, chatroom_id) {
@@ -948,20 +976,28 @@ window.onload = () => {
 	}
 
 	function parseRequest(response) {
-		if (!chatEnabled || loading) return;
-		if (flusher !== null) {
+		console.log(response);
+		if (isVod) {
+			if (!flushers[0]?.chatEnabled || loading) return;
+			if (flushers[0]?.flusher) {
+				response.data.messages.forEach(function (message) {
+					messageQueue.push(message);
+				});
+				processMessageQueue();
+			} else {
+				setTimeout(function () {
+					if (response.data.messages.length > 0) {
+						/* check if needed */
+						messageQueue.push(response.data.messages[0]);
+					}
+					initializeChat();
+				}, 1000);
+			}
+		} else {
 			response.data.messages.forEach(function (message) {
 				messageQueue.push(message);
 			});
-			processMessageQueue();
-		} else {
-			setTimeout(function () {
-				if (response.data.messages.length > 0) {
-					/* check if needed */
-					messageQueue.push(response.data.messages[0]);
-				}
-				initializeChat();
-			}, 1000);
+			initializeChat();
 		}
 	}
 
@@ -1150,8 +1186,8 @@ window.onload = () => {
 		data.container.classList.add('flusher-message');
 		data.container.addEventListener("animationend", function () {
 			try {
-				flushers[id].flusher.removeChild(this);
-				flushers[id].displayedMessages.delete(data.key);
+				flushers[data.chatroom_id].flusher.removeChild(this);
+				flushers[data.chatroom_id].displayedMessages.delete(data.key);
 			} catch { }
 		});
 
@@ -1159,11 +1195,6 @@ window.onload = () => {
 	}
 
 	function appendMessage(queueItem) {
-		if (flushers[queueItem.chatroom_id].flusher === null) {
-			isProcessingMessages = false;
-			return;
-		}
-
 		elementQueue.push(queueItem);
 		processElementQueue();
 		isProcessingMessages = false;
@@ -1500,8 +1531,10 @@ window.onload = () => {
 		introContent.style.setProperty('--row', 0);
 		introContent.classList.add('flusher-message');
 
-		show ? selectRow({message:
-			 introContent, messageKey}) : testDimensions();
+		show ? selectRow({
+			message:
+				introContent, messageKey
+		}) : testDimensions();
 		function testDimensions() {
 			const parent = external ? flusher : document.body;
 			parent.append(introContent);
