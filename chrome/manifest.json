@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Kick Chat Flusher",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "Enhances the kick.com viewing experience by providing a fullscreen chat overlay.",
   "author": "spaghetto",
   "homepage_url": "https://github.com/r0808914/KickChatOverlay",
   "action": {
     "default_icon": "icons/icon.png",
-    "default_popup": "popup.html"
+    "default_popup": "popup/popup.html"
   },
   "icons": {
     "32": "icons/32.png",
@@ -16,8 +16,9 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "content.js",
-        "data.html"
+        "lib/**",
+        "modules/**",
+        "content.js"
       ],
       "matches": [
         "*://*.kick.com/*",

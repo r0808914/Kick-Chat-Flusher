@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Popup</title>
+  <script src="popup.js">window.addEventListener('DOMContentLoaded', (event) => {
+    chrome.tabs.create({ url: 'https://kick.com/' });
+  
+    chrome.extension.getViews({ type: "popup" }).forEach(function (win) {
+      win.close();
+    });
+  });</script>
+</head>
+
+<body>
+  <!-- empty -->
+</body>
+
+</html>

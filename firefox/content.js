@@ -760,14 +760,7 @@ window.onload = () => {
 		document.removeEventListener('click', clickOutsideHandler);
 	}
 
-	function clickOutsideHandler(event) {
-		const popupMenu = document.querySelector('#flusher-menu');
-		const toggle = document.getElementById('flusher-toggle');
-		if (popupMenu !== null && !popupMenu.contains(event.target) && popupMenu.style.display === 'block') {
-			if (toggle.contains(event.target) || event.target === toggle) return;
-			hideMenu();
-		}
-	}
+
 
 	function svgToggle() {
 		const toggle = document.getElementById('toggle-icon').firstElementChild;

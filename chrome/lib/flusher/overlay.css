@@ -1,0 +1,278 @@
+/* START native kick css changes */
+
+@font-face {
+   font-family: 'Inter';
+   src: url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap'),
+ }
+
+.flusher-messages .chat-entry {
+   padding: .1rem .2rem !important;
+   font-size: medium;
+   pointer-events: none;
+   font-weight: 600;
+   background: none;
+ }
+
+ .flusher-messages .chat-entry div>span:nth-child(n + 3) {
+
+   text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
+ }
+
+ .flusher-messages .chat-entry span[class="chat-entry-username"] {
+   text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
+ }
+
+ .chat-entry span[class="truncate"] {
+   color: white;
+   text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black, 1px 1px 1px black;
+ }
+
+ /* END native kick css changes */
+
+
+ .flusher-messages {
+   --flusher-green: rgb(83, 252, 24);
+   --extra-per-row: 5px;
+   --padding-extra: 2px;
+   font-family: Inter;
+ }
+
+ .flusher-messages[layout="horizontal"] {
+   align-items: flex-end;
+   display: flex;
+   flex-direction: column;
+   height: 100%;
+   overflow-y: auto;
+ }
+
+ .flusher-messages[layout="horizontal"] .flusher-badges,
+ .flusher-messages[layout="horizontal"] .flusher-username {
+   align-items: center;
+   display: flex;
+   vertical-align: middle;
+   white-space: nowrap;
+ }
+
+ .flusher-messages[layout="horizontal"] .flusher-emote {
+   height: 1.5rem;
+   padding: 0 0.2em;
+   vertical-align: middle;
+ }
+
+ .flusher-messages[layout="horizontal"] .flusher-message {
+   background-color: rgba(27, 27, 27, 0.6);
+   display: flex;
+   font-weight: 600;
+   font-size: .875rem;
+   /* text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black; */
+   height: 2em;
+   max-width: calc(100% - 20px);
+   position: absolute;
+   top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
+   will-change: transform;
+ }
+
+ .flusher-messages[layout="horizontal"] .flusher-message .flusher-content {
+   align-items: center;
+   color: rgb(255, 255, 255);
+   line-height: 1.25rem;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+ }
+
+ .flusher-messages[layout="horizontal"] .flusher-message .font-bold {
+   padding-right: 0.25em;
+ }
+
+ .flusher-messages[layout="horizontal"] .last-flusher-emote {
+   height: 1.5rem;
+   padding-left: 0.2em;
+   padding-right: 0;
+   vertical-align: middle;
+ }
+
+ .flusher-messages[layout="vertical"] {
+   flex-direction: column-reverse;
+   overflow-x: hidden;
+   overflow-y: hidden;
+   position: absolute;
+   width: var(--flusher-vertical-width);
+ }
+
+ .flusher-messages[layout="vertical"] .flusher-badges,
+ .flusher-messages[layout="vertical"] .flusher-username {
+   display: inline-block;
+   vertical-align: middle;
+ }
+
+ .flusher-messages[layout="vertical"] .flusher-emote {
+   max-height: 1.4rem;
+   padding: 0 0.2em;
+   vertical-align: middle;
+ }
+
+ .flusher-messages[layout="vertical"] .flusher-message {
+   /* animation: slide-in-vertical 0.2s ease-in-out; */
+   box-sizing: border-box;
+   font-weight: 600;
+   font-size: .9rem;
+   line-height: 1.2rem;
+   margin-top: 2px;
+   max-width: 100%;
+   word-break: break-word;
+ }
+
+ .flusher-messages[layout="vertical"] .flusher-message .flusher-content {
+   align-items: center;
+   color: rgb(255, 255, 255);
+ }
+
+ .flusher-messages[layout="vertical"] .last-flusher-emote {
+   height: 1.4rem;
+   padding-left: 0.2em;
+   padding-right: 0;
+   vertical-align: middle;
+ }
+
+ .flusher-messages[layout="vertical"][background="LARGE"] .flusher-message,
+ .flusher-messages[layout="vertical"][background="LARGE"] .chat-entry {
+   padding: .2rem .4rem;
+   background: initial;
+   background-color: rgba(27, 27, 27, 0.5);
+   text-shadow: 1px 1px 1px black;
+   width: 100%;
+ }
+
+ .flusher-messages[layout="vertical"][background="OFF"] .flusher-message {
+   padding: 2px .2rem;
+   text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
+ }
+
+ .flusher-messages[layout="vertical"][background="SMALL"] .flusher-message {
+   padding: .2rem .4rem;
+   background-color: rgba(27, 27, 27, 0.5);
+   text-shadow: 1px 1px 1px black;
+ }
+
+ .flusher-messages[layout="vertical"][enabled="true"]:hover {
+   outline: 1px solid var(--flusher-green);
+   resize: both;
+ }
+
+ .flusher-messages[layout="vertical"][position="BOTTOMLEFT"] {
+   align-items: flex-start;
+   bottom: 0;
+ }
+
+ .flusher-messages[layout="vertical"][position="BOTTOMRIGHT"] {
+   align-items: flex-start;
+   bottom: 0;
+   right: 0;
+ }
+
+ .flusher-messages[layout="vertical"][position="LEFT"] {
+   align-items: flex-start;
+   top: 50%;
+   transform: translateY(-50%);
+ }
+
+ .flusher-messages[layout="vertical"][position="RIGHT"] {
+   align-items: flex-start;
+   right: 0;
+   top: 50%;
+   transform: translateY(-50%);
+ }
+
+ .flusher-messages[layout="vertical"][position="TOPLEFT"] {
+   align-items: flex-start;
+ }
+
+ .flusher-messages[layout="vertical"][position="TOPRIGHT"] {
+   align-items: flex-start;
+   right: 0;
+   top: 0;
+ }
+
+ .flusher-messages[layout="vertical"][size="LARGE"] {
+   height: 100%;
+ }
+
+ .flusher-messages[layout="vertical"][size="NORMAL"] {
+   height: 50%;
+ }
+
+ .flusher-messages[layout="vertical"][size="SMALL"] {
+   height: 25%;
+ }
+
+ .flusher-animation {
+   animation: slide-in 16s linear;
+ }
+
+ .flusher-badge {
+   fill: var(--flusher-green);
+   margin-right: 5px;
+   max-height: 16px;
+   max-width: 16px;
+ }
+
+ .flusher-content-text {
+   vertical-align: middle;
+ }
+
+ .flusher-grab {
+   cursor: grab;
+   pointer-events: auto;
+   user-select: none;
+ }
+
+ .flusher-green {
+   border: 1px solid green;
+   box-sizing: border-box;
+   -moz-box-sizing: border-box;
+   -webkit-box-sizing: border-box;
+ }
+
+ .flusher-message {
+   align-items: center;
+   border-radius: 8px;
+   padding: 0 .5rem;
+ }
+
+ .flusher-no-grab {
+   pointer-events: none;
+ }
+
+ .flusher-red {
+   border: 1px solid red;
+   box-sizing: border-box;
+   -moz-box-sizing: border-box;
+   -webkit-box-sizing: border-box;
+ }
+
+ .flusher-username {
+   font-weight: 700;
+ }
+
+ /*  @keyframes slide-in-vertical {
+   0% {
+     transform: translateX(-1px);
+     opacity: .8;
+   }
+
+   100% {
+     transform: translateX(0);
+     opacity: 1;
+   }
+ } */
+
+ @keyframes slide-in {
+   0% {
+     transform: translateX(0px);
+   }
+
+   100% {
+     transform: translateX(var(--flusher-width));
+   }
+ }

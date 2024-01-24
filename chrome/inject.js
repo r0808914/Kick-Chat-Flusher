@@ -1,17 +1,6 @@
-; (function () {
-
-  const b = typeof browser !== 'undefined' ? browser : chrome
-
-  const dataFileURL = chrome.runtime.getURL('data.html');
-
-  const metaTag = document.createElement('meta');
-  metaTag.name = 'flusher-data';
-  metaTag.content = dataFileURL;
-  document.head.appendChild(metaTag);
-
-  const script = document.createElement('script')
-  script.src = b.runtime.getURL('content.js')
-
-  document.documentElement.appendChild(script)
-})()
-
+(function () {
+  console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Inject');
+  const b = typeof browser !== 'undefined' ? browser : chrome;
+  const content = b.runtime.getURL('./modules/content.js');
+  import(content);
+})();
