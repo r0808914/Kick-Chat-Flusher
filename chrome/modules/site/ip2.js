@@ -50,24 +50,4 @@ function initIp2() {
 				.catch(error => console.error('Error fetching data:', error));
 		}
 	}
-
-	function addPusher() {
-		const pusherScript = document.createElement('script');
-		pusherScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/pusher/8.3.0/pusher.min.js';
-		pusherScript.integrity = 'sha512-tXL5mrkSoP49uQf2jO0LbvzMyFgki//znmq0wYXGq94gVF6TU0QlrSbwGuPpKTeN1mIjReeqKZ4/NJPjHN1d2Q==';
-		pusherScript.crossOrigin = 'anonymous';
-		pusherScript.referrerPolicy = 'no-referrer';
-		document.head.appendChild(pusherScript);
-
-		document.head.appendChild(getFont());
-	}
-
-	function setupPusher() {
-		if (socket !== null) return;
-		socket = new Pusher('eb1d5f283081a78b932c', {
-			cluster: 'us2',
-			protocol: 'wss',
-			encrypted: true,
-		});
-	}
 }

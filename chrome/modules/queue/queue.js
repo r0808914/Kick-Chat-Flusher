@@ -1,95 +1,98 @@
-export function getMessageKey(key, value, chatroom_id, flusherSettings) {
+import { selectRow } from '../layout/horizontal.js';
+import { appendVertical } from "../layout/vertical.js";
+
+export function getMessageKey(key, value, flusher) {
 	const keyValue = key + "-" + value;
-	const dupe = flusherSettings.displayedMessages.has(keyValue);
-	const ignore = ((flusherSettings.spamState === 2 && dupe) || (flusherSettings.spamState === 0 && dupe && flusherSettings.lastRow > 1)) ? true : false;
-	if (!ignore) flusherSettings.displayedMessages.add(keyValue);
+	const dupe = flusher.props.displayedMessages.has(keyValue);
+	const ignore = ((flusher.states.spamState === 2 && dupe) || (flusher.states.spamState === 0 && dupe && flusher.lastRow > 1)) ? true : false;
+	if (!ignore) flusher.props.displayedMessages.add(keyValue);
 	return { key: keyValue, ignore: ignore };
 }
 
-export async function processMessageQueue(flusherSettings) {
+export async function processMessageQueue(flusher) {
 	try {
-		if (flusherSettings.isProcessingMessages) return;
-		flusherSettings.isProcessingMessages = true;
+		if (flusher.isProcessingMessages) return;
+		flusher.isProcessingMessages = true;
 
-		let queueItem = flusherSettings.messageQueue.shift();
+		let queueItem = flusher.props.messageQueue.shift();
 		if (!queueItem) {
-			flusherSettings.isProcessingMessages = false;
+			flusher.isProcessingMessages = false;
 			return;
 		}
 
-		queueItem.chatroom_id = flusherSettings.external ? queueItem?.chatroom_id : 0;
+		queueItem.chatroom_id = flusher.external ? queueItem?.chatroom_id : 0;
 
-		const lastRow = flusherSettings.lastRow;
-		const maxRows = flusherSettings.maxRows;
+		const lastRow = flusher.props.lastRow;
+		const maxRows = flusher.props.maxRows;
 
 		if ((lastRow === null || lastRow >= maxRows)) {
-			flusherSettings.isProcessingMessages = false;
+			flusher.isProcessingMessages = false;
 			return;
 		}
 
 		const eventType = queueItem.event ?? queueItem.eventName;
 
 		if (eventType === "App\\Events\\ChatMessageEvent") {
-			createMessage(queueItem,flusherSettings);
+			createMessage(queueItem, flusher);
 		} else if (queueItem.type === "message") {
-			createMessage(queueItem,flusherSettings);
+			createMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\UserBannedEvent") {
-			createUserBanMessage(queueItem,flusherSettings);
+			createUserBanMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
-			createGiftedMessage(queueItem,flusherSettings);
+			createGiftedMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\FollowersUpdated") {
-			createFollowersMessage(queueItem,flusherSettings);
+			createFollowersMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\StreamHostEvent") {
-			createHostMessage(queueItem,flusherSettings);
+			createHostMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\SubscriptionEvent") {
-			createSubMessage(queueItem,flusherSettings);
+			createSubMessage(queueItem, flusher);
 		} else {
-			flusherSettings.isProcessingMessages = false;
+			flusher.props.isProcessingMessages = false;
 			processMessageQueue();
 		}
 	}
 	catch (error) {
-		isProcessingMessages = false;
-		processMessageQueue(flusherSettings);
+		flusher.props.isProcessingMessages = false;
+		processMessageQueue(flusher);
 		console.log(error);
 	}
 }
 
-function processElementQueue() {
+export function processElementQueue(flusher) {
 	try {
-		if (isProcessingElements) return;
-		isProcessingElements = true;
+		if (flusher.props.isProcessingElements) return;
+		flusher.props.isProcessingElements = true;
 
-		const queueItem = elementQueue.shift();
+		const queueItem = flusher.props.elementQueue.shift();
 		if (!queueItem) {
-			isProcessingElements = false;
+			flusher.props.isProcessingElements = false;
 			return;
 		}
 
-		const flushState = flusherSettings.flushers[queueItem.chatroom_id].flushState;
+		const flushState = flusher.props.flushState;
 
-		if (!flusherSettings.flushers[queueItem.chatroom_id].chatEnabled) {
-			isProcessingElements = false;
+		if (!flusher.props.chatEnabled) {
+			flusher.props.isProcessingElements = false;
 			return;
 		}
 
-		flushState ? selectRow(queueItem) : appendVertical(queueItem);
+		flushState ? selectRow(queueItem, flusher) : appendVertical(queueItem, flusher);
 
-		if (isVod || flushState) {
-			const queueLength = elementQueue.length;
+		if (flusher.props.isVod || flushState) {
+			const queueLength = flusher.props.elementQueue.length;
 			let wait = Math.trunc(4000 / queueLength);
-			if (queueLength < 4 && isVod && flushState) wait = 1000;
+			if (queueLength < 4 && flusher.props.isVod && flusher.props.flushState) wait = 1000;
 			setTimeout(function () {
-				isProcessingElements = false;
-				processElementQueue();
+				flusher.props.isProcessingElements = false;
+				processElementQueue(flusher);
 			}, wait);
 		} else {
-			isProcessingElements = false;
-			processElementQueue();
+			flusher.props.isProcessingElements = false;
+			processElementQueue(flusher);
 		}
 	} catch (error) {
-		isProcessingElements = false;
-		processElementQueue();
+		flusher.props.isProcessingElements = false;
+		processElementQueue(flusher);
 		console.log(error);
 	}
 }
@@ -101,14 +104,14 @@ function appendMessage(queueItem) {
 	processMessageQueue();
 }
 
-async function createMessage(message,flusherSettings) {
+async function createMessage(message, flusher) {
 	const sender = message.sender;
 	const username = sender.username;
 	const content = message.content;
 
-	const reduced = flusherSettings.flushers.spamState === 2 ? reduceRepeatedSentences(content) : content;
+	const reduced = flusher.props.flushers.spamState === 2 ? reduceRepeatedSentences(content) : content;
 
-	const messageKeyData = getMessageKey(sender.id, reduced, message.chatroom_id);
+	const messageKeyData = getMessageKey(sender.id, reduced, flusher);
 	if (messageKeyData.ignore === true) {
 		isProcessingMessages = false;
 		processMessageQueue();
@@ -194,7 +197,7 @@ async function createMessage(message,flusherSettings) {
 		const badges = data.sender.identity.badges || [];
 		const badgeElements = [];
 
-		flusherSettings.isProcessingMessages = false;
+		props.isProcessingMessages = false;
 
 		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
 		if (firstChatIdentity !== null) {
@@ -208,9 +211,9 @@ async function createMessage(message,flusherSettings) {
 					badgeText = `${badge.type}-${badge.count}`;
 				}
 
-				const cachedBadge = flusherSettings.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+				const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
 				if (cachedBadge) {
-					flusherSettings.badgeElements.push(cachedBadge.html);
+					props.badgeElements.push(cachedBadge.html);
 					return;
 				}
 
@@ -220,7 +223,7 @@ async function createMessage(message,flusherSettings) {
 					const newImg = document.createElement('img');
 					newImg.src = imgUrl;
 					newImg.classList.add('flusher-badge');
-					flusherSettings.badgeCache.push({
+					props.badgeCache.push({
 						type: badgeText,
 						html: newImg
 					});
@@ -234,7 +237,7 @@ async function createMessage(message,flusherSettings) {
 					const svgCopy = svgElement.cloneNode(true);
 					svgCopy.classList.add('flusher-badge');
 
-					flusherSettings.badgeCache.push({
+					props.badgeCache.push({
 						type: badgeText,
 						html: svgCopy
 					});
@@ -264,7 +267,7 @@ async function createMessage(message,flusherSettings) {
 			if (badge.count) {
 				badgeText = `${badge.type}-${badge.count}`;
 			}
-			const cachedBadge = flusherSettings.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+			const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
 			if (cachedBadge) {
 				badgeArray.push(cachedBadge.html);
 				badgeCount++;
@@ -408,8 +411,6 @@ function createGiftedMessage(data, videoElement) {
 	giftedContent.appendChild(giftedSpan);
 	appendMessage(messageKey, giftedContent, null, videoElement);
 }
-
-
 
 function createFollowersMessage(data, videoElement) {
 	const followersCount = data.followersCount;

@@ -1,4 +1,5 @@
-import { visibilityChange } from "./utils.js";
+import { visibilityChange } from "../utils/utils.js";
+import { processMessageQueue, processElementQueue } from "../queue/queue.js";
 
 class FlusherMessages {
    constructor() {
@@ -34,7 +35,7 @@ class FlusherMessages {
       channel.bind_global(function (eventName, data) {
          document.body.contains(iframe) ? onMessage(id, data) : disposeChannel(id);
          function onMessage(id, data) {
-            if (!flushers[id].chatEnabled || data === null || loading) return;
+            if (!flusher.chatEnabled || data === null || loading) return;
             messageQueue.push(data);
             processMessageQueue();
          }
@@ -44,9 +45,8 @@ class FlusherMessages {
    disposeChannel(id) {
       if (external) return;
       socket.unsubscribe(`chatrooms.${id}.v2`);
-      console.log(`dispose ${flushers[id].channelName}.${id}`);
+      console.log(`dispose ${flusher.channelName}.${id}`);
    }
-
 
    addPusher() {
       const pusherScript = document.createElement('script');
@@ -71,8 +71,8 @@ class FlusherMessages {
    parseRequest(response) {
       console.log(response);
       if (isVod) {
-         if (!flusherSettings?.chatEnabled || flusherSettings.loading) return;
-         if (flusherSettings?.flusher) {
+         if (!props?.chatEnabled || props.loading) return;
+         if (props?.flusher) {
             response.data.messages.forEach(function (message) {
                messageQueue.push(message);
             });
@@ -103,7 +103,7 @@ class FlusherMessages {
       channel.bind_global(function (eventName, data) {
          document.body.contains(iframe) ? onMessage(id, data) : disposeChannel(id);
          function onMessage(id, data) {
-            if (!flusherSettings.flushers[id].chatEnabled || data === null || flusherSettings.loading) return;
+            if (!props.flusher.chatEnabled || data === null || props.loading) return;
             messageQueue.push(data);
             processMessageQueue();
          }
@@ -111,22 +111,22 @@ class FlusherMessages {
    }
 
    disposeChannel(id) {
-      if (flusherSettings.external) return;
+      if (props.external) return;
       socket.unsubscribe(`chatrooms.${id}.v2`);
-      console.log(`dispose ${flusherSettings.flushers[id].channelName}.${id}`);
+      console.log(`dispose ${props.flusher.channelName}.${id}`);
    }
 
    handleChatMessageEvent(data) {
       try {
-         if (flusherSettings.isVod || !flusherSettings.chatEnabled || flusherSettings.loading || !flusherSettings.flushState) return;
-         if (flusherSettings.flusher) {
+         if (props.isVod || !props.chatEnabled || props.loading || !props.flushState) return;
+         if (props.flusher) {
             data.data.chatroom_id = 0;
             messageQueue.push(data.data);
             processMessageQueue();
             return;
          }
       } catch (error) {
-         if (!flusherSettings) initializeChat();
+         if (!props) initializeChat();
       }
    }
 
@@ -153,32 +153,18 @@ class FlusherMessages {
       setTimeout(() => {
          nativeChat.childNodes.forEach(childNode => {
             const clonedNode = childNode.cloneNode(true);
-            flusher.appendChild(clonedNode);
+            flusher.props.elementQueue.push(clonedNode);
+            processElementQueue(flusher);
          });
-      }, 150);
-
-      function cloneAndAppend(node) {
-         setTimeout(() => {
-            const clonedNode = node.cloneNode(true);
-            if (node.getAttribute('data-chat-entry') === 'history_breaker') return;
-            const lastItem = flusher.firstChild;
-            if (lastItem) {
-               flusher.insertBefore(clonedNode, flusher.firstChild);
-            } else {
-               flusher.append(clonedNode);
-            }
-            if (flusher.children.length > flusherSettings.maxRows) {
-               /* flusherSettings.displayedMessages.delete(messageKey); */
-               flusher.removeChild(flusher.lastChild);
-            }
-         }, 150);
-      }
+      }, 100);
 
       this.nativeChatObserver = new MutationObserver(mutations => {
          mutations.forEach(mutation => {
             if (mutation.type === 'childList') {
                mutation.addedNodes.forEach(addedNode => {
-                  cloneAndAppend(addedNode);
+                  const clonedNode = addedNode.cloneNode(true);
+                  flusher.props.elementQueue.push(clonedNode);
+                  processElementQueue(flusher);
                });
             }
          });
@@ -188,44 +174,30 @@ class FlusherMessages {
       this.nativeChatObserver.observe(nativeChat, observerConfig);
    }
 
-   bindRequests(flusherSettings, flusher) {
+   bindRequests(flusher) {
       console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Bind Requests');
-      if (!flusherSettings.isVod && !flusherSettings.flushState) this.interceptNative(flusher);
+      if (!flusher.props.external) this.interceptNative(flusher);
 
-      if (!this.socket) {
-         visibilityChange();
-         if (flusherSettings.external) this.interceptChatRequests(flusherSettings);
+      if (!this.socket && flusher.props.external) {
+         /* visibilityChange(); */
+         if (flusher.props.external) this.interceptChatRequests();
 
          /* messages over pusher */
-         if (!this.socket && !flusherSettings.external) {
-          /*   this.socket = window.Echo.connector.pusher; */
-          this.waitForPusher().then((pusher) => {
-            // Now you can use 'pusher' safely
-            console.log('Pusher is ready:', pusher);
-            this.socket.connection.bind("message", this.boundHandleChatMessageEvent);
+         if (!this.socket && !flusher.props.external) {
+            /*   this.socket = window.Echo.connector.pusher; */
 
+            this.socket.connection.bind("message", this.boundHandleChatMessageEvent);
             // Your code that depends on 'pusher' goes here
-          });
          }
       }
    }
 
- waitForPusher() {
-      return new Promise((resolve) => {
-        function checkPusher() {
-          if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
-            resolve(window.Echo.connector.pusher);
-          } else {
-            console.log('failed');
-            // Retry after a short delay
-            setTimeout(checkPusher, 500);
-          }
-        }
-    
-        // Start the initial check
-        checkPusher();
-      });
-    }
+   unbindRequests(flusher) {
+      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Unbind Requests');
+      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Dispose Native Chat');
+      if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
+      this.nativeChatObserver = null;
+   }
 }
 
 const FlusherMessageProvider = new FlusherMessages();

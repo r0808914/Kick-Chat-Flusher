@@ -14,7 +14,6 @@
  }
 
  .flusher-messages .chat-entry div>span:nth-child(n + 3) {
-
    text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
  }
 

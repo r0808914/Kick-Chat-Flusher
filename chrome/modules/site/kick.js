@@ -1,45 +1,42 @@
 import { Flusher } from '../flusher/flusher.js';
-
+import { createChat } from '../interface/overlay.js';
 class Kick {
-  static initialized = false;
-  static loading = false;
 
   static init() {
-    if (!Kick.initialized && !Kick.loading) {
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK');
-      Kick.loading = true;
+    console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Initialize');
 
+    let stopObserver = false;
+
+    if (document.querySelector(".video-js")) {
+      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK video found');
       const video = document.querySelector('video');
-      if (document.querySelector("video") && document.querySelector(".video-js")) {
-        const flusher = new Flusher(video, "KICK", 0);
-        return;
-      }
-
-      const observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-          if (mutation.addedNodes) {
-            mutation.addedNodes.forEach(function (node) {
-              if (document.querySelector(".video-js")) {
-                observer.disconnect();
-                const video = document.querySelector('video');
-                const flusher = new Flusher(video, "KICK", 0);
-                return;
-              }
-            });
-          }
-        });
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-
-      setTimeout(function () {
-        observer.disconnect();
-        Kick.loading = false;
-      }, 5000);
+      const flusher = new Flusher(video, "KICK", 0);
+      createChat(flusher);
+      return;
     }
+
+    console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK start video observer');
+    const observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (!stopObserver && mutation.addedNodes) {
+          mutation.addedNodes.forEach(function (node) {
+            if (document.querySelector(".video-js")) {
+              console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK stop video observer');
+              observer.disconnect();
+              stopObserver = true;
+              const video = document.querySelector('video');
+              const flusher = new Flusher(video, "KICK", 0);
+              createChat(flusher);
+            }
+          });
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
   }
 }
 

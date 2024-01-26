@@ -1,8 +1,8 @@
-export function dragElement(elmnt) {
+export function dragElement(flusher) {
 	var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 	var isResizing = false;
 
-	elmnt.onmousedown = function (e) {
+	flusher.container.onmousedown = function (e) {
 		e = e || window.event;
 		e.preventDefault();
 
@@ -28,15 +28,15 @@ export function dragElement(elmnt) {
 		pos3 = e.clientX;
 		pos4 = e.clientY;
 
-		elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-		elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+		flusher.container.style.top = (flusher.container.offsetTop - pos2) + "px";
+		flusher.container.style.left = (flusher.container.offsetLeft - pos1) + "px";
 	}
 
 	function resizeElement(e) {
 		e = e || window.event;
 		e.preventDefault();
-		elmnt.style.width = (elmnt.offsetWidth - (pos3 - e.clientX)) + "px";
-		elmnt.style.height = (elmnt.offsetHeight - (pos4 - e.clientY)) + "px";
+		flusher.container.style.width = (flusher.container.offsetWidth - (pos3 - e.clientX)) + "px";
+		flusher.container.style.height = (flusher.container.offsetHeight - (pos4 - e.clientY)) + "px";
 		pos3 = e.clientX;
 		pos4 = e.clientY;
 	}
@@ -53,7 +53,7 @@ export function dragElement(elmnt) {
 	}
 
 	function isInResizeHandle(e) {
-		var rect = elmnt.getBoundingClientRect();
+		var rect = flusher.container.getBoundingClientRect();
 		var handleSize = 10;
 		return (
 			e.clientX >= rect.right - handleSize &&
