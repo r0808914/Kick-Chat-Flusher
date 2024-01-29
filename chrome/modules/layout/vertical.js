@@ -1,10 +1,9 @@
 export function appendVertical(message, flusher) {
-	if(!message) return;
+	if (!message) return;
 	const lastItem = flusher.container.firstChild;
 
 	if (flusher.props.external) {
-		const timestamp = message.created_at;
-		timestamp = new Date(timestamp);
+		const timestamp = new Date(message.created_at);
 		message.container.dataset.timestamp = timestamp;
 		if (lastItem) {
 			const lastTimestamp = new Date(lastItem.dataset.timestamp ?? 0);
@@ -15,7 +14,7 @@ export function appendVertical(message, flusher) {
 				while (current) {
 					const currentTimestamp = new Date(current.dataset.timestamp);
 					if (timestamp > currentTimestamp) {
-						flusher.container.insertBefore(flusher.container, current);
+						flusher.container.insertBefore(message.container, current);
 						break;
 					}
 					current = current.previousSibling;
@@ -34,6 +33,13 @@ export function appendVertical(message, flusher) {
 	}
 
 	while (flusher.container.children.length > flusher.props.maxRows) {
-		flusher.container.removeChild(flusher.container.lastChild);
+		const oldest = flusher.container.lastChild;
+		if (flusher.states.spamState !== 1) {
+			const entryId = oldest?.getAttribute('data-chat-entry');
+			if(entryId)
+			flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+		}
+
+		oldest.remove();
 	}
 }

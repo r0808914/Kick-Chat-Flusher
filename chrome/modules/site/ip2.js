@@ -1,53 +1,89 @@
-function initIp2() {
-	/* check wss chatroom channels in kick */
+import { Flusher } from '../flusher/flusher.js';
+import { createChat } from '../interface/overlay.js';
 
-	addPusher();
+class Ip2 {
 
-	const parentChannel = document.getElementById('channels');
+	static async init() {
+		console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Initialize');
 
-	parentChannel.addEventListener('click', function (event) {
-		const clickedChannel = event.target.closest('.channel');
-		if (clickedChannel) {
-			const mutationCallback = function (mutationsList, observer) {
-				for (const mutation of mutationsList) {
-					if (mutation.type === 'childList') {
-						const itemBoxElements = document.querySelectorAll('.item-box');
-						itemBoxElements.forEach((itemBoxElement) => {
-							const iframes = itemBoxElement.querySelectorAll('iframe');
-							iframes.forEach((iframe) => {
-								if (iframe.hasAttribute('flusher')) return;
-								if (!Object.keys(flushers).length) {
-									setupPusher();
-									visibilityChange();
+		const targetNode = await waitForCondition(() => document.getElementById('streamViewerContainer'));
+		console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Container found');
+
+		const callback = async function (mutationsList, observer) {
+			for (const mutation of mutationsList) {
+				if (mutation.type === 'childList') {
+					if (mutation.addedNodes.length > 0) {
+						for (const node of mutation.addedNodes) {
+							if (targetNode.contains(node) && node.parentElement === targetNode) {
+								if (node.id && !node.id.includes('-chat-') && node.id.includes('-video-')) {
+									const hasFlusherAttribute = node.hasAttribute('flusher');
+									if (hasFlusherAttribute) return;
+									const iframe = await waitForCondition(() => node.querySelector('iframe'));
+									console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m New video found');
+									node.setAttribute('flusher', '');
+									createChannel(iframe);
 								}
-								observer.disconnect();
-								createChannel(iframe);
-							});
-						});
+							}
+						}
 					}
 				}
-			};
+			}
+		};
 
-			const observer = new MutationObserver(mutationCallback);
-			const targetNode = document.body;
-			const config = { childList: true, subtree: true };
-			observer.observe(targetNode, config);
-		}
-	});
+		const observer = new MutationObserver(callback);
+		const config = { childList: true, subtree: false };
+		observer.observe(targetNode, config);
 
-	function createChannel(iframe) {
-		const src = iframe.getAttribute('src');
-		if (src && src.includes('kick.com')) {
-			const channelName = new URL(src).pathname.slice(1);
-			fetch(`https://kick.com/api/v1/channels/${channelName}`)
-				.then(response => response.json())
-				.then(data => {
-					const chatroomId = data && data.chatroom && data.chatroom.id;
-					createChat(iframe, chatroomId)
-						.then(flusher => subscribeChannel(flusher, iframe))
-						.catch(error => console.error('Error creating chat:', error));
-				})
-				.catch(error => console.error('Error fetching data:', error));
+		function createChannel(iframe) {
+			const src = iframe.getAttribute('src');
+			if (src && src.includes('kick.com')) {
+				const channelName = new URL(src).pathname.slice(1);
+				console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Fetch Channel Data');
+				fetch(`https://kick.com/api/v1/channels/${channelName}`)
+					.then(response => response.json())
+					.then(data => {
+						const chatroomId = data && data.chatroom && data.chatroom.id;
+						console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m chatroomId: ${chatroomId}`);
+
+						const flusher = new Flusher(iframe, "IP2", chatroomId);
+						flusher.props.hostId = data.id;
+
+						console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Badges`, data.subscriber_badges);
+						flusher.props.badgeCache.push(...data.subscriber_badges);
+
+						createChat(flusher);
+					})
+					.catch(error => console.error('Error fetching data:', error));
+			}
 		}
+
+		function waitForCondition(conditionCallback) {
+			return new Promise((resolve, reject) => {
+				const checkCondition = () => {
+					const result = conditionCallback();
+					if (result) {
+						resolve(result);
+						return;
+					}
+					setTimeout(checkCondition, 500);
+				};
+
+				checkCondition();
+			});
+		}
+
+		/* try {
+			const chatFrame = document.createElement('iframe');
+			chatFrame.src = 'https://kick.com/USERNAME/chatroom';
+			document.body.append(chatFrame);
+			const elementText = chatFrame.$eval('body', (element) => {
+				return element.textContent;
+			});
+			console.log('Element Text inside iframe:', elementText);
+		} catch (error) {
+			console.error('Error:', error);
+		} */
 	}
 }
+
+export default Ip2;

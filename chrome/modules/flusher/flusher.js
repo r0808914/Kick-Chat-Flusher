@@ -1,14 +1,21 @@
 import { FlusherStates } from './states.js';
 import { FlusherProps } from './props.js';
+import { FlusherMessages } from './messages.js';
+import { visibilityChange } from "../utils/utils.js";
+
+import Badges from '../utils/badges.js';
 
 export class Flusher {
 	constructor(video, domain, chatroomId) {
 		this.video = video;
 		this.states = new FlusherStates();
 		this.props = new FlusherProps();
+		this.provider = new FlusherMessages();
+		this.badges = new Badges().badgeTypeToSVG;
 		this.props.domain = domain;
 		this.props.chatroomId = chatroomId;
 		this.props.external = domain === 'KICK' ? false : true;
+		visibilityChange(this);
 	}
 
 	resetConnection() {
@@ -46,7 +53,7 @@ export class Flusher {
 			}
 		}
 
-		this.props.displayedMessages = new Set();
+		this.props.displayedMessages = [];
 
 		if (this.props.lastPositionPerRow) {
 			this.props.lastPositionPerRow.length = 0;

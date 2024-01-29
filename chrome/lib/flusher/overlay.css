@@ -1,23 +1,36 @@
 /* START native kick css changes */
 
-@font-face {
-   font-family: 'Inter';
-   src: url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap'),
- }
-
-.flusher-messages .chat-entry {
-   padding: .1rem .2rem !important;
+.flusher-messages[layout="horizontal"] .flusher-kick {
+   padding: 0 0 !important;
    font-size: medium;
    pointer-events: none;
    font-weight: 600;
-   background: none;
+   background-color: rgba(27, 27, 27, 0.6);
+   display: flex;
+   /* text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black; */
+   height: 2em;
+   max-width: calc(100% - 20px);
+   position: absolute;
+   top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
+   will-change: transform;
+   align-items: center;
+   border-radius: 8px;
  }
 
- .flusher-messages .chat-entry div>span:nth-child(n + 3) {
+ .flusher-messages[layout="vertical"] .chat-entry {
+  padding: .1rem .2rem !important;
+  font-size: medium;
+  pointer-events: none;
+  font-weight: 600;
+  background: none;
+  margin: 0;
+}
+
+ .flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
    text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
  }
 
- .flusher-messages .chat-entry span[class="chat-entry-username"] {
+ .flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
    text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
  }
 
@@ -43,6 +56,19 @@
    height: 100%;
    overflow-y: auto;
  }
+
+/*   .flusher-messages[layout="horizontal"] .chat-entry {
+  background-color: rgba(27, 27, 27, 0.6);
+   display: flex;
+   font-weight: 600;
+   font-size: .875rem;
+   height: auto;
+    text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black; 
+   max-width: calc(30%);
+   position: absolute;
+   top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
+   will-change: transform;
+}  */
 
  .flusher-messages[layout="horizontal"] .flusher-badges,
  .flusher-messages[layout="horizontal"] .flusher-username {
@@ -80,13 +106,14 @@
    white-space: nowrap;
  }
 
- .flusher-messages[layout="horizontal"] .flusher-message .font-bold {
-   padding-right: 0.25em;
+ .flusher-messages .flusher-message .font-bold {
+   color: white;
+   padding-right: .1rem;
  }
 
  .flusher-messages[layout="horizontal"] .last-flusher-emote {
    height: 1.5rem;
-   padding-left: 0.2em;
+   padding-left: 0.1em;
    padding-right: 0;
    vertical-align: middle;
  }
@@ -107,7 +134,7 @@
 
  .flusher-messages[layout="vertical"] .flusher-emote {
    max-height: 1.4rem;
-   padding: 0 0.2em;
+   padding: 0 0.1em;
    vertical-align: middle;
  }
 
@@ -129,7 +156,7 @@
 
  .flusher-messages[layout="vertical"] .last-flusher-emote {
    height: 1.4rem;
-   padding-left: 0.2em;
+   padding-left: 0.1em;
    padding-right: 0;
    vertical-align: middle;
  }

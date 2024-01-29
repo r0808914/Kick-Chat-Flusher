@@ -1,9 +1,4 @@
-@font-face {
-   font-family: 'Inter';
-   src: url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap'),
- }
-
- .flusher-menu {
+ .flusher-menu[domain="KICK"] {
    font-family: 'Inter';
    position: absolute;
    bottom: 2.5rem;
@@ -20,6 +15,26 @@
    padding: .5rem;
    border-radius: 5px;
    color: white;
+ }
+
+ .flusher-menu[domain="IP2"] {
+   font-family: 'Inter';
+   position: absolute;
+   bottom: .2rem;
+   right: -4%;
+   z-index: 2;
+   display: flex;
+   height: -moz-fit-content;
+   height: fit-content;
+   width: auto;
+   --tw-bg-opacity: 1;
+   background-color: rgb(23 28 30 / var(--tw-bg-opacity));
+   padding: .5rem;
+   border-radius: 5px;
+   color: white;
+   font-size: initial !important;
+   transform: scale(0.6);
+   transform-origin: bottom;
  }
 
  .flusher-actions-item {

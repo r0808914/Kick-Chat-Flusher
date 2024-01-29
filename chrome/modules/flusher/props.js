@@ -3,7 +3,7 @@ export class FlusherProps {
     this.chatroomId = null;
     this.clickOutsideHandlerFunction = null;
     this.domain = null;
-    this.displayedMessages = new Set();
+    this.displayedMessages = [];
     this.elementQueue = [];
     this.external = false;
     this.intervalScroll = null;
@@ -13,6 +13,7 @@ export class FlusherProps {
     this.isVod = false;
     this.loading = false;
     this.messageQueue = [];
+    this.badgeCache = [];
     this.lastPositionPerRow = [];
     this.rowQueue = [];
     this.scrolling = false;

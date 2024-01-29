@@ -25,9 +25,10 @@
 .toggle-icon[domain="IP2"] {
    display: none;
    width: 20px;
-   bottom: 0.15rem;
+   bottom: 10%;
    position: absolute;
-   right: 0.15rem;
+   left: 50%;
+   transform: translate(-50%, -50%);
 }
 
 /* .vjs-control.vjs-button[domain="KICK"] > .toggle-icon {

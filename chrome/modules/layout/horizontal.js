@@ -1,6 +1,4 @@
 export function selectRow(message, flusher) {
-	const chatroom_id = message.chatroom_id;
-
 	let selectedRow = 0;
 	const positions = flusher.props.lastPositionPerRow.length ?? 0;
 	if (positions > 0) {
@@ -34,7 +32,7 @@ export function selectRow(message, flusher) {
 	flusher.props.lastRow = selectedRow;
 }
 
-export async function startAnimation(messageData, flusher) {
+async function startAnimation(messageData, flusher) {
 	const message = messageData.container;
 	const space = 4;
 	const rowIndex = messageData.row;
@@ -100,7 +98,6 @@ export async function startAnimation(messageData, flusher) {
 	}
 
 	async function requestNext(messageWidth, overlap, messageData, flusher) {
-		messageData.container.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 		let timeNeeded = Math.ceil((messageWidth + space + overlap) / flusher.props.parentWidth * 16000);
 
 		const timeoutId = setTimeout(() => {
@@ -126,20 +123,21 @@ export async function startAnimation(messageData, flusher) {
 	}
 
 	function checkRow(messageData, rowIndex, flusher) {
-		const id = messageData.chatroom_id;
 		if ((rowIndex + 1) > flusher.props.lastRow) {
 			for (let i = 0; i < rowIndex; i++) {
 				if (flusher.props.lastPositionPerRow[i] === undefined || flusher.props.lastPositionPerRow[i].run === true) {
 					if (messageData.message !== null) {
 						flusher.props.lastPositionPerRow[rowIndex] = undefined;
 						messageData.container.style.setProperty('--row', i);
+						messageData.container.classList.add('flusher-green');
+
 						startAnimation(messageData, flusher);
 					}
 					return;
 				}
 				if (flusher.props.rowQueue[i].length < 1) {
 					if (messageData.container !== null) {
-						flusher.props.lastPositionPerRow[rowIndex] = undefined;
+						flusher.props.lastPositionPerRow[i] = undefined;
 						messageData.container.style.setProperty('--row', i);
 						flusher.props.rowQueue[i].push(messageData);
 					}
@@ -152,19 +150,24 @@ export async function startAnimation(messageData, flusher) {
 	}
 }
 
-export function prepareAnimation(data, flusher) {
+function prepareAnimation(data, flusher) {
 	if (!data.container) {
 		const newDiv = document.createElement('div');
-		newDiv.appendChild(data);
-		data.container = newDiv;
+		data.container = data;
 	}
 
+	flusher.props.external ? data.container.classList.add('flusher-message') : data.container.classList.add('flusher-kick');
+
 	data.container.style.setProperty('--row', data.row);
-	data.container.classList.add('flusher-message');
 	data.container.addEventListener("animationend", function () {
 		try {
-			flusher.container.removeChild(this);
-			flusher.props.displayedMessages.delete(data.key);
+			const oldest = flusher.container.firstChild;
+			if (flusher.states.spamState !== 1) {
+				const entryId = oldest?.getAttribute('data-chat-entry');
+				if(entryId)
+				flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+			}
+			oldest.remove();
 		} catch { }
 	});
 

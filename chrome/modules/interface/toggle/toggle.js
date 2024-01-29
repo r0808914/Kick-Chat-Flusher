@@ -12,10 +12,8 @@ export function createToggle(flusher) {
 	const baseMenu = popupMenu.querySelector('.flusher-menu-base');
 	const existingButton = flusher.props.external ? parent : document.querySelector('.vjs-fullscreen-control');
 
-	const toggleBtn = flusher.props.external ? toggle.querySelector('svg') : toggle;
+	const toggleBtn = flusher.props.external ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
 	existingButton.parentNode.append(toggleBtn);
-
-	const id = flusher.container.getAttribute('flusher-chatroom');
 
 	svgToggle(flusher);
 
@@ -40,7 +38,7 @@ export function svgToggle(flusher) {
 	if (toggle === null) return;
 	const menu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
 	const visible = menu.style.display === "block" ? true : false;
-	if (flusher.props.chatEnabled || visible) {
+	if (flusher.states.chatEnabled || visible) {
 		toggle.classList.add('svg-toggle');
 	} else {
 		toggle.classList.remove('svg-toggle');

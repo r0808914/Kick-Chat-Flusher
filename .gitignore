@@ -1,2 +1,6 @@
-firefox/web-ext-artifacts/*
 *.zip
+
+chrome/node_modules/*
+chrome/dist/main*
+
+firefox/web-ext-artifacts/*

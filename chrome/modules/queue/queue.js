@@ -1,22 +1,22 @@
 import { selectRow } from '../layout/horizontal.js';
 import { appendVertical } from "../layout/vertical.js";
 
-export function getMessageKey(key, value, flusher) {
+export function getMessageKey(key, value, messageId,flusher) {
 	const keyValue = key + "-" + value;
-	const dupe = flusher.props.displayedMessages.has(keyValue);
+	const dupe = flusher.props.displayedMessages.find(obj => { return obj.key === keyValue });
 	const ignore = ((flusher.states.spamState === 2 && dupe) || (flusher.states.spamState === 0 && dupe && flusher.lastRow > 1)) ? true : false;
-	if (!ignore) flusher.props.displayedMessages.add(keyValue);
+	if (!ignore) flusher.props.displayedMessages.push({ id: messageId, key: keyValue });
 	return { key: keyValue, ignore: ignore };
 }
 
 export async function processMessageQueue(flusher) {
 	try {
-		if (flusher.isProcessingMessages) return;
-		flusher.isProcessingMessages = true;
+		if (flusher.props.isProcessingMessages) return;
+		flusher.props.isProcessingMessages = true;
 
 		let queueItem = flusher.props.messageQueue.shift();
 		if (!queueItem) {
-			flusher.isProcessingMessages = false;
+			flusher.props.isProcessingMessages = false;
 			return;
 		}
 
@@ -26,29 +26,29 @@ export async function processMessageQueue(flusher) {
 		const maxRows = flusher.props.maxRows;
 
 		if ((lastRow === null || lastRow >= maxRows)) {
-			flusher.isProcessingMessages = false;
+			flusher.props.isProcessingMessages = false;
 			return;
 		}
 
 		const eventType = queueItem.event ?? queueItem.eventName;
 
 		if (eventType === "App\\Events\\ChatMessageEvent") {
-			createMessage(queueItem, flusher);
+			createMessage(JSON.parse(queueItem.data), flusher);
 		} else if (queueItem.type === "message") {
 			createMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\UserBannedEvent") {
-			createUserBanMessage(queueItem, flusher);
+			createUserBanMessage(JSON.parse(queueItem.data), flusher);
 		} else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
-			createGiftedMessage(queueItem, flusher);
+			createGiftedMessage(JSON.parse(queueItem.data), flusher);
 		} else if (eventType === "App\\Events\\FollowersUpdated") {
-			createFollowersMessage(queueItem, flusher);
+			createFollowersMessage(JSON.parse(queueItem.data), flusher);
 		} else if (eventType === "App\\Events\\StreamHostEvent") {
-			createHostMessage(queueItem, flusher);
+			createHostMessage(JSON.parse(queueItem.data), flusher);
 		} else if (eventType === "App\\Events\\SubscriptionEvent") {
-			createSubMessage(queueItem, flusher);
+			createSubMessage(JSON.parse(queueItem.data), flusher);
 		} else {
 			flusher.props.isProcessingMessages = false;
-			processMessageQueue();
+			processMessageQueue(flusher);
 		}
 	}
 	catch (error) {
@@ -69,9 +69,9 @@ export function processElementQueue(flusher) {
 			return;
 		}
 
-		const flushState = flusher.props.flushState;
+		const flushState = flusher.states.flushState;
 
-		if (!flusher.props.chatEnabled) {
+		if (!flusher.states.chatEnabled) {
 			flusher.props.isProcessingElements = false;
 			return;
 		}
@@ -81,7 +81,7 @@ export function processElementQueue(flusher) {
 		if (flusher.props.isVod || flushState) {
 			const queueLength = flusher.props.elementQueue.length;
 			let wait = Math.trunc(4000 / queueLength);
-			if (queueLength < 4 && flusher.props.isVod && flusher.props.flushState) wait = 1000;
+			if (queueLength < 4 && flusher.props.isVod && flusher.states.flushState) wait = 1000;
 			setTimeout(function () {
 				flusher.props.isProcessingElements = false;
 				processElementQueue(flusher);
@@ -97,11 +97,11 @@ export function processElementQueue(flusher) {
 	}
 }
 
-function appendMessage(queueItem) {
-	elementQueue.push(queueItem);
-	processElementQueue();
-	isProcessingMessages = false;
-	processMessageQueue();
+function appendMessage(queueItem, flusher) {
+	flusher.props.elementQueue.push(queueItem);
+	processElementQueue(flusher);
+	flusher.props.isProcessingMessages = false;
+	processMessageQueue(flusher);
 }
 
 async function createMessage(message, flusher) {
@@ -109,23 +109,26 @@ async function createMessage(message, flusher) {
 	const username = sender.username;
 	const content = message.content;
 
-	const reduced = flusher.props.flushers.spamState === 2 ? reduceRepeatedSentences(content) : content;
+	const reduced = flusher.props.spamState === 2 ? reduceRepeatedSentences(content) : content;
 
-	const messageKeyData = getMessageKey(sender.id, reduced, flusher);
-	if (messageKeyData.ignore === true) {
-		isProcessingMessages = false;
-		processMessageQueue();
-		return;
+	if (flusher.states.spamState !== 1) {
+		const messageKeyData = getMessageKey(sender.id, reduced, message.id,flusher);
+		if (messageKeyData.ignore === true) {
+			flusher.props.isProcessingMessages = false;
+			processMessageQueue(flusher);
+			return;
+		}
+
+		message.key = messageKeyData.key;
 	}
 
-	message.key = messageKeyData.key;
-
 	const messageDiv = document.createElement("div");
+	messageDiv.classList.add("flusher-message");
 
 	const badgeSpan = document.createElement("span");
 	badgeSpan.classList.add("flusher-badges");
 
-	const badgeElements = await getBadges(message);
+	const badgeElements = await getBadges(message, flusher);
 	badgeElements.forEach(badgeElement => {
 		badgeSpan.appendChild(badgeElement.cloneNode(true));
 	});
@@ -181,9 +184,10 @@ async function createMessage(message, flusher) {
 
 	badgeSpan.firstChild ? messageDiv.append(badgeSpan) : null;
 	messageDiv.append(usernameSpan, boldSpan, contentSpan);
+	messageDiv.setAttribute('data-chat-entry', message.id);
 	message.container = messageDiv;
 
-	appendMessage(message);
+	appendMessage(message, flusher);
 
 	function reduceRepeatedSentences(input) {
 		const regexSentence = /(\b.+?\b)\1+/g;
@@ -191,13 +195,84 @@ async function createMessage(message, flusher) {
 		const regexChar = /(.)(\1{10,})/g;
 		return sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
 	}
+}
 
-	function checkForBadges(data) {
-		const id = data.chatroom_id;
+async function getBadges(data, flusher) {
+	const badges = data.sender.identity.badges || [];
+	let badgeArray = [];
+
+	if (badges.length === 0) return badgeArray;
+
+	for (const badge of badges) {
+		const cachedBadge = getBadgeImage(badge, flusher);
+		if (!cachedBadge) continue;
+		if (cachedBadge?.src) {
+			const badgeElement = document.createElement('img');
+			badgeElement.src = cachedBadge.src;
+			badgeElement.alt = badge.type;
+			badgeElement.classList.add('flusher-badge');
+			badgeArray.push(badgeElement);
+		} else {
+			cachedBadge.classList.add('flusher-badge');
+			badgeArray.push(cachedBadge);
+		}
+	}
+
+	function getBadgeImage(badge, flusher) {
+		let badgeImage;
+		if (badge.type === 'subscriber') {
+			const months = badge.count;
+			const correspondingBadge = findClosestBadge(months);
+			badgeImage = correspondingBadge ? correspondingBadge : flusher.badges['subscriber']?.cloneNode(true);
+		} else {
+			badgeImage = flusher.badges[badge.type]?.cloneNode(true) || null;
+		}
+
+		return badgeImage;
+	}
+
+	function findClosestBadge(months) {
+		return flusher.props.badgeCache.reduce((closest, currentBadge) => {
+			if (currentBadge.months <= months && (!closest || currentBadge.months > closest.months)) {
+				return currentBadge;
+			}
+			return closest || flusher.badges['subscriber']?.cloneNode(true);
+		}, null)?.badge_image || flusher.props.badgeCache[flusher.props.badgeCache.length - 1]?.badge_image || flusher.badges['subscriber']?.cloneNode(true);
+	}
+
+	/* Enable when iframe chatroom available */
+
+	/* badges.forEach(badge => {
+		let badgeText = badge.text;
+		if (badge.count) {
+			badgeText = `${badge.type}-${badge.count}`;
+		}
+		const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+		if (cachedBadge) {
+			badgeArray.push(cachedBadge.html);
+			badgeCount++;
+			return;
+		}
+	}); */
+
+	/* let attempts = 0;
+	while (badgeCount !== badges.length && attempts < 10) {
+		const newBadges = checkForBadges(data, flusher);
+		badgeArray = newBadges;
+
+		badgeCount = badgeArray.length;
+		attempts++;
+
+		await new Promise(resolve => setTimeout(resolve, 750));
+	} */
+
+	return badgeArray;
+
+	function checkForBadges(data, flusher) {
 		const badges = data.sender.identity.badges || [];
 		const badgeElements = [];
 
-		props.isProcessingMessages = false;
+		flusher.props.isProcessingMessages = false;
 
 		let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
 		if (firstChatIdentity !== null) {
@@ -223,7 +298,7 @@ async function createMessage(message, flusher) {
 					const newImg = document.createElement('img');
 					newImg.src = imgUrl;
 					newImg.classList.add('flusher-badge');
-					props.badgeCache.push({
+					flusher.props.badgeCache.push({
 						type: badgeText,
 						html: newImg
 					});
@@ -237,7 +312,7 @@ async function createMessage(message, flusher) {
 					const svgCopy = svgElement.cloneNode(true);
 					svgCopy.classList.add('flusher-badge');
 
-					props.badgeCache.push({
+					flusher.props.badgeCache.push({
 						type: badgeText,
 						html: svgCopy
 					});
@@ -252,54 +327,18 @@ async function createMessage(message, flusher) {
 
 		return badgeElements;
 	}
-
-	async function getBadges(data) {
-		const id = data.chatroom_id;
-		const badges = data.sender.identity.badges || [];
-
-		let badgeArray = [];
-		let badgeCount = 0;
-
-		if (badges.length === 0) return badgeArray;
-
-		badges.forEach(badge => {
-			let badgeText = badge.text;
-			if (badge.count) {
-				badgeText = `${badge.type}-${badge.count}`;
-			}
-			const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
-			if (cachedBadge) {
-				badgeArray.push(cachedBadge.html);
-				badgeCount++;
-				return;
-			}
-		});
-
-		let attempts = 0;
-		while (badgeCount !== badges.length && attempts < 10) {
-			const newBadges = checkForBadges(data);
-			badgeArray = newBadges;
-
-			badgeCount = badgeArray.length;
-			attempts++;
-
-			await new Promise(resolve => setTimeout(resolve, 750));
-		}
-
-		return badgeArray;
-	}
 }
 
-function createUserBanMessage(data, videoElement) {
-	const now = new Date();
+function createUserBanMessage(data, flusher) {
+	/* const now = new Date(); */
 	const bannedUser = data.user.username;
 
-	const messageKey = getMessageKey(`-ban${now.getMinutes()}-`, bannedUser);
+	/* const messageKey = getMessageKey(`-ban${now.getMinutes()}-`, bannedUser);
 	if (messageKey.ignore === true) {
 		isProcessingMessages = false;
-		processMessageQueue();
+		processMessageQueue(flusher);
 		return;
-	}
+	} */
 
 	const banMessageContent = document.createElement("div");
 	banMessageContent.classList.add("flusher-message", "flusher-red");
@@ -320,15 +359,15 @@ function createUserBanMessage(data, videoElement) {
 	banMessageSpan.append(bannedUserSpan, emoji, banText, emoji.cloneNode(true), bannedBySpan);
 
 	banMessageContent.appendChild(banMessageSpan);
-	appendMessage(messageKey, banMessageContent, null, videoElement);
+	appendMessage(banMessageContent, flusher);
 }
 
-function createSubMessage(data, videoElement) {
+function createSubMessage(data, flusher) {
 	const now = new Date();
 
 	const username = data.username;
 	const months = data.months;
-	const messageKey = getMessageKey(`-sub${now.getMinutes()}-`, username + '-' + months);
+	/* const messageKey = getMessageKey(`-sub${now.getMinutes()}-`, username + '-' + months); */
 
 	const subscriptionMessageContent = document.createElement("div");
 	subscriptionMessageContent.classList.add("flusher-message", "flusher-green");
@@ -346,22 +385,22 @@ function createSubMessage(data, videoElement) {
 	subSpan.append(emojiSpan, subscriptionMessageSpan);
 
 	subscriptionMessageContent.append(subSpan);
-	appendMessage(messageKey, subscriptionMessageContent, null, videoElement);
+	appendMessage(subscriptionMessageContent, flusher);
 }
 
-function createHostMessage(data, videoElement) {
-	const now = new Date();
+function createHostMessage(data, flusher) {
+	/* const now = new Date(); */
 
 	const hostUsername = data.host_username;
 	const viewersCount = data.number_viewers;
 
-	const messageKeyData = getMessageKey(`-host${now.getMinutes()}-`, hostUsername + ' ' + viewersCount);
+	/* const messageKeyData = getMessageKey(`-host${now.getMinutes()}-`, hostUsername + ' ' + viewersCount);
 	if (messageKeyData.ignore === true) {
 		isProcessingMessages = false;
-		processMessageQueue();
+		processMessageQueue(flusher);
 		return;
 	}
-	const messageKey = messageKeyData.key;
+	const messageKey = messageKeyData.key; */
 
 	const hostMessageContent = document.createElement("div");
 	hostMessageContent.classList.add("flusher-message", "flusher-green");
@@ -378,22 +417,22 @@ function createHostMessage(data, videoElement) {
 	hostMessageSpan.append(emojiSpan, viewersCountSpan);
 
 	hostMessageContent.appendChild(hostMessageSpan);
-	appendMessage(messageKey, hostMessageContent, null, videoElement);
+	appendMessage(hostMessageContent, flusher);
 }
 
-function createGiftedMessage(data, videoElement) {
-	const now = new Date();
+function createGiftedMessage(data, flusher) {
+	/* const now = new Date(); */
 
 	const gifterUsername = data.gifter_username;
 	const giftedUsernames = data.gifted_usernames;
 
-	const messageKeyData = getMessageKey(`-gift${now.getMinutes()}-`, gifterUsername + '-' + giftedUsernames[0]);
+	/* const messageKeyData = getMessageKey(`-gift${now.getMinutes()}-`, gifterUsername + '-' + giftedUsernames[0]);
 	if (messageKeyData.ignore === true) {
 		isProcessingMessages = false;
-		processMessageQueue();
+		processMessageQueue(flusher);
 		return;
 	}
-	const messageKey = messageKeyData.key;
+	const messageKey = messageKeyData.key; */
 
 	const giftedContent = document.createElement("div");
 	giftedContent.classList.add("flusher-message", "flusher-green");
@@ -409,25 +448,25 @@ function createGiftedMessage(data, videoElement) {
 	giftedSpan.append(emojiSpan, gifterUsernameSpan);
 
 	giftedContent.appendChild(giftedSpan);
-	appendMessage(messageKey, giftedContent, null, videoElement);
+	appendMessage(giftedContent, flusher);
 }
 
-function createFollowersMessage(data, videoElement) {
+function createFollowersMessage(data, flusher) {
 	const followersCount = data.followersCount;
 
-	const messageKeyData = getMessageKey('-followers-', followersCount);
+	/* const messageKeyData = getMessageKey('-followers-', followersCount);
 	if (messageKeyData.ignore === true) {
 		isProcessingMessages = false;
-		processMessageQueue();
+		processMessageQueue(flusher);
 		return;
 	}
-	const messageKey = messageKeyData.key;
+	const messageKey = messageKeyData.key; */
 
-	if (lastFollowersCount !== null) {
-		const followersDiff = followersCount - lastFollowersCount;
+	if (flusher.props.lastFollowersCount !== null) {
+		const followersDiff = followersCount - flusher.props.lastFollowersCount;
 		if (followersDiff === 0) {
-			isProcessingMessages = false;
-			processMessageQueue();
+			flusher.props.isProcessingMessages = false;
+			processMessageQueue(flusher);
 			return;
 		}
 
@@ -444,13 +483,13 @@ function createFollowersMessage(data, videoElement) {
 		followersSpan.append(emojiSpan, followersMessageSpan)
 
 		messageContent.append(followersSpan);
-		appendMessage(messageKey, messageContent, null, videoElement);
+		appendMessage(messageContent, flusher);
 
-		lastFollowersCount = followersCount;
+		flusher.props.lastFollowersCount = followersCount;
 
 	} else {
-		lastFollowersCount = followersCount;
-		isProcessingMessages = false;
-		processMessageQueue();
+		flusher.props.lastFollowersCount = followersCount;
+		flusher.props.isProcessingMessages = false;
+		processMessageQueue(flusher);
 	}
 }
