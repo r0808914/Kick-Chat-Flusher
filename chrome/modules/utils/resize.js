@@ -1,5 +1,5 @@
 import { toggleEnableMenu } from "../interface/menu/menu.js";
-import { getMessageKey, processMessageQueue } from "../queue/queue.js"
+import { processMessageQueue } from "../queue/queue.js"
 import Kick from '../site/kick.js';
 
 export function checkResize(flusher) {
@@ -17,21 +17,26 @@ export function checkResize(flusher) {
 			flusher.resizeTimer = setTimeout(() => {
 				for (let entry of entries) {
 
-					let { width, height } = entry.contentRect;
+					const rect = target.getBoundingClientRect();
+					let width = rect.width;
+					let height = rect.height;
+
 					window.currentUrl = window.location.href;
 
-					if ((width === null || width === 0) && flusher.props.parentWidth) {
-						if (!flusher.props.isVod && !flusher.props.external) flusher.provider.unbindRequests();
-						if (flusher !== null) {
-							console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Remove Chat');
-							if (!flusher.props.external) Kick.init();
-							flusher = null;
-							return;
-						}
+					if ((width === null || width === 0) && (!height || height === 0)) {
+							if (flusher !== null) {
+								console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Remove Chat');
+								const init = !flusher.props.external;
+								flusher.resizeObserver.disconnect();
+								flusher.resizeObserver = null;
+								flusher.provider.unbindRequests();
+								flusher = null;
+								if (init) Kick.init();
+							}
+						
+						return;
 					}
 
-					height = target.offsetHeight;
-					if (!height || height === 0) return;
 					console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Width ${width} height ${height}`);
 
 					const oldWidth = flusher.props.parentWidth;
@@ -44,10 +49,11 @@ export function checkResize(flusher) {
 					const newFlushState = flusher.states.flushState !== undefined ? (flusher.states.flushState ? 'horizontal' : 'vertical') : (flusher.states.flushState ? 'horizontal' : 'vertical');
 
 					flusher.container.setAttribute('layout', newFlushState);
-					flusher.container.setAttribute('enabled', flusher.states.chatEnabled !== undefined ? flusher.states.chatEnabled : flusher.states.chatEnabled);
-					flusher.container.setAttribute('position', flusher.props.position !== undefined ? flusher.props.position : flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
-					flusher.container.setAttribute('size', flusher.props.size !== undefined ? flusher.props.size : flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
-					flusher.container.setAttribute('background', flusher.props.background !== undefined ? flusher.props.background : flusher.states.backgroundStates[flusher.states.backgroundState]);
+					flusher.container.setAttribute('enabled', flusher.states.chatEnabled);
+					flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
+					flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
+					flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
+					flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
 
 					toggleEnableMenu();
 
@@ -71,12 +77,7 @@ export function checkResize(flusher) {
 
 					if (oldWidth == null || oldWidth == 0) {
 						if (flusher.container === null) return;
-						/* test(); */
-						flusher.props.isVod = window.location.href.includes('/video/');
-						let channelName = flusher.props.external ? flusher.video.parentNode.querySelector('.iframe-lbl-div.notranslate') : document.querySelector('.stream-username');
-						flusher.props.channelName = channelName !== null ? channelName.textContent : '';
-
-						flusher.props.external ? flusher.provider.subscribeChannel(flusher) : flusher.provider.bindRequests(flusher);
+						if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
 
 						flusher.props.loading = false;
 						processMessageQueue(flusher);
@@ -109,10 +110,6 @@ export function checkResize(flusher) {
 		introContent.style.setProperty('--row', 0);
 		introContent.classList.add('flusher-message');
 
-		/* const now = new Date();
-		const messageKeyData = getMessageKey(`-intro`, now.getTime(),flusher);
-		const messageKey = messageKeyData.key; */
-
 		const parent = flusher.props.external ? flusher.container : document.body;
 		parent.append(introContent);
 		flusher.props.elementHeight = introContent.clientHeight;
@@ -122,7 +119,7 @@ export function checkResize(flusher) {
 	}
 }
 
-/* do every 10 sec scroll if fullscreen to do */
+/* 10 sec scroll loop if fullscreen */
 export function debouncedScroll(flusher) {
 	if (flusher.props?.scrolling === true) return;
 	flusher.props.scrolling = true;

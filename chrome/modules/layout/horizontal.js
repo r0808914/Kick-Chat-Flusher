@@ -8,7 +8,6 @@ export function selectRow(message, flusher) {
 
 			if (item === undefined || item.run === true) {
 				selectedRow = i;
-				flusher.props.lastRow = selectedRow;
 				break;
 			}
 
@@ -29,10 +28,9 @@ export function selectRow(message, flusher) {
 
 	message = prepareAnimation(message, flusher);
 	if (message !== null) startAnimation(message, flusher);
-	flusher.props.lastRow = selectedRow;
 }
 
-async function startAnimation(messageData, flusher) {
+function startAnimation(messageData, flusher) {
 	const message = messageData.container;
 	const space = 4;
 	const rowIndex = messageData.row;
@@ -45,7 +43,6 @@ async function startAnimation(messageData, flusher) {
 	let messageWidth;
 	const lastContainer = lastItem !== undefined ? lastItem.container : undefined;
 
-	/* existing row */
 	if (lastContainer !== undefined) {
 
 		requestAnimationFrame(() => {
@@ -60,12 +57,8 @@ async function startAnimation(messageData, flusher) {
 
 			/* queue running */
 			if (lastItem.run === false) {
-				const numString = Math.abs(overlap).toString();
-				const firstDigit = parseInt(numString[0], 10);
-				overlap = overlap / overlap >= 10 ? firstDigit : 0;
 				message.style.marginRight = `-${(messageWidth + overlap + space)}px`;
 				message.classList.add('flusher-animation');
-				/* firstDigit > 2 ? debouncedScroll() : null; */
 			}
 
 			/* queue ended */
@@ -76,7 +69,6 @@ async function startAnimation(messageData, flusher) {
 
 				} else {	/* new queue */
 					message.style.marginRight = `-${(messageWidth + space)}px`;
-					/* message.style.backgroundColor = "red"; */
 					message.classList.add('flusher-animation');
 					overlap = 0;
 				}
@@ -113,8 +105,9 @@ async function startAnimation(messageData, flusher) {
 
 	function checkQueue(messageData, flusher) {
 		const index = messageData.row;
+		if(!flusher?.props?.rowQueue) return;
 		const queueItem = flusher.props.rowQueue[index].shift();
-		if (queueItem !== undefined) {
+		if (queueItem) {
 			checkRow(queueItem, index, flusher);
 		} else {
 			flusher.props.lastRow = flusher.props.lastRow - 1;
@@ -123,7 +116,9 @@ async function startAnimation(messageData, flusher) {
 	}
 
 	function checkRow(messageData, rowIndex, flusher) {
-		if ((rowIndex + 1) > flusher.props.lastRow) {
+		/* To be Fixed */
+		
+		/* if ((rowIndex + 1) > flusher.props.lastRow) {
 			for (let i = 0; i < rowIndex; i++) {
 				if (flusher.props.lastPositionPerRow[i] === undefined || flusher.props.lastPositionPerRow[i].run === true) {
 					if (messageData.message !== null) {
@@ -144,17 +139,14 @@ async function startAnimation(messageData, flusher) {
 					return;
 				}
 			}
-		}
+		} */
 
 		startAnimation(messageData, flusher);
 	}
 }
 
 function prepareAnimation(data, flusher) {
-	if (!data.container) {
-		const newDiv = document.createElement('div');
-		data.container = data;
-	}
+	if (!data.container) data.container = data;
 
 	flusher.props.external ? data.container.classList.add('flusher-message') : data.container.classList.add('flusher-kick');
 
@@ -162,7 +154,7 @@ function prepareAnimation(data, flusher) {
 	data.container.addEventListener("animationend", function () {
 		try {
 			const oldest = flusher.container.firstChild;
-			if (flusher.states.spamState !== 1) {
+			if (!flusher.states.spamState) {
 				const entryId = oldest?.getAttribute('data-chat-entry');
 				if(entryId)
 				flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);

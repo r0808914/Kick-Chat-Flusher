@@ -6,15 +6,16 @@ import { visibilityChange } from "../utils/utils.js";
 import Badges from '../utils/badges.js';
 
 export class Flusher {
-	constructor(video, domain, chatroomId) {
+	constructor(video, domain, channelName) {
 		this.video = video;
 		this.states = new FlusherStates();
 		this.props = new FlusherProps();
 		this.provider = new FlusherMessages();
 		this.badges = new Badges().badgeTypeToSVG;
 		this.props.domain = domain;
-		this.props.chatroomId = chatroomId;
+		this.props.channelName = channelName;
 		this.props.external = domain === 'KICK' ? false : true;
+		this.props.isVod = window.location.href.includes('/video/');
 		visibilityChange(this);
 	}
 
@@ -35,8 +36,8 @@ export class Flusher {
 			this.resetPosition();
 		}
 
-		const isEnabled = this.props.chatEnabled;
-		this.props.chatEnabled = false;
+		const isEnabled = this.states.chatEnabled;
+		this.states.chatEnabled = false;
 
 		this.props.elementQueue.length = 0;
 		this.props.messageQueue.length = 0;
@@ -71,7 +72,7 @@ export class Flusher {
 
 		if (this.container !== null) this.container.style.display = 'flex';
 
-		this.props.chatEnabled = isEnabled;
+		this.states.chatEnabled = isEnabled;
 
 		this.props.isProcessingElements = false;
 		this.props.isProcessingMessages = false;

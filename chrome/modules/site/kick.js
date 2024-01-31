@@ -4,13 +4,13 @@ class Kick {
 
   static init() {
     console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Initialize');
-
+    const channelName = window.location.pathname.slice(1);
     let stopObserver = false;
 
     if (document.querySelector(".video-js")) {
       console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK video found');
       const video = document.getElementsByTagName('video')[0];
-      const flusher = new Flusher(video, "KICK", 0);
+      const flusher = new Flusher(video, "KICK", channelName);
       createChat(flusher);
       return;
     }
@@ -25,7 +25,7 @@ class Kick {
               observer.disconnect();
               stopObserver = true;
               const video = document.getElementsByTagName('video')[0];
-              const flusher = new Flusher(video, "KICK", 0);
+              const flusher = new Flusher(video, "KICK", channelName);
               createChat(flusher);
             }
           });

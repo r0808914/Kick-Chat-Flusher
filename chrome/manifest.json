@@ -21,7 +21,6 @@
       ],
       "matches": [
         "*://*.kick.com/*",
-        "*://*.cxwatcher.github.io/*",
         "*://*.ip2.network/*"
       ]
     }
@@ -30,7 +29,6 @@
     {
       "matches": [
         "*://*.kick.com/*",
-        "*://*.cxwatcher.github.io/*",
         "*://*.ip2.network/*"
       ],
       "js": [

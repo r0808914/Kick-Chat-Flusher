@@ -39,21 +39,8 @@ class Ip2 {
 			if (src && src.includes('kick.com')) {
 				const channelName = new URL(src).pathname.slice(1);
 				console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Fetch Channel Data');
-				fetch(`https://kick.com/api/v1/channels/${channelName}`)
-					.then(response => response.json())
-					.then(data => {
-						const chatroomId = data && data.chatroom && data.chatroom.id;
-						console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m chatroomId: ${chatroomId}`);
-
-						const flusher = new Flusher(iframe, "IP2", chatroomId);
-						flusher.props.hostId = data.id;
-
-						console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Badges`, data.subscriber_badges);
-						flusher.props.badgeCache.push(...data.subscriber_badges);
-
-						createChat(flusher);
-					})
-					.catch(error => console.error('Error fetching data:', error));
+				const flusher = new Flusher(iframe, "IP2", channelName);
+				createChat(flusher);
 			}
 		}
 
@@ -72,7 +59,7 @@ class Ip2 {
 			});
 		}
 
-		/* try {
+		/* try { 
 			const chatFrame = document.createElement('iframe');
 			chatFrame.src = 'https://kick.com/USERNAME/chatroom';
 			document.body.append(chatFrame);

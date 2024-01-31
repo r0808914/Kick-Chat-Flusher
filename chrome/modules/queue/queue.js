@@ -1,10 +1,10 @@
 import { selectRow } from '../layout/horizontal.js';
 import { appendVertical } from "../layout/vertical.js";
 
-export function getMessageKey(key, value, messageId,flusher) {
+export function getMessageKey(key, value, messageId, flusher) {
 	const keyValue = key + "-" + value;
 	const dupe = flusher.props.displayedMessages.find(obj => { return obj.key === keyValue });
-	const ignore = ((flusher.states.spamState === 2 && dupe) || (flusher.states.spamState === 0 && dupe && flusher.lastRow > 1)) ? true : false;
+	const ignore = (!flusher.states.spamState && dupe && flusher.lastRow > 1) ? true : false;
 	if (!ignore) flusher.props.displayedMessages.push({ id: messageId, key: keyValue });
 	return { key: keyValue, ignore: ignore };
 }
@@ -32,9 +32,9 @@ export async function processMessageQueue(flusher) {
 
 		const eventType = queueItem.event ?? queueItem.eventName;
 
-		if (eventType === "App\\Events\\ChatMessageEvent") {
+		if (eventType === "App\\Events\\ChatMessageEvent" && flusher.props.external) {
 			createMessage(JSON.parse(queueItem.data), flusher);
-		} else if (queueItem.type === "message") {
+		} else if (queueItem.type === "message" && flusher.props.external) {
 			createMessage(queueItem, flusher);
 		} else if (eventType === "App\\Events\\UserBannedEvent") {
 			createUserBanMessage(JSON.parse(queueItem.data), flusher);
@@ -78,18 +78,9 @@ export function processElementQueue(flusher) {
 
 		flushState ? selectRow(queueItem, flusher) : appendVertical(queueItem, flusher);
 
-		if (flusher.props.isVod || flushState) {
-			const queueLength = flusher.props.elementQueue.length;
-			let wait = Math.trunc(4000 / queueLength);
-			if (queueLength < 4 && flusher.props.isVod && flusher.states.flushState) wait = 1000;
-			setTimeout(function () {
-				flusher.props.isProcessingElements = false;
-				processElementQueue(flusher);
-			}, wait);
-		} else {
-			flusher.props.isProcessingElements = false;
-			processElementQueue(flusher);
-		}
+		flusher.props.isProcessingElements = false;
+		processElementQueue(flusher);
+
 	} catch (error) {
 		flusher.props.isProcessingElements = false;
 		processElementQueue(flusher);
@@ -109,10 +100,10 @@ async function createMessage(message, flusher) {
 	const username = sender.username;
 	const content = message.content;
 
-	const reduced = flusher.props.spamState === 2 ? reduceRepeatedSentences(content) : content;
+	const reduced = !flusher.props.spamState ? reduceRepeatedSentences(content) : content;
 
-	if (flusher.states.spamState !== 1) {
-		const messageKeyData = getMessageKey(sender.id, reduced, message.id,flusher);
+	if (!flusher.states.spamState) {
+		const messageKeyData = getMessageKey(sender.id, reduced, message.id, flusher);
 		if (messageKeyData.ignore === true) {
 			flusher.props.isProcessingMessages = false;
 			processMessageQueue(flusher);
@@ -330,15 +321,7 @@ async function getBadges(data, flusher) {
 }
 
 function createUserBanMessage(data, flusher) {
-	/* const now = new Date(); */
 	const bannedUser = data.user.username;
-
-	/* const messageKey = getMessageKey(`-ban${now.getMinutes()}-`, bannedUser);
-	if (messageKey.ignore === true) {
-		isProcessingMessages = false;
-		processMessageQueue(flusher);
-		return;
-	} */
 
 	const banMessageContent = document.createElement("div");
 	banMessageContent.classList.add("flusher-message", "flusher-red");
@@ -359,15 +342,16 @@ function createUserBanMessage(data, flusher) {
 	banMessageSpan.append(bannedUserSpan, emoji, banText, emoji.cloneNode(true), bannedBySpan);
 
 	banMessageContent.appendChild(banMessageSpan);
-	appendMessage(banMessageContent, flusher);
+
+	data.created_at = Date.now();
+	data.container = banMessageContent;
+
+	appendMessage(data, flusher);
 }
 
 function createSubMessage(data, flusher) {
-	const now = new Date();
-
 	const username = data.username;
 	const months = data.months;
-	/* const messageKey = getMessageKey(`-sub${now.getMinutes()}-`, username + '-' + months); */
 
 	const subscriptionMessageContent = document.createElement("div");
 	subscriptionMessageContent.classList.add("flusher-message", "flusher-green");
@@ -385,22 +369,16 @@ function createSubMessage(data, flusher) {
 	subSpan.append(emojiSpan, subscriptionMessageSpan);
 
 	subscriptionMessageContent.append(subSpan);
-	appendMessage(subscriptionMessageContent, flusher);
+
+	data.created_at = Date.now();
+	data.container = subscriptionMessageContent;
+
+	appendMessage(data, flusher);
 }
 
 function createHostMessage(data, flusher) {
-	/* const now = new Date(); */
-
 	const hostUsername = data.host_username;
 	const viewersCount = data.number_viewers;
-
-	/* const messageKeyData = getMessageKey(`-host${now.getMinutes()}-`, hostUsername + ' ' + viewersCount);
-	if (messageKeyData.ignore === true) {
-		isProcessingMessages = false;
-		processMessageQueue(flusher);
-		return;
-	}
-	const messageKey = messageKeyData.key; */
 
 	const hostMessageContent = document.createElement("div");
 	hostMessageContent.classList.add("flusher-message", "flusher-green");
@@ -417,22 +395,16 @@ function createHostMessage(data, flusher) {
 	hostMessageSpan.append(emojiSpan, viewersCountSpan);
 
 	hostMessageContent.appendChild(hostMessageSpan);
-	appendMessage(hostMessageContent, flusher);
+
+	data.created_at = Date.now();
+	data.container = hostMessageContent;
+
+	appendMessage(data, flusher);
 }
 
 function createGiftedMessage(data, flusher) {
-	/* const now = new Date(); */
-
 	const gifterUsername = data.gifter_username;
 	const giftedUsernames = data.gifted_usernames;
-
-	/* const messageKeyData = getMessageKey(`-gift${now.getMinutes()}-`, gifterUsername + '-' + giftedUsernames[0]);
-	if (messageKeyData.ignore === true) {
-		isProcessingMessages = false;
-		processMessageQueue(flusher);
-		return;
-	}
-	const messageKey = messageKeyData.key; */
 
 	const giftedContent = document.createElement("div");
 	giftedContent.classList.add("flusher-message", "flusher-green");
@@ -448,19 +420,15 @@ function createGiftedMessage(data, flusher) {
 	giftedSpan.append(emojiSpan, gifterUsernameSpan);
 
 	giftedContent.appendChild(giftedSpan);
-	appendMessage(giftedContent, flusher);
+
+	data.created_at = Date.now();
+	data.container = giftedContent;
+
+	appendMessage(data, flusher);
 }
 
 function createFollowersMessage(data, flusher) {
 	const followersCount = data.followersCount;
-
-	/* const messageKeyData = getMessageKey('-followers-', followersCount);
-	if (messageKeyData.ignore === true) {
-		isProcessingMessages = false;
-		processMessageQueue(flusher);
-		return;
-	}
-	const messageKey = messageKeyData.key; */
 
 	if (flusher.props.lastFollowersCount !== null) {
 		const followersDiff = followersCount - flusher.props.lastFollowersCount;
@@ -483,7 +451,11 @@ function createFollowersMessage(data, flusher) {
 		followersSpan.append(emojiSpan, followersMessageSpan)
 
 		messageContent.append(followersSpan);
-		appendMessage(messageContent, flusher);
+
+		data.created_at = Date.now();
+		data.container = messageContent;
+
+		appendMessage(data, flusher);
 
 		flusher.props.lastFollowersCount = followersCount;
 

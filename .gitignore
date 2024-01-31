@@ -2,5 +2,6 @@
 
 chrome/node_modules/*
 chrome/dist/main*
+chrome/modules/utils/test/*
 
 firefox/web-ext-artifacts/*
