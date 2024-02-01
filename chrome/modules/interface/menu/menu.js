@@ -32,16 +32,6 @@ export function createMenu(flusher) {
       parent.append(shadowBox);
       parent = parent.querySelector('#shadowbox').shadowRoot;
 
-      flusher.states.chatEnabled = getLocalStorageItem('flusher-enable', flusher.states.chatEnabled);
-      flusher.states.flushState = getLocalStorageItem('flusher-flush', flusher.states.flushState);
-      flusher.states.reply = getLocalStorageItem('flusher-reply', flusher.states.reply);
-      flusher.states.spamState = getLocalStorageItem('flusher-spam', flusher.states.spamState);
-      flusher.states.positionState = getLocalStorageItem('flusher-position', flusher.states.positionState);
-      flusher.states.fontState = getLocalStorageItem('flusher-font', flusher.states.fontState);
-      flusher.states.sizeState = getLocalStorageItem('flusher-size', flusher.states.sizeState);
-      flusher.states.backgroundState = getLocalStorageItem('flusher-background', flusher.states.backgroundState);
-      flusher.states.timeState = getLocalStorageItem('flusher-time', flusher.states.timeState);
-
       let settingsMenu = parent.querySelector('.flusher-menu-settings');
       let layoutMenu = parent.querySelector('.flusher-menu-layout');
       let messageMenu = parent.querySelector('.flusher-menu-message');
@@ -73,7 +63,7 @@ export function createMenu(flusher) {
 
       positionBtn.addEventListener('mousedown', function (event) {
          flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
-         localStorage.setItem('flusher-position', JSON.stringify(flusher.states.positionState));
+         setExtensionStorageItem('flusher-position', lusher.states.positionState);
          divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
          flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
          flusher.resetPosition();
@@ -85,7 +75,7 @@ export function createMenu(flusher) {
 
       sizeBtn.addEventListener('mousedown', function (event) {
          flusher.states.sizeState = (flusher.states.sizeState + 1) % flusher.states.sizeStates.length;
-         localStorage.setItem('flusher-size', JSON.stringify(flusher.states.sizeState));
+         setExtensionStorageItem('flusher-size', flusher.states.sizeState);
          divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
          flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
          flusher.setVerticalWidth();
@@ -97,7 +87,7 @@ export function createMenu(flusher) {
 
       backgroundBtn.addEventListener('mousedown', function (event) {
          flusher.states.backgroundState = (flusher.states.backgroundState + 1) % flusher.states.backgroundStates.length;
-         localStorage.setItem('flusher-background', JSON.stringify(flusher.states.backgroundState));
+         setExtensionStorageItem('flusher-background', flusher.states.backgroundState);
          divInsideBackground.textContent = toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]);
          flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
       });
@@ -181,7 +171,7 @@ export function createMenu(flusher) {
          toggleElement.classList.toggle(toggledClass);
          const newSpamEnabled = toggleElement.classList.contains(toggledClass);
          flusher.states.spamState = newSpamEnabled;
-         localStorage.setItem('flusher-spam', JSON.stringify(newSpamEnabled));
+         setExtensionStorageItem('flusher-spam', newSpamEnabled);
          flusher.props.displayedMessages = [];
       });
 
@@ -194,11 +184,13 @@ export function createMenu(flusher) {
 
       fontBtn.addEventListener('mousedown', function (event) {
          flusher.states.fontState = (flusher.states.fontState + 1) % flusher.states.sizeStates.length;
-         localStorage.setItem('flusher-font', JSON.stringify(flusher.states.fontState));
+         setExtensionStorageItem('flusher-font', flusher.states.fontState);
          divInsideFont.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.fontState]);
          flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
-         if(flusher.states.flushState) flusher.clear();
+         if (flusher.states.flushState) flusher.clear();
       });
+
+      (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex';
 
       const replyToggleContainer = parent.querySelector('.flusher-reply');
       const replyToggle = replyToggleContainer.querySelector('.flusher-toggle');
@@ -216,7 +208,7 @@ export function createMenu(flusher) {
             }
          });
 
-         localStorage.setItem('flusher-reply', JSON.stringify(newReplyEnabled));
+         setExtensionStorageItem('flusher-reply', newReplyEnabled);
       });
 
       (flusher.props.external || flusher.props.isVod) ? replyToggleContainer.style.display = 'none' : replyToggleContainer.style.display = 'flex';
@@ -237,7 +229,7 @@ export function createMenu(flusher) {
          });
 
          flusher.container.setAttribute('enabled', newTimeEnabled);
-         localStorage.setItem('flusher-time', JSON.stringify(newTimeEnabled));
+         setExtensionStorageItem('flusher-time', newTimeEnabled);
       });
 
       if (flusher.states.timeState) timeToggle.classList.toggle(toggledClass);
@@ -267,7 +259,7 @@ export function createMenu(flusher) {
          flusher.clear();
          flusher.container.setAttribute('layout', newFlushState ? 'horizontal' : 'vertical');
 
-         localStorage.setItem('flusher-flush', JSON.stringify(newFlushState));
+         setExtensionStorageItem('flusher-flush', newFlushState);
       });
 
       (!flusher.states.chatEnabled) ? flusherToggleContainer.style.display = 'none' : flusherToggleContainer.style.display = 'flex';
@@ -294,9 +286,11 @@ export function createMenu(flusher) {
          (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
          (flusher.states.flushState || !flusher.states.chatEnabled) ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
          (!flusher.states.chatEnabled) ? flusherToggleContainer.style.display = 'none' : flusherToggleContainer.style.display = 'flex';
+         (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex';
 
          flusher.container.setAttribute('enabled', newChatEnabled);
-         localStorage.setItem('flusher-enable', JSON.stringify(newChatEnabled));
+
+         setExtensionStorageItem('flusher-enable', newChatEnabled);
       });
 
       if (flusher.states.chatEnabled) flusherToggle.classList.toggle(toggledClass);
@@ -304,20 +298,31 @@ export function createMenu(flusher) {
       togglePointerEvents(flusher);
 
       return createToggle(flusher);
+   }
 
-      function toTitleCase(str) {
-         if(!str) return 'undefined';
-         if (str === 'OFF' || str === 'ON') return str;
-         return str.toLowerCase().replace(/\b\w/g, function (char) {
-            return char.toUpperCase();
-         });
-      }
+   /* flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
+   flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
+   flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
+   flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
+   flusher.states.positionState = await getExtensionStorageItem('flusher-position', flusher.states.positionState);
+   flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
+   flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
+   flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
+   flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState); */
 
-      function getLocalStorageItem(key, defaultValue) {
-         let storedValue = localStorage.getItem(key);
-         if(storedValue === 'null') storedValue = null;
-         return !storedValue ? defaultValue : JSON.parse(storedValue);
-      }
+   function toTitleCase(str) {
+      if (!str) return 'undefined';
+      if (str === 'OFF' || str === 'ON') return str;
+      return str.toLowerCase().replace(/\b\w/g, function (char) {
+         return char.toUpperCase();
+      });
+   }
+
+   function setExtensionStorageItem(key, value) {
+      const data = { [key]: value };
+      chrome.storage.local.set(data, () => {
+         console.log(`Value for key ${key} has been set to ${value} in extension storage.`);
+      });
    }
 }
 

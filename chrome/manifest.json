@@ -13,6 +13,9 @@
     "32": "icons/32.png",
     "128": "icons/128.png"
   },
+  "permissions": [
+    "storage"
+  ],
   "web_accessible_resources": [
     {
       "resources": [

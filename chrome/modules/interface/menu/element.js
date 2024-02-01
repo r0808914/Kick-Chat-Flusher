@@ -80,13 +80,6 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       </button>
     </div>
     <div class="chat-actions-content">
-      <div
-        class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Font Size</div>
-        <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></div>
-        </div>
-      </div>
       <div class="flusher-spam flusher-actions-item">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam</div>
         <div class="flex h-10 w-fit items-center justify-end">
@@ -95,6 +88,13 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
               <div class="flusher-toggle-indicator"></div>
             </div>
           </div>
+        </div>
+      </div>
+      <div
+        class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Font Size</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></div>
         </div>
       </div>
       <div class="flusher-spaced flusher-actions-item" style="display: none;">

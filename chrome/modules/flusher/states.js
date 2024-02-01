@@ -4,10 +4,10 @@ export class FlusherStates {
     this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
     this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
     this.backgroundState = 2;
-    this.positionState = 0;
+    this.positionState = 4;
     this.sizeState = 1;
-    this.fontState = 2;
-    this.reply = true;
+    this.fontState = 1;
+    this.reply = false;
     this.flushState = false;
     this.chatEnabled = true;
     this.spamState = true;

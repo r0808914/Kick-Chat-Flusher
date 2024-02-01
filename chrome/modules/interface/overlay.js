@@ -2,7 +2,7 @@ import { createMenu } from './menu/menu.js';
 import { checkResize } from '../utils/resize.js';
 import { getFont } from '../utils/utils.js';
 
-export function createChat(flusher) {
+export async function createChat(flusher) {
    if (flusher.video.hasAttribute('flusher')) return;
    flusher.video.setAttribute('flusher', "")
    console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Create Chat');
@@ -38,9 +38,29 @@ export function createChat(flusher) {
    }
 
    flusher.container = flusherDiv;
+
+   flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
+   flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
+   flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
+   flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
+   flusher.states.positionState = await getExtensionStorageItem('flusher-position', flusher.states.positionState);
+   flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
+   flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
+   flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
+   flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
+
    flusher.toggle = createMenu(flusher);
 
    flusher.props.external ? flusher.video.parentNode.append(chatFlusher) : flusher.video.append(chatFlusher);
    flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
    checkResize(flusher);
+
+   function getExtensionStorageItem(key, defaultValue) {
+      return new Promise((resolve) => {
+         chrome.storage.local.get([key], (result) => {
+            const storedValue = result[key];
+            resolve(storedValue !== undefined ? storedValue : defaultValue);
+         });
+      });
+   }
 }
