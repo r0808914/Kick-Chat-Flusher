@@ -321,6 +321,8 @@ async function getBadges(data, flusher) {
 }
 
 function createUserBanMessage(data, flusher) {
+	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createUserBanMessage`);
+
 	const bannedUser = data.user.username;
 
 	const banMessageContent = document.createElement("div");
@@ -350,6 +352,8 @@ function createUserBanMessage(data, flusher) {
 }
 
 function createSubMessage(data, flusher) {
+	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createSubMessage`);
+
 	const username = data.username;
 	const months = data.months;
 
@@ -377,6 +381,8 @@ function createSubMessage(data, flusher) {
 }
 
 function createHostMessage(data, flusher) {
+	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createHostMessage`);
+
 	const hostUsername = data.host_username;
 	const viewersCount = data.number_viewers;
 
@@ -403,6 +409,8 @@ function createHostMessage(data, flusher) {
 }
 
 function createGiftedMessage(data, flusher) {
+	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createGiftedMessage`);
+
 	const gifterUsername = data.gifter_username;
 	const giftedUsernames = data.gifted_usernames;
 
@@ -428,6 +436,8 @@ function createGiftedMessage(data, flusher) {
 }
 
 function createFollowersMessage(data, flusher) {
+	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createFollowersMessage`);
+
 	const followersCount = data.followersCount;
 
 	if (flusher.props.lastFollowersCount !== null) {

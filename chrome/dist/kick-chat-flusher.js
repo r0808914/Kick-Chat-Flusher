@@ -212,14 +212,14 @@ function appendVertical(message, flusher) {
           }
           current = current.previousSibling;
         }
-        if (!current) flusher.container.insertBefore(message.container, flusher.container.firstChild);
+        if (!current) flusher.container.insertBefore(message.container, lastItem);
       }
     } else {
       flusher.container.append(message.container);
     }
   } else {
     if (lastItem) {
-      flusher.container.insertBefore(message, flusher.container.firstChild);
+      flusher.container.insertBefore(message.container ?? message, lastItem);
     } else {
       flusher.container.append(message);
     }
@@ -508,6 +508,7 @@ async function getBadges(data, flusher) {
   }
 }
 function createUserBanMessage(data, flusher) {
+  console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createUserBanMessage`);
   const bannedUser = data.user.username;
   const banMessageContent = document.createElement("div");
   banMessageContent.classList.add("flusher-message", "flusher-red");
@@ -527,6 +528,7 @@ function createUserBanMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createSubMessage(data, flusher) {
+  console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createSubMessage`);
   const username = data.username;
   const months = data.months;
   const subscriptionMessageContent = document.createElement("div");
@@ -545,6 +547,7 @@ function createSubMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createHostMessage(data, flusher) {
+  console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createHostMessage`);
   const hostUsername = data.host_username;
   const viewersCount = data.number_viewers;
   const hostMessageContent = document.createElement("div");
@@ -562,6 +565,7 @@ function createHostMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createGiftedMessage(data, flusher) {
+  console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createGiftedMessage`);
   const gifterUsername = data.gifter_username;
   const giftedUsernames = data.gifted_usernames;
   const giftedContent = document.createElement("div");
@@ -579,6 +583,7 @@ function createGiftedMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createFollowersMessage(data, flusher) {
+  console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createFollowersMessage`);
   const followersCount = data.followersCount;
   if (flusher.props.lastFollowersCount !== null) {
     const followersDiff = followersCount - flusher.props.lastFollowersCount;
@@ -713,63 +718,61 @@ class FlusherMessages {
     this.nativeChatObserver.observe(nativeChat, observerConfig);
     function addMessage(node) {
       let clonedNode = node.cloneNode(true);
-      if (!clonedNode || clonedNode.nodeName !== "DIV") {
-        console.log(node);
-        console.log(clonedNode);
-        return;
-      }
-      clonedNode.classList.remove("mt-0.5");
+      if (!clonedNode || clonedNode.nodeName !== "DIV") return;
       const id = clonedNode.getAttribute('data-chat-entry');
-      if (id === 'history_breaker') return;
-      if (!id && id !== '') {
-        console.log(node);
-        console.log(clonedNode);
-        return;
-      }
-      if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
-        let uniqueString = '';
-        const userId = clonedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-        uniqueString += userId + '-';
-        const divTextContent = clonedNode.querySelector('.chat-entry-content')?.textContent;
-        uniqueString += divTextContent + '-';
-        const emoteElements = clonedNode.querySelectorAll('[data-emote-name]');
-        emoteElements.forEach(emoteElement => {
-          const emoteValue = emoteElement.getAttribute('data-emote-name');
-          uniqueString += emoteValue;
-        });
-        const exist = flusher.props.displayedMessages.find(obj => {
-          return obj.key === uniqueString;
-        });
-        if (exist) return true;
-        clonedNode.querySelectorAll('span:nth-child(3) span').forEach(function (element) {
-          if (element.textContent.trim().length > 0) {
-            const regexSentence = /(\b.+?\b)\1+/g;
-            const sentence = element.textContent.replace(regexSentence, '$1');
-            const regexChar = /(.)(\1{10,})/g;
-            element.textContent = sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
+      if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
+      if (id || id === '') {
+        if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
+          let uniqueString = '';
+          const userId = clonedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+          uniqueString += userId + '-';
+          const divTextContent = clonedNode.querySelector('.chat-entry-content')?.textContent;
+          uniqueString += divTextContent + '-';
+          const emoteElements = clonedNode.querySelectorAll('[data-emote-name]');
+          emoteElements.forEach(emoteElement => {
+            const emoteValue = emoteElement.getAttribute('data-emote-name');
+            uniqueString += emoteValue;
+          });
+          const exist = flusher.props.displayedMessages.find(obj => {
+            return obj.key === uniqueString;
+          });
+          if (exist) return true;
+          clonedNode.querySelectorAll('span:nth-child(3) span').forEach(function (element) {
+            if (element.textContent.trim().length > 0) {
+              const regexSentence = /(\b.+?\b)\1+/g;
+              const sentence = element.textContent.replace(regexSentence, '$1');
+              const regexChar = /(.)(\1{10,})/g;
+              element.textContent = sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
+            }
+          });
+          const entryId = clonedNode?.getAttribute('data-chat-entry');
+          flusher.props.displayedMessages.push({
+            id: entryId,
+            key: uniqueString
+          });
+        }
+        if (!flusher.states.reply || flusher.states.flushState) {
+          const chatEntry = clonedNode.querySelector('.chat-entry');
+          if (chatEntry && chatEntry.childElementCount > 1) {
+            chatEntry.firstElementChild.style.display = 'none';
           }
-        });
-        const entryId = clonedNode?.getAttribute('data-chat-entry');
-        flusher.props.displayedMessages.push({
-          id: entryId,
-          key: uniqueString
-        });
-      }
-      if (!flusher.states.reply || flusher.states.flushState) {
-        const chatEntry = clonedNode.querySelector('.chat-entry');
-        if (chatEntry && chatEntry.childElementCount > 1) {
-          chatEntry.firstElementChild.style.display = 'none';
+        }
+        if (flusher.props.isVod && (flusher.states.flushState || !flusher.states.timeState)) {
+          clonedNode.querySelector('.chat-entry div').firstElementChild.style.display = 'none';
         }
       }
-      if (flusher.props.isVod && (flusher.states.flushState || !flusher.states.timeState)) {
-        clonedNode.querySelector('.chat-entry div').firstElementChild.style.display = 'none';
-      }
+      clonedNode.classList.remove("mt-0.5");
       flusher.props.elementQueue.push(clonedNode);
       processElementQueue(flusher);
     }
     function waitForChat(parent) {
       console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Looking for Native Chat');
       if (!parent) parent = document.body;
+      const chatEntry = parent.querySelector('[data-chat-entry]');
+      if (chatEntry) {
+        console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Native Chat found');
+        return chatEntry.parentElement;
+      }
       return new Promise(resolve => {
         const config = {
           attributes: true,

@@ -19,14 +19,14 @@ export function appendVertical(message, flusher) {
 					}
 					current = current.previousSibling;
 				}
-				if (!current) flusher.container.insertBefore(message.container, flusher.container.firstChild);
+				if (!current) flusher.container.insertBefore(message.container, lastItem);
 			}
 		} else {
 			flusher.container.append(message.container);
 		}
 	} else {
 		if (lastItem) {
-			flusher.container.insertBefore(message, flusher.container.firstChild);
+			flusher.container.insertBefore(message.container ?? message, lastItem);
 		} else {
 			flusher.container.append(message);
 		}
@@ -36,8 +36,8 @@ export function appendVertical(message, flusher) {
 		const oldest = flusher.container.lastChild;
 		if (!flusher.states.spamState) {
 			const entryId = oldest?.getAttribute('data-chat-entry');
-			if(entryId)
-			flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+			if (entryId)
+				flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
 		}
 
 		oldest.remove();
