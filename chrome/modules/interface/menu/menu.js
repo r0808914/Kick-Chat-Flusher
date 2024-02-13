@@ -63,7 +63,7 @@ export function createMenu(flusher) {
 
       positionBtn.addEventListener('mousedown', function (event) {
          flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
-         setExtensionStorageItem('flusher-position', lusher.states.positionState);
+         setExtensionStorageItem('flusher-position', flusher.states.positionState);
          divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
          flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
          flusher.resetPosition();

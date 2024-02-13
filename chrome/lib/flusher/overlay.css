@@ -405,9 +405,9 @@
   -webkit-box-sizing: border-box;
 }
 
-.flusher-messages[layout="horizontal"] .flusher-red,
-.flusher-messages[layout="horizontal"] .flusher-green {
-  padding: 1rem 1.5rem;
+.flusher-messages[layout="vertical"] .flusher-red,
+.flusher-messages[layout="vertical"] .flusher-green {
+  margin: 0.3rem 0.1rem;
 }
 
 .flusher-username {

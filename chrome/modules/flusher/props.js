@@ -6,7 +6,6 @@ export class FlusherProps {
     this.displayedMessages = [];
     this.elementQueue = [];
     this.external = false;
-    this.intervalScroll = null;
     this.isFullscreen = false;
     this.isProcessingElements = false;
     this.isProcessingMessages = false;
@@ -16,7 +15,6 @@ export class FlusherProps {
     this.badgeCache = [];
     this.lastPositionPerRow = [];
     this.rowQueue = [];
-    this.scrolling = false;
     this.timeoutIds = [];
     this.video = null;
     this.lastRow = 0;

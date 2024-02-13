@@ -24,16 +24,16 @@ export function checkResize(flusher) {
 					window.currentUrl = window.location.href;
 
 					if ((width === null || width === 0) && (!height || height === 0)) {
-							if (flusher !== null) {
-								console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Remove Chat');
-								const init = !flusher.props.external;
-								flusher.resizeObserver.disconnect();
-								flusher.resizeObserver = null;
-								flusher.provider.unbindRequests();
-								flusher = null;
-								if (init) Kick.init();
-							}
-						
+						if (flusher !== null) {
+							console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Remove Chat');
+							const init = !flusher.props.external;
+							flusher.resizeObserver.disconnect();
+							flusher.resizeObserver = null;
+							flusher.provider.unbindRequests();
+							flusher = null;
+							if (init) Kick.init();
+						}
+
 						return;
 					}
 
@@ -60,15 +60,10 @@ export function checkResize(flusher) {
 					const documentWidth = document.documentElement.clientWidth;
 					if (documentWidth < ((flusher.props.parentWidth / 2) + 10)) {
 						flusher.props.isFullscreen = true;
-						flusher.props.scrolling = false;
-						debouncedScroll(flusher);
-						flusher.props.intervalScroll = setInterval(debouncedScroll(flusher), 10000);
+						startScrollingInterval(flusher);
 					} else {
 						flusher.props.isFullscreen = false;
-						if (flusher.props.intervalScroll !== null) {
-							clearInterval(flusher.props.intervalScroll);
-							flusher.props.intervalScroll = null;
-						}
+						stopScrollingInterval(flusher);
 					}
 
 					flusher.props.elementHeight = null;
@@ -119,11 +114,20 @@ export function checkResize(flusher) {
 	}
 }
 
-/* 10 sec scroll loop if fullscreen */
-export function debouncedScroll(flusher) {
-	if (flusher.props?.scrolling === true) return;
-	flusher.props.scrolling = true;
+function startScrollingInterval(flusher) {
+	if (flusher.props.scrollIntervalId) return;
+	flusher.props.scrollIntervalId = setInterval(function () {
+		scrollChat(flusher);
+	}, 10000);
+}
 
+export function stopScrollingInterval(flusher) {
+	if (!flusher.props.scrollIntervalId) return;
+	clearInterval(flusher.props.scrollIntervalId);
+	flusher.props.scrollIntervalId = null;
+}
+
+function scrollChat(flusher) {
 	const chatBtn = document.querySelector('#chatroom .justify-center.absolute');
 	const chatContainer = document.querySelector('#chatroom [data-chat-entry]');
 	if (flusher.props.isFullscreen && !flusher.props.isVod) {
@@ -136,10 +140,4 @@ export function debouncedScroll(flusher) {
 			}
 		}
 	}
-
-	const timeoutId = setTimeout(() => {
-		flusher.props.scrolling = false;
-	}, 5000);
-
-	flusher.props.timeoutIds.push(timeoutId);
 }
