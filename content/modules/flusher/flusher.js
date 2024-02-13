@@ -1,7 +1,7 @@
 import { FlusherStates } from './states.js';
 import { FlusherProps } from './props.js';
 import { FlusherMessages } from './messages.js';
-import { visibilityChange } from "../utils/utils.js";
+import { visibilityChange , logToConsole } from "../utils/utils.js";
 import { stopScrollingInterval } from '../utils/resize.js'
 
 import Badges from '../utils/badges.js';
@@ -25,7 +25,7 @@ export class Flusher {
 	}
 
 	resetConnection() {
-		console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Reset Connection');
+		logToConsole('Reset Connection');
 
 		if (!this.props.flusher) return;
 		clearChat(this.props.flusher);

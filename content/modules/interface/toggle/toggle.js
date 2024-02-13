@@ -1,5 +1,5 @@
 import { toggle } from './element.js';
-import { hideMenu, clickOutsideHandler } from '../../interface/menu/menu.js';
+import { hideMenu, clickOutsideHandler } from '../menu/menu.js';
 
 export let clickOutsideHandlerFunction = null;
 
@@ -13,7 +13,8 @@ export function createToggle(flusher) {
 	const existingButton = flusher.props.external ? parent : document.querySelector('.vjs-fullscreen-control');
 
 	const toggleBtn = flusher.props.external ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
-	existingButton.parentNode.append(toggleBtn);
+	flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, existingButton.nextSibling);
+	;
 
 	svgToggle(flusher);
 

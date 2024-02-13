@@ -1,9 +1,11 @@
 import { toggleEnableMenu } from "../interface/menu/menu.js";
 import { processMessageQueue } from "../queue/queue.js"
+import { logToConsole } from "./utils.js";
+
 import Kick from '../site/kick.js';
 
 export function checkResize(flusher) {
-	console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Check Resize');
+	logToConsole('Check Resize');
 	const target = flusher.props.external ? flusher.video : flusher.video.querySelector('video');
 
 	flusher.resizeTimer = null;
@@ -25,7 +27,7 @@ export function checkResize(flusher) {
 
 					if ((width === null || width === 0) && (!height || height === 0)) {
 						if (flusher !== null) {
-							console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Remove Chat');
+							logToConsole('Remove Chat');
 							const init = !flusher.props.external;
 							flusher.resizeObserver.disconnect();
 							flusher.resizeObserver = null;
@@ -37,7 +39,7 @@ export function checkResize(flusher) {
 						return;
 					}
 
-					console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Width ${Math.round(width)} height ${Math.round(height)}`);
+					logToConsole(`Width ${Math.round(width)} height ${Math.round(height)}`);
 
 					const oldWidth = flusher.props.parentWidth;
 					flusher.props.parentWidth = Math.trunc(width) * 2;
@@ -78,7 +80,7 @@ export function checkResize(flusher) {
 						flusher.props.loading = false;
 						processMessageQueue(flusher);
 
-						console.info(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m (${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
+						logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
 					} else {
 						flusher.states.flushState ? flusher.clear() : flusher.resetPosition();
 					}

@@ -1,5 +1,6 @@
 import { selectRow } from '../layout/horizontal.js';
 import { appendVertical } from "../layout/vertical.js";
+import { logToConsole } from '../utils/utils.js';
 
 export function getMessageKey(key, value, messageId, flusher) {
 	const keyValue = key + "-" + value;
@@ -54,7 +55,7 @@ export async function processMessageQueue(flusher) {
 	catch (error) {
 		flusher.props.isProcessingMessages = false;
 		processMessageQueue(flusher);
-		console.log(error);
+		console.error(error);
 	}
 }
 
@@ -94,7 +95,7 @@ export function processElementQueue(flusher) {
 	} catch (error) {
 		flusher.props.isProcessingElements = false;
 		processElementQueue(flusher);
-		console.log(error);
+		console.error(error);
 	}
 }
 
@@ -331,7 +332,7 @@ async function getBadges(data, flusher) {
 }
 
 function createUserBanMessage(data, flusher) {
-	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createUserBanMessage`);
+	logToConsole(`createUserBanMessage`);
 
 	const bannedUser = data.user.username;
 
@@ -362,7 +363,7 @@ function createUserBanMessage(data, flusher) {
 }
 
 function createSubMessage(data, flusher) {
-	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createSubMessage`);
+	logToConsole(`createSubMessage`)
 
 	const username = data.username;
 	const months = data.months;
@@ -391,7 +392,7 @@ function createSubMessage(data, flusher) {
 }
 
 function createHostMessage(data, flusher) {
-	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createHostMessage`);
+	logToConsole(`createHostMessage`)
 
 	const hostUsername = data.host_username;
 	const viewersCount = data.number_viewers;
@@ -419,7 +420,7 @@ function createHostMessage(data, flusher) {
 }
 
 function createGiftedMessage(data, flusher) {
-	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createGiftedMessage`);
+	logToConsole(`createGiftedMessage`)
 
 	const gifterUsername = data.gifter_username;
 	const giftedUsernames = data.gifted_usernames;
@@ -446,7 +447,7 @@ function createGiftedMessage(data, flusher) {
 }
 
 function createFollowersMessage(data, flusher) {
-	console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m createFollowersMessage`);
+	logToConsole(`createFollowersMessage`)
 
 	const followersCount = data.followersCount;
 

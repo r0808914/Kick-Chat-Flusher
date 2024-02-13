@@ -1,8 +1,9 @@
 import { processMessageQueue, processElementQueue } from "../queue/queue.js";
+import { logToConsole } from "../utils/utils.js";
 
 export class FlusherMessages {
    constructor() {
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Create MessageProvider');
+      logToConsole('Create MessageProvider');
       this.socket = null;
       this.nativeChatObserver = null;
       this.channels = new Set();
@@ -12,7 +13,7 @@ export class FlusherMessages {
       const id = flusher.props.chatroomId;
       if (!id) return;
       if (this.channels.has(id)) {
-         console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Channel ${id} is already subscribed.`);
+         logToConsole(`Channel ${id} is already subscribed.`);
          return;
       }
 
@@ -23,7 +24,9 @@ export class FlusherMessages {
          return;
       }
 
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Subscribe Channel: ' + id);
+
+      logToConsole(`Subscribe Channel:  ${id}`);
+
       this.socket.send(JSON.stringify(subscriptionMessage));
       this.channels.add(id);
 
@@ -43,13 +46,14 @@ export class FlusherMessages {
          const data = await response.json();
 
          if (data && data.data && data.data.messages) {
-            console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m History has ${data.data.messages.length} messages`);
+            logToConsole(`History has ${data.data.messages.length} messages`);
+
             data.data.messages.forEach((message) => {
                flusher.props.messageQueue.push(message);
             });
             processMessageQueue(flusher);
          } else {
-            console.log('No messages found in the response.');
+            logToConsole('No messages found in the response.');
          }
       } catch (error) {
          console.error('Error fetching messages:', error.message);
@@ -57,7 +61,7 @@ export class FlusherMessages {
    }
 
    setupWebSocket(flusher) {
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Setup WebSocket');
+      logToConsole('Setup WebSocket');
 
       if (this.socket) return;
 
@@ -71,17 +75,17 @@ export class FlusherMessages {
       };
 
       this.socket.addEventListener('open', (event) => {
-         console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m WebSocket connection opened ${flusher.props.channelName}:`, event);
+         logToConsole(`WebSocket connection opened ${flusher.props.channelName}`);
          this.subscribeChannel(flusher);
       });
 
       this.socket.addEventListener('close', (event) => {
-         console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m WebSocket connection closed ${flusher.props.channelName}:`, event);
+         logToConsole(`WebSocket connection closed ${flusher.props.channelName}`);
          this.channels.clear();
       });
 
       this.socket.addEventListener('error', (event) => {
-         console.error('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m WebSocket error:', event);
+         console.error('WebSocket error:', event);
       });
    }
 
@@ -100,11 +104,12 @@ export class FlusherMessages {
    }
 
    async interceptNative(flusher) {
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Intercept Native Chat');
+      logToConsole(`Intercept Native Chat`);
+
       const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector('.overflow-y-scroll.py-3'));
 
       if (!flusher.states.flushState) setTimeout(() => {
-         console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Parse existing');
+         logToConsole(`Parse existing`);
          nativeChat.childNodes.forEach(addedNode => {
             if (!addedNode || addedNode.nodeName !== "DIV") return;
             const id = addedNode.getAttribute('data-chat-entry');
@@ -238,12 +243,13 @@ export class FlusherMessages {
       }
 
       function waitForChat(parent) {
-         console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Looking for Native Chat');
+         logToConsole(`Looking for Native Chat`);
+
          if (!parent) parent = document.body;
 
          const chatEntry = parent.querySelector('[data-chat-entry]');
          if (chatEntry) {
-            console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Native Chat found');
+            logToConsole(`Native Chat found`);
             return chatEntry.parentElement;
          }
 
@@ -260,7 +266,7 @@ export class FlusherMessages {
                            observer.disconnect();
                            resolve(node.parentNode);
                            found = true;
-                           console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Native Chat found');
+                           logToConsole(`Native Chat found`);
                         }
                      });
                   }
@@ -274,7 +280,7 @@ export class FlusherMessages {
    }
 
    async bindRequests(flusher) {
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Bind Requests');
+      logToConsole(`Bind Requests`);
 
       if (!flusher) return;
 
@@ -289,12 +295,12 @@ export class FlusherMessages {
                const data = await response.json();
 
                flusher.props.chatroomId = data && data.chatroom && data.chatroom.id;
-               console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m chatroomId: ${flusher.props.chatroomId} ${flusher.props.channelName}`);
+               logToConsole(`chatroomId: ${flusher.props.chatroomId} ${flusher.props.channelName}`)
 
                flusher.props.hostId = data.id;
 
                if (flusher.props.external) {
-                  console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Badges`, data.subscriber_badges);
+                  logToConsole(`${data.subscriber_badges.length} Badges`)
                   flusher.props.badgeCache.push(...data.subscriber_badges);
                }
             } catch (error) {
@@ -308,10 +314,10 @@ export class FlusherMessages {
    }
 
    unbindRequests(flusher) {
-      console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Unbind Requests');
+      logToConsole(`Unbind Requests`)
       this.disposeChannel(flusher);
       if (!flusher?.props?.external) {
-         console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Dispose Native Chat');
+         logToConsole(`Dispose Native Chat`)
          if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
          this.nativeChatObserver = null;
       }

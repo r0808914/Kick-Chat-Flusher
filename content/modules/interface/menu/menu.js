@@ -1,6 +1,7 @@
 import { menu } from './element.js';
 import { createToggle, svgToggle } from '../toggle/toggle.js';
 import { dragElement } from '../../utils/drag.js';
+import { logToConsole } from '../../utils/utils.js';
 
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
@@ -311,7 +312,7 @@ export function createMenu(flusher) {
    function setExtensionStorageItem(key, value) {
       const data = { [key]: value };
       chrome.storage.local.set(data, () => {
-         console.log(`Value for key ${key} has been set to ${value} in extension storage.`);
+         logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`);
       });
    }
 }

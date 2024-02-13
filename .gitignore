@@ -1,8 +1,8 @@
 *.zip
 
-chrome/node_modules/*
-chrome/dist/main*
-chrome/modules/utils/test/*
-chrome/releases/*
+content/node_modules/*
+content/dist/main*
+content/modules/utils/test/*
 
-firefox/web-ext-artifacts/*
+content/releases/*
+content/web-ext-artifacts/*

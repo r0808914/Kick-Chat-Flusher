@@ -1,5 +1,6 @@
 export function visibilityChange(flusher) {
-	console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Add visibilityChange');
+	logToConsole(`Add visibilityChange`);
+
 	document.addEventListener('visibilitychange', function handleVisibilityChange() {
 		if (!flusher || !flusher.states.flushState) return;
 		if (document.hidden) {
@@ -17,4 +18,9 @@ export function getFont() {
 	fontLink.rel = 'stylesheet';
 	fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap';
 	return fontLink;
+}
+
+export function logToConsole(message) {
+	const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
+	isChrome ? console.log(`%c Kick Chat Flusher %c ${message}`, 'background: #228B22; color: #FFFFFF; padding: 2px 0;', '') : console.log('Kick Chat Flusher - ', message);
 }
