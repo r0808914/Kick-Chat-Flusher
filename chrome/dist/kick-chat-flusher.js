@@ -133,7 +133,7 @@ function startAnimation(messageData, flusher) {
   }
   function checkQueue(messageData, flusher) {
     const index = messageData.row;
-    if (!flusher?.props?.rowQueue) return;
+    if (!flusher?.props?.rowQueue[index]) return;
     const queueItem = flusher.props.rowQueue[index].shift();
     if (queueItem) {
       checkRow(queueItem, index, flusher);
@@ -216,11 +216,7 @@ function appendVertical(message, flusher) {
       flusher.container.append(message.container);
     }
   } else {
-    if (lastItem) {
-      flusher.container.insertBefore(message.container ?? message, lastItem);
-    } else {
-      flusher.container.append(message);
-    }
+    flusher.container['insertBefore'](message.container ?? message, lastItem);
   }
   while (flusher.container.children.length > flusher.props.maxRows) {
     const oldest = flusher.container.lastChild;
@@ -305,8 +301,18 @@ function processElementQueue(flusher) {
       return;
     }
     flushState ? selectRow(queueItem, flusher) : appendVertical(queueItem, flusher);
-    flusher.props.isProcessingElements = false;
-    processElementQueue(flusher);
+    if (flusher.props.isVod) {
+      const queueLength = flusher.props.elementQueue.length;
+      let wait = Math.trunc(2000 / queueLength);
+      if (queueLength < 3 && flusher.props.isVod && flusher.props.flushState) wait = 500;
+      setTimeout(function () {
+        flusher.props.isProcessingElements = false;
+        processElementQueue(flusher);
+      }, wait);
+    } else {
+      flusher.props.isProcessingElements = false;
+      processElementQueue(flusher);
+    }
   } catch (error) {
     flusher.props.isProcessingElements = false;
     processElementQueue(flusher);
@@ -700,12 +706,69 @@ class FlusherMessages {
     const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector('.overflow-y-scroll.py-3'));
     if (!flusher.states.flushState) setTimeout(() => {
       console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Parse existing');
-      nativeChat.childNodes.forEach(addedNode => addMessage(addedNode));
+      nativeChat.childNodes.forEach(addedNode => {
+        if (!addedNode || addedNode.nodeName !== "DIV") return;
+        const id = addedNode.getAttribute('data-chat-entry');
+        if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
+        if (id || id === '') {
+          if (!flusher.states.spamState || flusher.states.flushState) {
+            let uniqueString = '';
+            const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+            uniqueString += userId + '-';
+            const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
+            uniqueString += divTextContent + '-';
+            const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+            emoteElements.forEach(emoteElement => {
+              const emoteValue = emoteElement.getAttribute('data-emote-name');
+              uniqueString += emoteValue;
+            });
+            const exist = flusher.props.displayedMessages.find(obj => {
+              return obj.key === uniqueString;
+            });
+            if (exist) return;
+            const entryId = addedNode?.getAttribute('data-chat-entry');
+            flusher.props.displayedMessages.push({
+              id: entryId,
+              key: uniqueString
+            });
+          }
+        }
+        setTimeout(() => addMessage(addedNode, id), 150);
+      });
     }, 150);
     this.nativeChatObserver = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
+      const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
+      nodesList.forEach(mutation => {
         if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach(addedNode => setTimeout(() => addMessage(addedNode), 150));
+          mutation.addedNodes.forEach(addedNode => {
+            if (!addedNode || addedNode.nodeName !== "DIV") return;
+            const id = addedNode.getAttribute('data-chat-entry');
+            if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
+            if (id || id === '') {
+              if (!flusher.states.spamState || flusher.states.flushState) {
+                let uniqueString = '';
+                const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+                uniqueString += userId + '-';
+                const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
+                uniqueString += divTextContent + '-';
+                const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+                emoteElements.forEach(emoteElement => {
+                  const emoteValue = emoteElement.getAttribute('data-emote-name');
+                  uniqueString += emoteValue;
+                });
+                const exist = flusher.props.displayedMessages.find(obj => {
+                  return obj.key === uniqueString;
+                });
+                if (exist) return;
+                const entryId = addedNode?.getAttribute('data-chat-entry');
+                flusher.props.displayedMessages.push({
+                  id: entryId,
+                  key: uniqueString
+                });
+              }
+            }
+            setTimeout(() => addMessage(addedNode, id), 150);
+          });
         }
       });
     });
@@ -714,27 +777,23 @@ class FlusherMessages {
       subtree: false
     };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
-    function addMessage(node) {
-      let clonedNode = node.cloneNode(true);
-      if (!clonedNode || clonedNode.nodeName !== "DIV") return;
-      const id = clonedNode.getAttribute('data-chat-entry');
-      if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
+    function addMessage(node, id) {
+      const clonedNode = node.cloneNode(true);
+
+      /* function getRandomColor() {
+         const letters = '0123456789ABCDEF';
+         let color = '#';
+         for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+         }
+         return color;
+      }
+       const randomColor = getRandomColor();
+      node.style.border = `2px solid ${randomColor}`;
+      clonedNode.style.border = `2px solid ${randomColor}`; */
+
       if (id || id === '') {
         if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
-          let uniqueString = '';
-          const userId = clonedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-          uniqueString += userId + '-';
-          const divTextContent = clonedNode.querySelector('.chat-entry-content')?.textContent;
-          uniqueString += divTextContent + '-';
-          const emoteElements = clonedNode.querySelectorAll('[data-emote-name]');
-          emoteElements.forEach(emoteElement => {
-            const emoteValue = emoteElement.getAttribute('data-emote-name');
-            uniqueString += emoteValue;
-          });
-          const exist = flusher.props.displayedMessages.find(obj => {
-            return obj.key === uniqueString;
-          });
-          if (exist) return true;
           clonedNode.querySelectorAll('span:nth-child(3) span').forEach(function (element) {
             if (element.textContent.trim().length > 0) {
               const regexSentence = /(\b.+?\b)\1+/g;
@@ -742,11 +801,6 @@ class FlusherMessages {
               const regexChar = /(.)(\1{10,})/g;
               element.textContent = sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
             }
-          });
-          const entryId = clonedNode?.getAttribute('data-chat-entry');
-          flusher.props.displayedMessages.push({
-            id: entryId,
-            key: uniqueString
           });
         }
         if (!flusher.states.reply || flusher.states.flushState) {
@@ -756,7 +810,10 @@ class FlusherMessages {
           }
         }
         if (flusher.props.isVod && (flusher.states.flushState || !flusher.states.timeState)) {
-          clonedNode.querySelector('.chat-entry div').firstElementChild.style.display = 'none';
+          const chatEntryDiv = clonedNode.querySelector('.chat-entry div');
+          if (chatEntryDiv && chatEntryDiv.firstElementChild) {
+            chatEntryDiv.firstElementChild.style.display = 'none';
+          }
         }
       }
       clonedNode.classList.remove("mt-0.5");
@@ -777,13 +834,16 @@ class FlusherMessages {
           childList: true,
           subtree: true
         };
+        let found = false;
         const mutationCallback = function (mutationsList, observer) {
           for (const mutation of mutationsList) {
             if (mutation.type === 'childList') {
               mutation.addedNodes.forEach(node => {
                 if (node.nodeType === 1 && node.hasAttribute('data-chat-entry')) {
+                  if (found) return;
                   observer.disconnect();
                   resolve(node.parentNode);
+                  found = true;
                   console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Native Chat found');
                 }
               });
@@ -1429,7 +1489,7 @@ function createMenu(flusher) {
         const chatEntry = childNode.querySelector('.chat-entry div');
         chatEntry.firstElementChild.style.display = flusher.states.timeState ? 'initial' : 'none';
       });
-      flusher.container.setAttribute('enabled', newTimeEnabled);
+      flusher.container.setAttribute('time', newTimeEnabled);
       setExtensionStorageItem('flusher-time', newTimeEnabled);
     });
     if (flusher.states.timeState) timeToggle.classList.toggle(toggledClass);
@@ -1475,17 +1535,6 @@ function createMenu(flusher) {
     togglePointerEvents(flusher);
     return createToggle(flusher);
   }
-
-  /* flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-  flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
-  flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
-  flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
-  flusher.states.positionState = await getExtensionStorageItem('flusher-position', flusher.states.positionState);
-  flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
-  flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
-  flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-  flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState); */
-
   function toTitleCase(str) {
     if (!str) return 'undefined';
     if (str === 'OFF' || str === 'ON') return str;
@@ -1579,7 +1628,7 @@ function checkResize(flusher) {
             }
             return;
           }
-          console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Width ${width} height ${height}`);
+          console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Width ${Math.round(width)} height ${Math.round(height)}`);
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
@@ -1592,6 +1641,7 @@ function checkResize(flusher) {
           flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
           flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
           flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
+          flusher.container.setAttribute('time', flusher.states.timeState);
           toggleEnableMenu();
           const documentWidth = document.documentElement.clientWidth;
           if (documentWidth < flusher.props.parentWidth / 2 + 10) {
@@ -1812,12 +1862,13 @@ class Flusher {
     this.video = video;
     this.states = new FlusherStates();
     this.props = new FlusherProps();
-    this.provider = new FlusherMessages();
     this.badges = new badges().badgeTypeToSVG;
     this.props.domain = domain;
-    this.props.channelName = channelName;
     this.props.external = domain === 'KICK' ? false : true;
     this.props.isVod = window.location.href.includes('/video/');
+    const element = document.querySelector('.stream-username');
+    this.props.channelName = channelName ?? (element ? element.innerText.trim() : '');
+    this.provider = new FlusherMessages();
     visibilityChange(this);
   }
   resetConnection() {
@@ -1951,27 +2002,41 @@ async function createChat(flusher) {
 class Kick {
   static init() {
     console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Initialize');
-    const channelName = window.location.pathname.slice(1);
     let stopObserver = false;
-    if (document.querySelector(".video-js")) {
+    let shouldReturn = true;
+    let video = document.querySelector(".video-js");
+    let username = document.querySelector(".stream-username");
+    if (video && username) {
       console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK video found');
       const video = document.getElementsByTagName('video')[0];
-      const flusher = new Flusher(video, "KICK", channelName);
-      createChat(flusher);
-      return;
+      const flusher = new Flusher(video, "KICK");
+      try {
+        createChat(flusher);
+      } catch (error) {
+        shouldReturn = false;
+        console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Failed to create chat');
+      }
+      if (shouldReturn) return;
     }
     console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK start video observer');
     const observer = new MutationObserver(function (mutations) {
       mutations.forEach(function (mutation) {
         if (!stopObserver && mutation.addedNodes) {
           mutation.addedNodes.forEach(function (node) {
-            if (document.querySelector(".video-js")) {
-              console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK stop video observer');
-              observer.disconnect();
-              stopObserver = true;
-              const video = document.getElementsByTagName('video')[0];
-              const flusher = new Flusher(video, "KICK", channelName);
-              createChat(flusher);
+            if (document.querySelector(".stream-username")) {
+              if (document.querySelector(".video-js")) {
+                console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m KICK stop video observer');
+                stopObserver = true;
+                const video = document.getElementsByTagName('video')[0];
+                const flusher = new Flusher(video, "KICK");
+                try {
+                  createChat(flusher);
+                } catch (error) {
+                  stopObserver = false;
+                  console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Failed to create chat');
+                }
+                if (stopObserver) observer.disconnect();
+              }
             }
           });
         }

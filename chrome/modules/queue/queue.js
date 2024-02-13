@@ -78,8 +78,18 @@ export function processElementQueue(flusher) {
 
 		flushState ? selectRow(queueItem, flusher) : appendVertical(queueItem, flusher);
 
-		flusher.props.isProcessingElements = false;
-		processElementQueue(flusher);
+		if (flusher.props.isVod) {
+			const queueLength = flusher.props.elementQueue.length;
+			let wait = Math.trunc(2000 / queueLength);
+			if (queueLength < 3 && flusher.props.isVod && flusher.props.flushState) wait = 500;
+			setTimeout(function () {
+				flusher.props.isProcessingElements = false;
+				processElementQueue(flusher);
+			}, wait);
+		} else {
+			flusher.props.isProcessingElements = false;
+			processElementQueue(flusher);
+		}
 
 	} catch (error) {
 		flusher.props.isProcessingElements = false;

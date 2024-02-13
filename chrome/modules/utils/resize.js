@@ -37,7 +37,7 @@ export function checkResize(flusher) {
 						return;
 					}
 
-					console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Width ${width} height ${height}`);
+					console.log(`\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Width ${Math.round(width)} height ${Math.round(height)}`);
 
 					const oldWidth = flusher.props.parentWidth;
 					flusher.props.parentWidth = Math.trunc(width) * 2;
@@ -54,6 +54,7 @@ export function checkResize(flusher) {
 					flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
 					flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
 					flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
+					flusher.container.setAttribute('time', flusher.states.timeState);
 
 					toggleEnableMenu();
 

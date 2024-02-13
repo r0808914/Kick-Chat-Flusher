@@ -377,6 +377,10 @@
   min-height: 30px;
 }
 
+.flusher-messages[time="false"] .chat-message-identity {
+  margin-left: 0;
+}
+
 .flusher-message {
   align-items: center;
   padding: 0 .5rem;

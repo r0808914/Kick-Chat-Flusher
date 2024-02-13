@@ -105,8 +105,10 @@ function startAnimation(messageData, flusher) {
 
 	function checkQueue(messageData, flusher) {
 		const index = messageData.row;
-		if(!flusher?.props?.rowQueue) return;
+
+		if(!flusher?.props?.rowQueue[index]) return;
 		const queueItem = flusher.props.rowQueue[index].shift();
+		
 		if (queueItem) {
 			checkRow(queueItem, index, flusher);
 		} else {

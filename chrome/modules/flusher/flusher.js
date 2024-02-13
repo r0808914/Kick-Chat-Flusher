@@ -11,12 +11,16 @@ export class Flusher {
 		this.video = video;
 		this.states = new FlusherStates();
 		this.props = new FlusherProps();
-		this.provider = new FlusherMessages();
 		this.badges = new Badges().badgeTypeToSVG;
 		this.props.domain = domain;
-		this.props.channelName = channelName;
 		this.props.external = domain === 'KICK' ? false : true;
 		this.props.isVod = window.location.href.includes('/video/');
+
+		const element = document.querySelector('.stream-username');
+		this.props.channelName = channelName ?? (element ? element.innerText.trim() : '');
+
+		this.provider = new FlusherMessages();
+
 		visibilityChange(this);
 	}
 

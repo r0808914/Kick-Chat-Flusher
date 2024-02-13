@@ -105,13 +105,80 @@ export class FlusherMessages {
 
       if (!flusher.states.flushState) setTimeout(() => {
          console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Parse existing');
-         nativeChat.childNodes.forEach(addedNode => addMessage(addedNode));
+         nativeChat.childNodes.forEach(addedNode => {
+            if (!addedNode || addedNode.nodeName !== "DIV") return;
+            const id = addedNode.getAttribute('data-chat-entry');
+            
+            if (id === 'history_breaker' || (flusher.states.flushState && (!id || id === ''))) return;
+
+            if (id || id === '') {
+               if (!flusher.states.spamState || flusher.states.flushState) {
+                  let uniqueString = '';
+                  const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+                  uniqueString += userId + '-';
+
+                  const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
+                  uniqueString += divTextContent + '-';
+
+                  const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+                  emoteElements.forEach((emoteElement) => {
+                     const emoteValue = emoteElement.getAttribute('data-emote-name');
+                     uniqueString += emoteValue;
+                  });
+
+                  const exist = flusher.props.displayedMessages.find(obj => {
+                     return obj.key === uniqueString;
+                  });
+
+                  if (exist) return;
+
+                  const entryId = addedNode?.getAttribute('data-chat-entry');
+                  flusher.props.displayedMessages.push({ id: entryId, key: uniqueString });
+               }
+            }
+
+            setTimeout(() => addMessage(addedNode, id), 150);
+         });
       }, 150);
 
       this.nativeChatObserver = new MutationObserver(mutations => {
-         mutations.forEach(mutation => {
+         const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
+         nodesList.forEach(mutation => {
             if (mutation.type === 'childList') {
-               mutation.addedNodes.forEach(addedNode => setTimeout(() => addMessage(addedNode), 150))
+               mutation.addedNodes.forEach(addedNode => {
+                  if (!addedNode || addedNode.nodeName !== "DIV") return;
+
+                  const id = addedNode.getAttribute('data-chat-entry');
+                  if (id === 'history_breaker' || (flusher.states.flushState && (!id || id === ''))) return;
+
+                  if (id || id === '') {
+                     if (!flusher.states.spamState || flusher.states.flushState) {
+                        let uniqueString = '';
+                        const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+                        uniqueString += userId + '-';
+
+                        const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
+                        uniqueString += divTextContent + '-';
+
+                        const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+                        emoteElements.forEach((emoteElement) => {
+                           const emoteValue = emoteElement.getAttribute('data-emote-name');
+                           uniqueString += emoteValue;
+                        });
+
+                        const exist = flusher.props.displayedMessages.find(obj => {
+                           return obj.key === uniqueString;
+                        });
+
+                        if (exist) return;
+
+                        const entryId = addedNode?.getAttribute('data-chat-entry');
+                        flusher.props.displayedMessages.push({ id: entryId, key: uniqueString });
+                     }
+                  }
+
+                  setTimeout(() => addMessage(addedNode, id), 150);
+               });
             }
          });
       });
@@ -119,34 +186,26 @@ export class FlusherMessages {
       const observerConfig = { childList: true, subtree: false };
       this.nativeChatObserver.observe(nativeChat, observerConfig);
 
-      function addMessage(node) {
-         let clonedNode = node.cloneNode(true);
+      function addMessage(node, id) {
+         const clonedNode = node.cloneNode(true);
 
-         if (!clonedNode || clonedNode.nodeName !== "DIV") return;
 
-         const id = clonedNode.getAttribute('data-chat-entry');
-         if (id === 'history_breaker' || (flusher.states.flushState && (!id || id === ''))) return;
+         /* function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+               color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+         }
+
+         const randomColor = getRandomColor();
+         node.style.border = `2px solid ${randomColor}`;
+         clonedNode.style.border = `2px solid ${randomColor}`; */
+
+
          if (id || id === '') {
             if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
-               let uniqueString = '';
-               const userId = clonedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-               uniqueString += userId + '-';
-
-               const divTextContent = clonedNode.querySelector('.chat-entry-content')?.textContent;
-               uniqueString += divTextContent + '-';
-
-               const emoteElements = clonedNode.querySelectorAll('[data-emote-name]');
-               emoteElements.forEach((emoteElement) => {
-                  const emoteValue = emoteElement.getAttribute('data-emote-name');
-                  uniqueString += emoteValue;
-               });
-
-               const exist = flusher.props.displayedMessages.find(obj => {
-                  return obj.key === uniqueString
-               })
-
-               if (exist) return true;
-
                clonedNode.querySelectorAll('span:nth-child(3) span').forEach(function (element) {
                   if (element.textContent.trim().length > 0) {
                      const regexSentence = /(\b.+?\b)\1+/g;
@@ -155,9 +214,6 @@ export class FlusherMessages {
                      element.textContent = sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
                   }
                });
-
-               const entryId = clonedNode?.getAttribute('data-chat-entry');
-               flusher.props.displayedMessages.push({ id: entryId, key: uniqueString });
             }
 
             if (!flusher.states.reply || flusher.states.flushState) {
@@ -168,7 +224,10 @@ export class FlusherMessages {
             }
 
             if (flusher.props.isVod && (flusher.states.flushState || !flusher.states.timeState)) {
-               clonedNode.querySelector('.chat-entry div').firstElementChild.style.display = 'none';
+               const chatEntryDiv = clonedNode.querySelector('.chat-entry div');
+               if (chatEntryDiv && chatEntryDiv.firstElementChild) {
+                  chatEntryDiv.firstElementChild.style.display = 'none';
+               }
             }
          }
 
@@ -183,21 +242,24 @@ export class FlusherMessages {
          if (!parent) parent = document.body;
 
          const chatEntry = parent.querySelector('[data-chat-entry]');
-         if(chatEntry){
+         if (chatEntry) {
             console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Native Chat found');
             return chatEntry.parentElement;
          }
 
          return new Promise(resolve => {
             const config = { attributes: true, childList: true, subtree: true };
+            let found = false;
 
             const mutationCallback = function (mutationsList, observer) {
                for (const mutation of mutationsList) {
                   if (mutation.type === 'childList') {
                      mutation.addedNodes.forEach(node => {
                         if (node.nodeType === 1 && node.hasAttribute('data-chat-entry')) {
+                           if (found) return;
                            observer.disconnect();
                            resolve(node.parentNode);
+                           found = true;
                            console.log('\x1b[42m\x1b[97m Kick Chat Flusher \x1b[49m\x1b[0m Native Chat found');
                         }
                      });

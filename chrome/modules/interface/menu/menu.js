@@ -228,7 +228,7 @@ export function createMenu(flusher) {
             chatEntry.firstElementChild.style.display = flusher.states.timeState ? 'initial' : 'none';
          });
 
-         flusher.container.setAttribute('enabled', newTimeEnabled);
+         flusher.container.setAttribute('time', newTimeEnabled);
          setExtensionStorageItem('flusher-time', newTimeEnabled);
       });
 
@@ -299,16 +299,6 @@ export function createMenu(flusher) {
 
       return createToggle(flusher);
    }
-
-   /* flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-   flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
-   flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
-   flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
-   flusher.states.positionState = await getExtensionStorageItem('flusher-position', flusher.states.positionState);
-   flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
-   flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
-   flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-   flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState); */
 
    function toTitleCase(str) {
       if (!str) return 'undefined';

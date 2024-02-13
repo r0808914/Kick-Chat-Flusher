@@ -25,11 +25,7 @@ export function appendVertical(message, flusher) {
 			flusher.container.append(message.container);
 		}
 	} else {
-		if (lastItem) {
-			flusher.container.insertBefore(message.container ?? message, lastItem);
-		} else {
-			flusher.container.append(message);
-		}
+		flusher.container['insertBefore'](message.container ?? message, lastItem);
 	}
 
 	while (flusher.container.children.length > flusher.props.maxRows) {
