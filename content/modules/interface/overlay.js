@@ -10,6 +10,7 @@ export async function createChat(flusher) {
 
    const chatFlusher = document.createElement("div");
    chatFlusher.classList.add("flusher");
+   if(flusher.props.isAeroKick) chatFlusher.style.zIndex = 1000;
 
    const flusherDiv = document.createElement("div");
    flusherDiv.classList.add("flusher-messages");
@@ -52,7 +53,7 @@ export async function createChat(flusher) {
 
    flusher.toggle = createMenu(flusher);
 
-   flusher.props.external ? flusher.video.parentNode.append(chatFlusher) : flusher.video.append(chatFlusher);
+   flusher.video.parentNode.append(chatFlusher);
    flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
    checkResize(flusher);
 

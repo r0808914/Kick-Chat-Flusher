@@ -6,15 +6,17 @@ import { logToConsole } from '../../utils/utils.js';
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
 
-   flusher.video = flusher.props.external ? flusher.video : flusher.video.closest('.video-js');
+   /* flusher.video = flusher.props.external ? flusher.video : flusher.video.closest('.video-js'); */
    const domMenu = flusher.video.querySelector('.flusher-menu');
    if (domMenu === null) {
-      let parent = flusher.props.external ? flusher.video.parentNode : document.querySelector('.vjs-control-bar');
+      const b = typeof browser !== 'undefined' ? browser : chrome;
+      let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : document.querySelector('.vjs-control-bar');
 
       const shadowBox = document.createElement('div');
       shadowBox.id = 'shadowbox';
+      if (flusher.props.isAeroKick) shadowBox.style.zIndex = 1001;
+
       const shadowRoot = shadowBox.attachShadow({ mode: 'open' });
-      const b = typeof browser !== 'undefined' ? browser : chrome;
 
       const linkElement = document.createElement('link');
       linkElement.rel = 'stylesheet';
@@ -276,7 +278,7 @@ export function createMenu(flusher) {
 
          newChatEnabled ? flusher.provider.bindRequests(flusher) : flusher.provider.unbindRequests(flusher)
 
-         if (newChatEnabled && flusher.container.attributes['layout'].nodeValue === 'vertical') dragElement(flusher);
+         if (newChatEnabled && flusher.container.attributes['layout']?.nodeValue === 'vertical') dragElement(flusher);
 
          flusher.clear();
 
@@ -295,8 +297,6 @@ export function createMenu(flusher) {
       });
 
       if (flusher.states.chatEnabled) flusherToggle.classList.toggle(toggledClass);
-
-      togglePointerEvents(flusher);
 
       return createToggle(flusher);
    }
@@ -359,15 +359,15 @@ export function clickOutsideHandler(event, flusher) {
    }
 }
 
-function togglePointerEvents(flusher) {
+export function togglePointerEvents(flusher) {
    if (flusher.states.flushState || !flusher.states.chatEnabled) {
       flusher.container.classList.remove('flusher-grab');
       flusher.container.classList.add('flusher-no-grab');
-      return;
-   }
-   flusher.props.lastRow = 2;
-   dragElement(flusher);
+   } else {
+      flusher.container.classList.remove('flusher-no-grab');
+      flusher.container.classList.add('flusher-grab');
 
-   flusher.container.classList.remove('flusher-no-grab');
-   flusher.container.classList.add('flusher-grab');
+      flusher.props.lastRow = 2;
+      dragElement(flusher);
+   }
 }

@@ -1,4 +1,4 @@
-import { toggleEnableMenu } from "../interface/menu/menu.js";
+import { toggleEnableMenu, togglePointerEvents } from "../interface/menu/menu.js";
 import { processMessageQueue } from "../queue/queue.js"
 import { logToConsole } from "./utils.js";
 
@@ -6,7 +6,7 @@ import Kick from '../site/kick.js';
 
 export function checkResize(flusher) {
 	logToConsole('Check Resize');
-	const target = flusher.props.external ? flusher.video : flusher.video.querySelector('video');
+	const target = flusher.props.external ? flusher.video : flusher.video.querySelector('video') ?? flusher.video;
 
 	flusher.resizeTimer = null;
 	if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
@@ -57,6 +57,7 @@ export function checkResize(flusher) {
 					flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
 					flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
 					flusher.container.setAttribute('time', flusher.states.timeState);
+					if(flusher.props.isAeroKick) flusher.container.setAttribute('aerokick', '');
 
 					toggleEnableMenu();
 
@@ -79,6 +80,7 @@ export function checkResize(flusher) {
 
 						flusher.props.loading = false;
 						processMessageQueue(flusher);
+						togglePointerEvents(flusher);
 
 						logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
 					} else {

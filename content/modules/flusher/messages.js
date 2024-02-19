@@ -106,83 +106,27 @@ export class FlusherMessages {
    async interceptNative(flusher) {
       logToConsole(`Intercept Native Chat`);
 
-      const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector('.overflow-y-scroll.py-3'));
+      const AeroKick = document.body.classList.contains('aerokick-customization');
+      if (AeroKick) logToConsole(`detected: AeroKick for Chat`);
+
+      const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector(AeroKick ? '.chat-container .bk-overflow-y-auto' : '.overflow-y-scroll.py-3'), AeroKick);
+
+      const b = typeof browser !== 'undefined' ? browser : chrome;
+      const defaultAvatar = b.runtime.getURL('lib/kick/user-profile-pic.png');
 
       if (!flusher.states.flushState) setTimeout(() => {
          logToConsole(`Parse existing`);
          nativeChat.childNodes.forEach(addedNode => {
-            if (!addedNode || addedNode.nodeName !== "DIV") return;
-            const id = addedNode.getAttribute('data-chat-entry');
-            
-            if (id === 'history_breaker' || (flusher.states.flushState && (!id || id === ''))) return;
-
-            if (id || id === '') {
-               if (!flusher.states.spamState || flusher.states.flushState) {
-                  let uniqueString = '';
-                  const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-                  uniqueString += userId + '-';
-
-                  const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
-                  uniqueString += divTextContent + '-';
-
-                  const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
-                  emoteElements.forEach((emoteElement) => {
-                     const emoteValue = emoteElement.getAttribute('data-emote-name');
-                     uniqueString += emoteValue;
-                  });
-
-                  const exist = flusher.props.displayedMessages.find(obj => {
-                     return obj.key === uniqueString;
-                  });
-
-                  if (exist) return;
-
-                  const entryId = addedNode?.getAttribute('data-chat-entry');
-                  flusher.props.displayedMessages.push({ id: entryId, key: uniqueString });
-               }
-            }
-
-            setTimeout(() => addMessage(addedNode, id), 150);
+            checkDupe(addedNode, AeroKick);
          });
-      }, 150);
+      }, 500);
 
       this.nativeChatObserver = new MutationObserver(mutations => {
          const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
          nodesList.forEach(mutation => {
             if (mutation.type === 'childList') {
                mutation.addedNodes.forEach(addedNode => {
-                  if (!addedNode || addedNode.nodeName !== "DIV") return;
-
-                  const id = addedNode.getAttribute('data-chat-entry');
-                  if (id === 'history_breaker' || (flusher.states.flushState && (!id || id === ''))) return;
-
-                  if (id || id === '') {
-                     if (!flusher.states.spamState || flusher.states.flushState) {
-                        let uniqueString = '';
-                        const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-                        uniqueString += userId + '-';
-
-                        const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
-                        uniqueString += divTextContent + '-';
-
-                        const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
-                        emoteElements.forEach((emoteElement) => {
-                           const emoteValue = emoteElement.getAttribute('data-emote-name');
-                           uniqueString += emoteValue;
-                        });
-
-                        const exist = flusher.props.displayedMessages.find(obj => {
-                           return obj.key === uniqueString;
-                        });
-
-                        if (exist) return;
-
-                        const entryId = addedNode?.getAttribute('data-chat-entry');
-                        flusher.props.displayedMessages.push({ id: entryId, key: uniqueString });
-                     }
-                  }
-
-                  setTimeout(() => addMessage(addedNode, id), 150);
+                  checkDupe(addedNode, AeroKick);
                });
             }
          });
@@ -191,9 +135,95 @@ export class FlusherMessages {
       const observerConfig = { childList: true, subtree: false };
       this.nativeChatObserver.observe(nativeChat, observerConfig);
 
-      function addMessage(node, id) {
+      function checkDupe(addedNode, AeroKick) {
+
+         if (!addedNode || addedNode.nodeName !== "DIV") return;
+
+         if (AeroKick && !flusher.props.isVod) {
+            const button = addedNode.querySelector('button');
+            if (!button) {
+               console.log('Kick Chat Flusher - Button does not exist in the added node:', addedNode);
+               return;
+            }
+         }
+
+         const id = (AeroKick && flusher.props.isAeroKick) ? addedNode.querySelector('button').getAttribute('data-radial-id') : addedNode.getAttribute('data-chat-entry');
+         if (id === 'history_breaker' || (flusher.states.flushState && (!id || id === ''))) return;
+
+         if (id || id === '') {
+            if (!flusher.states.spamState || flusher.states.flushState) {
+               let uniqueString = '';
+               const userId = (AeroKick && flusher.props.isAeroKick) ? addedNode.querySelector('button').getAttribute('data-radial-username') : addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+               uniqueString += userId + '-';
+
+               const divTextContent = (AeroKick && flusher.props.isAeroKick) ? addedNode.querySelector('span.bk-inline').textContent : addedNode.querySelector('.chat-entry-content')?.textContent;
+               uniqueString += divTextContent + '-';
+
+               if (AeroKick && flusher.props.isAeroKick) {
+                  const emoteElements = addedNode.querySelectorAll('img');
+                  emoteElements.forEach((emoteElement) => {
+                     const emoteValue = emoteElement.getAttribute('alt');
+                     uniqueString += emoteValue;
+                  });
+               } else {
+                  const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+                  emoteElements.forEach((emoteElement) => {
+                     const emoteValue = emoteElement.getAttribute('data-emote-name');
+                     uniqueString += emoteValue;
+                  });
+               }
+
+               const exist = flusher.props.displayedMessages.find(obj => {
+                  return obj.key === uniqueString;
+               });
+
+               if (exist) return;
+
+               flusher.props.displayedMessages.push({ id: id, key: uniqueString });
+            }
+         }
+
+         setTimeout(() => addMessage(addedNode, id, defaultAvatar, AeroKick), 150);
+      }
+
+      function addMessage(node, id, defaultAvatar, AeroKick) {
          const clonedNode = node.cloneNode(true);
 
+         if (AeroKick) {
+            clonedNode.style.fontSize = null;
+            clonedNode.style.marginTop = null;
+            clonedNode.classList.remove('relative', 'bk-pl-1.5');
+
+            if (flusher.states.flushState) {
+               var elements = clonedNode.querySelectorAll('[class*=bk-top-]');
+
+               elements.forEach(element => {
+                  var classes = element.classList;
+                  var classesToRemove = Array.from(classes).filter(className => className.includes("bk-top-"));
+
+                  classesToRemove.forEach(className => {
+                     element.classList.remove(className);
+                  });
+               });
+            }
+
+            const avatar = clonedNode.querySelector('img[alt="avatar"]');
+
+            if (avatar) {
+               avatar.closest('button').classList.remove('bk-ease-in-out', 'bk-duration-100', 'bk-transition-colors', 'bk-translate-y-px');
+               avatar.style.animation = 'none';
+
+               const username = clonedNode.querySelector('.bk-text-transparent');
+               if (username) username.style.color = username.style.backgroundColor ?? 'white';
+
+               avatar.onerror = function () {
+                  this.style.display = 'none';
+                  this.onerror = null;
+                  this.src = defaultAvatar;
+                  this.style.display = 'block';
+               };
+            }
+         }
 
          /* function getRandomColor() {
             const letters = '0123456789ABCDEF';
@@ -208,7 +238,6 @@ export class FlusherMessages {
          node.style.border = `2px solid ${randomColor}`;
          clonedNode.style.border = `2px solid ${randomColor}`; */
 
-
          if (id || id === '') {
             if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
                clonedNode.querySelectorAll('span:nth-child(3) span').forEach(function (element) {
@@ -222,9 +251,14 @@ export class FlusherMessages {
             }
 
             if (!flusher.states.reply || flusher.states.flushState) {
-               const chatEntry = clonedNode.querySelector('.chat-entry');
-               if (chatEntry && chatEntry.childElementCount > 1) {
-                  chatEntry.firstElementChild.style.display = 'none';
+               if (AeroKick) {
+                  const chatEntry = clonedNode.querySelector('.bk-text-sm');
+                  if (chatEntry) chatEntry.style.display = 'none';
+               } else {
+                  const chatEntry = clonedNode.querySelector('.chat-entry');
+                  if (chatEntry && chatEntry.childElementCount > 1) {
+                     chatEntry.firstElementChild.style.display = 'none';
+                  }
                }
             }
 
@@ -242,12 +276,12 @@ export class FlusherMessages {
          processElementQueue(flusher);
       }
 
-      function waitForChat(parent) {
+      function waitForChat(parent, AeroKick) {
          logToConsole(`Looking for Native Chat`);
 
          if (!parent) parent = document.body;
 
-         const chatEntry = parent.querySelector('[data-chat-entry]');
+         const chatEntry = parent.querySelector('.rounded-md.bk-block') || parent.querySelector('[data-chat-entry]');
          if (chatEntry) {
             logToConsole(`Native Chat found`);
             return chatEntry.parentElement;
@@ -261,7 +295,7 @@ export class FlusherMessages {
                for (const mutation of mutationsList) {
                   if (mutation.type === 'childList') {
                      mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === 1 && node.hasAttribute('data-chat-entry')) {
+                        if (node.nodeType === 1 && (node.classList.contains('bk-block.rounded-md') || node.hasAttribute('data-chat-entry'))) {
                            if (found) return;
                            observer.disconnect();
                            resolve(node.parentNode);

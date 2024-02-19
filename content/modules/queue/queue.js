@@ -81,7 +81,7 @@ export function processElementQueue(flusher) {
 
 		if (flusher.props.isVod) {
 			const queueLength = flusher.props.elementQueue.length;
-			let wait = Math.trunc(2000 / queueLength);
+			let wait = Math.trunc(3500 / queueLength);
 			if (queueLength < 3 && flusher.props.isVod && flusher.props.flushState) wait = 500;
 			setTimeout(function () {
 				flusher.props.isProcessingElements = false;

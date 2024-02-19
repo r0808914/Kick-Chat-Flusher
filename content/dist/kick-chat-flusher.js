@@ -181,7 +181,7 @@ function prepareAnimation(data, flusher) {
     try {
       const oldest = flusher.container.firstChild;
       if (!flusher.states.spamState) {
-        const entryId = oldest?.getAttribute('data-chat-entry');
+        const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
         if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
       }
       oldest.remove();
@@ -221,7 +221,7 @@ function appendVertical(message, flusher) {
   while (flusher.container.children.length > flusher.props.maxRows) {
     const oldest = flusher.container.lastChild;
     if (!flusher.states.spamState) {
-      const entryId = oldest?.getAttribute('data-chat-entry');
+      const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
       if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
     }
     oldest.remove();
@@ -328,7 +328,7 @@ function processElementQueue(flusher) {
     flushState ? selectRow(queueItem, flusher) : appendVertical(queueItem, flusher);
     if (flusher.props.isVod) {
       const queueLength = flusher.props.elementQueue.length;
-      let wait = Math.trunc(2000 / queueLength);
+      let wait = Math.trunc(3500 / queueLength);
       if (queueLength < 3 && flusher.props.isVod && flusher.props.flushState) wait = 500;
       setTimeout(function () {
         flusher.props.isProcessingElements = false;
@@ -729,71 +729,23 @@ class FlusherMessages {
   }
   async interceptNative(flusher) {
     logToConsole(`Intercept Native Chat`);
-    const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector('.overflow-y-scroll.py-3'));
+    const AeroKick = document.body.classList.contains('aerokick-customization');
+    if (AeroKick) logToConsole(`detected: AeroKick for Chat`);
+    const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector(AeroKick ? '.chat-container .bk-overflow-y-auto' : '.overflow-y-scroll.py-3'), AeroKick);
+    const b = typeof browser !== 'undefined' ? browser : chrome;
+    const defaultAvatar = b.runtime.getURL('lib/kick/user-profile-pic.png');
     if (!flusher.states.flushState) setTimeout(() => {
       logToConsole(`Parse existing`);
       nativeChat.childNodes.forEach(addedNode => {
-        if (!addedNode || addedNode.nodeName !== "DIV") return;
-        const id = addedNode.getAttribute('data-chat-entry');
-        if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
-        if (id || id === '') {
-          if (!flusher.states.spamState || flusher.states.flushState) {
-            let uniqueString = '';
-            const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-            uniqueString += userId + '-';
-            const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
-            uniqueString += divTextContent + '-';
-            const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
-            emoteElements.forEach(emoteElement => {
-              const emoteValue = emoteElement.getAttribute('data-emote-name');
-              uniqueString += emoteValue;
-            });
-            const exist = flusher.props.displayedMessages.find(obj => {
-              return obj.key === uniqueString;
-            });
-            if (exist) return;
-            const entryId = addedNode?.getAttribute('data-chat-entry');
-            flusher.props.displayedMessages.push({
-              id: entryId,
-              key: uniqueString
-            });
-          }
-        }
-        setTimeout(() => addMessage(addedNode, id), 150);
+        checkDupe(addedNode, AeroKick);
       });
-    }, 150);
+    }, 500);
     this.nativeChatObserver = new MutationObserver(mutations => {
       const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
       nodesList.forEach(mutation => {
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach(addedNode => {
-            if (!addedNode || addedNode.nodeName !== "DIV") return;
-            const id = addedNode.getAttribute('data-chat-entry');
-            if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
-            if (id || id === '') {
-              if (!flusher.states.spamState || flusher.states.flushState) {
-                let uniqueString = '';
-                const userId = addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-                uniqueString += userId + '-';
-                const divTextContent = addedNode.querySelector('.chat-entry-content')?.textContent;
-                uniqueString += divTextContent + '-';
-                const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
-                emoteElements.forEach(emoteElement => {
-                  const emoteValue = emoteElement.getAttribute('data-emote-name');
-                  uniqueString += emoteValue;
-                });
-                const exist = flusher.props.displayedMessages.find(obj => {
-                  return obj.key === uniqueString;
-                });
-                if (exist) return;
-                const entryId = addedNode?.getAttribute('data-chat-entry');
-                flusher.props.displayedMessages.push({
-                  id: entryId,
-                  key: uniqueString
-                });
-              }
-            }
-            setTimeout(() => addMessage(addedNode, id), 150);
+            checkDupe(addedNode, AeroKick);
           });
         }
       });
@@ -803,8 +755,79 @@ class FlusherMessages {
       subtree: false
     };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
-    function addMessage(node, id) {
+    function checkDupe(addedNode, AeroKick) {
+      if (!addedNode || addedNode.nodeName !== "DIV") return;
+      if (AeroKick && !flusher.props.isVod) {
+        const button = addedNode.querySelector('button');
+        if (!button) {
+          console.log('Kick Chat Flusher - Button does not exist in the added node:', addedNode);
+          return;
+        }
+      }
+      const id = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector('button').getAttribute('data-radial-id') : addedNode.getAttribute('data-chat-entry');
+      if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
+      if (id || id === '') {
+        if (!flusher.states.spamState || flusher.states.flushState) {
+          let uniqueString = '';
+          const userId = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector('button').getAttribute('data-radial-username') : addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
+          uniqueString += userId + '-';
+          const divTextContent = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector('span.bk-inline').textContent : addedNode.querySelector('.chat-entry-content')?.textContent;
+          uniqueString += divTextContent + '-';
+          if (AeroKick && flusher.props.isAeroKick) {
+            const emoteElements = addedNode.querySelectorAll('img');
+            emoteElements.forEach(emoteElement => {
+              const emoteValue = emoteElement.getAttribute('alt');
+              uniqueString += emoteValue;
+            });
+          } else {
+            const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+            emoteElements.forEach(emoteElement => {
+              const emoteValue = emoteElement.getAttribute('data-emote-name');
+              uniqueString += emoteValue;
+            });
+          }
+          const exist = flusher.props.displayedMessages.find(obj => {
+            return obj.key === uniqueString;
+          });
+          if (exist) return;
+          flusher.props.displayedMessages.push({
+            id: id,
+            key: uniqueString
+          });
+        }
+      }
+      setTimeout(() => addMessage(addedNode, id, defaultAvatar, AeroKick), 150);
+    }
+    function addMessage(node, id, defaultAvatar, AeroKick) {
       const clonedNode = node.cloneNode(true);
+      if (AeroKick) {
+        clonedNode.style.fontSize = null;
+        clonedNode.style.marginTop = null;
+        clonedNode.classList.remove('relative', 'bk-pl-1.5');
+        if (flusher.states.flushState) {
+          var elements = clonedNode.querySelectorAll('[class*=bk-top-]');
+          elements.forEach(element => {
+            var classes = element.classList;
+            var classesToRemove = Array.from(classes).filter(className => className.includes("bk-top-"));
+            classesToRemove.forEach(className => {
+              element.classList.remove(className);
+            });
+          });
+        }
+        const avatar = clonedNode.querySelector('img[alt="avatar"]');
+        if (avatar) {
+          avatar.closest('button').classList.remove('bk-ease-in-out', 'bk-duration-100', 'bk-transition-colors', 'bk-translate-y-px');
+          avatar.style.animation = 'none';
+          const username = clonedNode.querySelector('.bk-text-transparent');
+          if (username) username.style.color = username.style.backgroundColor ?? 'white';
+          avatar.onerror = function () {
+            this.style.display = 'none';
+            this.onerror = null;
+            this.src = defaultAvatar;
+            this.style.display = 'block';
+          };
+        }
+      }
 
       /* function getRandomColor() {
          const letters = '0123456789ABCDEF';
@@ -830,9 +853,14 @@ class FlusherMessages {
           });
         }
         if (!flusher.states.reply || flusher.states.flushState) {
-          const chatEntry = clonedNode.querySelector('.chat-entry');
-          if (chatEntry && chatEntry.childElementCount > 1) {
-            chatEntry.firstElementChild.style.display = 'none';
+          if (AeroKick) {
+            const chatEntry = clonedNode.querySelector('.bk-text-sm');
+            if (chatEntry) chatEntry.style.display = 'none';
+          } else {
+            const chatEntry = clonedNode.querySelector('.chat-entry');
+            if (chatEntry && chatEntry.childElementCount > 1) {
+              chatEntry.firstElementChild.style.display = 'none';
+            }
           }
         }
         if (flusher.props.isVod && (flusher.states.flushState || !flusher.states.timeState)) {
@@ -846,10 +874,10 @@ class FlusherMessages {
       flusher.props.elementQueue.push(clonedNode);
       processElementQueue(flusher);
     }
-    function waitForChat(parent) {
+    function waitForChat(parent, AeroKick) {
       logToConsole(`Looking for Native Chat`);
       if (!parent) parent = document.body;
-      const chatEntry = parent.querySelector('[data-chat-entry]');
+      const chatEntry = parent.querySelector('.rounded-md.bk-block') || parent.querySelector('[data-chat-entry]');
       if (chatEntry) {
         logToConsole(`Native Chat found`);
         return chatEntry.parentElement;
@@ -865,7 +893,7 @@ class FlusherMessages {
           for (const mutation of mutationsList) {
             if (mutation.type === 'childList') {
               mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1 && node.hasAttribute('data-chat-entry')) {
+                if (node.nodeType === 1 && (node.classList.contains('bk-block.rounded-md') || node.hasAttribute('data-chat-entry'))) {
                   if (found) return;
                   observer.disconnect();
                   resolve(node.parentNode);
@@ -1219,15 +1247,15 @@ const toggle = element_doc.body.firstChild;
 
 let clickOutsideHandlerFunction = null;
 function createToggle(flusher) {
-  const parent = flusher.props.external ? flusher.video.parentNode : flusher.video;
+  const parent = !flusher.props.isAeroKick && !flusher.props.external ? flusher.video.closest('#video-holder') : flusher.video.parentNode;
   const domToggle = parent.querySelector('.flusher-toggle-btn');
   if (domToggle !== null) return;
   const popupMenu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
   const baseMenu = popupMenu.querySelector('.flusher-menu-base');
-  const existingButton = flusher.props.external ? parent : document.querySelector('.vjs-fullscreen-control');
-  const toggleBtn = flusher.props.external ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
-  flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, existingButton.nextSibling);
-  ;
+  const existingButton = flusher.props.external ? parent : flusher.props.isAeroKick ? flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4') : document.querySelector('.vjs-fullscreen-control');
+  const toggleBtn = flusher.props.external || flusher.props.isAeroKick ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
+  if (flusher.props.isAeroKick) toggleBtn.style.marginRight = "1rem";
+  flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, flusher.props.isAeroKick ? existingButton : existingButton.nextSibling);
   svgToggle(flusher);
   toggleBtn.addEventListener('mousedown', function (event) {
     event.stopPropagation();
@@ -1317,16 +1345,18 @@ function dragElement(flusher) {
 
 function createMenu(flusher) {
   const toggledClass = 'toggled-on';
-  flusher.video = flusher.props.external ? flusher.video : flusher.video.closest('.video-js');
+
+  /* flusher.video = flusher.props.external ? flusher.video : flusher.video.closest('.video-js'); */
   const domMenu = flusher.video.querySelector('.flusher-menu');
   if (domMenu === null) {
-    let parent = flusher.props.external ? flusher.video.parentNode : document.querySelector('.vjs-control-bar');
+    const b = typeof browser !== 'undefined' ? browser : chrome;
+    let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : document.querySelector('.vjs-control-bar');
     const shadowBox = document.createElement('div');
     shadowBox.id = 'shadowbox';
+    if (flusher.props.isAeroKick) shadowBox.style.zIndex = 1001;
     const shadowRoot = shadowBox.attachShadow({
       mode: 'open'
     });
-    const b = typeof browser !== 'undefined' ? browser : chrome;
     const linkElement = document.createElement('link');
     linkElement.rel = 'stylesheet';
     linkElement.href = b.runtime.getURL('lib/kick/app.b67a4f06.css');
@@ -1527,7 +1557,7 @@ function createMenu(flusher) {
       const newChatEnabled = toggleElement.classList.contains(toggledClass);
       flusher.states.chatEnabled = newChatEnabled;
       newChatEnabled ? flusher.provider.bindRequests(flusher) : flusher.provider.unbindRequests(flusher);
-      if (newChatEnabled && flusher.container.attributes['layout'].nodeValue === 'vertical') dragElement(flusher);
+      if (newChatEnabled && flusher.container.attributes['layout']?.nodeValue === 'vertical') dragElement(flusher);
       flusher.clear();
       svgToggle(flusher);
       toggleEnableMenu();
@@ -1540,7 +1570,6 @@ function createMenu(flusher) {
       setExtensionStorageItem('flusher-enable', newChatEnabled);
     });
     if (flusher.states.chatEnabled) flusherToggle.classList.toggle(toggledClass);
-    togglePointerEvents(flusher);
     return createToggle(flusher);
   }
   function toTitleCase(str) {
@@ -1598,12 +1627,12 @@ function togglePointerEvents(flusher) {
   if (flusher.states.flushState || !flusher.states.chatEnabled) {
     flusher.container.classList.remove('flusher-grab');
     flusher.container.classList.add('flusher-no-grab');
-    return;
+  } else {
+    flusher.container.classList.remove('flusher-no-grab');
+    flusher.container.classList.add('flusher-grab');
+    flusher.props.lastRow = 2;
+    dragElement(flusher);
   }
-  flusher.props.lastRow = 2;
-  dragElement(flusher);
-  flusher.container.classList.remove('flusher-no-grab');
-  flusher.container.classList.add('flusher-grab');
 }
 ;// CONCATENATED MODULE: ./modules/utils/resize.js
 
@@ -1612,7 +1641,7 @@ function togglePointerEvents(flusher) {
 
 function checkResize(flusher) {
   logToConsole('Check Resize');
-  const target = flusher.props.external ? flusher.video : flusher.video.querySelector('video');
+  const target = flusher.props.external ? flusher.video : flusher.video.querySelector('video') ?? flusher.video;
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver(entries => {
@@ -1651,6 +1680,7 @@ function checkResize(flusher) {
           flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
           flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
           flusher.container.setAttribute('time', flusher.states.timeState);
+          if (flusher.props.isAeroKick) flusher.container.setAttribute('aerokick', '');
           toggleEnableMenu();
           const documentWidth = document.documentElement.clientWidth;
           if (documentWidth < flusher.props.parentWidth / 2 + 10) {
@@ -1668,6 +1698,7 @@ function checkResize(flusher) {
             if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
             flusher.props.loading = false;
             processMessageQueue(flusher);
+            togglePointerEvents(flusher);
             logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
           } else {
             flusher.states.flushState ? flusher.clear() : flusher.resetPosition();
@@ -1867,7 +1898,7 @@ V5.2h1V4.1h1v-1h3.4V12.9z" style="fill-rule: evenodd; clip-rule: evenodd; fill: 
 
 
 class Flusher {
-  constructor(video, domain, channelName) {
+  constructor(video, domain, channelName, aeroKick) {
     this.video = video;
     this.states = new FlusherStates();
     this.props = new FlusherProps();
@@ -1875,8 +1906,8 @@ class Flusher {
     this.props.domain = domain;
     this.props.external = domain === 'KICK' ? false : true;
     this.props.isVod = window.location.href.includes('/video/');
-    const element = document.querySelector('.stream-username');
-    this.props.channelName = channelName ?? (element ? element.innerText.trim() : '');
+    this.props.isAeroKick = aeroKick ?? false;
+    this.props.channelName = channelName;
     this.provider = new FlusherMessages();
     visibilityChange(this);
   }
@@ -1958,6 +1989,7 @@ async function createChat(flusher) {
   logToConsole(`Create Chat`);
   const chatFlusher = document.createElement("div");
   chatFlusher.classList.add("flusher");
+  if (flusher.props.isAeroKick) chatFlusher.style.zIndex = 1000;
   const flusherDiv = document.createElement("div");
   flusherDiv.classList.add("flusher-messages");
   const shadowRoot = flusher.props.external ? chatFlusher.attachShadow({
@@ -1993,7 +2025,7 @@ async function createChat(flusher) {
   flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
   flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
   flusher.toggle = createMenu(flusher);
-  flusher.props.external ? flusher.video.parentNode.append(chatFlusher) : flusher.video.append(chatFlusher);
+  flusher.video.parentNode.append(chatFlusher);
   flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
   checkResize(flusher);
   function getExtensionStorageItem(key, defaultValue) {
@@ -2013,49 +2045,69 @@ class Kick {
   static init() {
     logToConsole(`Initialize`);
     let stopObserver = false;
-    let shouldReturn = true;
-    let video = document.querySelector(".video-js");
-    let username = document.querySelector(".stream-username");
-    if (video && username) {
-      logToConsole(`KICK video found`);
-      const video = document.getElementsByTagName('video')[0];
-      const flusher = new Flusher(video, "KICK");
-      try {
-        createChat(flusher);
-      } catch (error) {
-        shouldReturn = false;
-        logToConsole(`Failed to create chat`);
-      }
-      if (shouldReturn) return;
-    }
-    logToConsole(`KICK start video observer`);
-    const observer = new MutationObserver(function (mutations) {
-      mutations.forEach(function (mutation) {
-        if (!stopObserver && mutation.addedNodes) {
-          mutation.addedNodes.forEach(function (node) {
-            if (document.querySelector(".stream-username")) {
-              if (document.querySelector(".video-js")) {
-                logToConsole(`KICK stop video observer`);
-                stopObserver = true;
-                const video = document.getElementsByTagName('video')[0];
-                const flusher = new Flusher(video, "KICK");
-                try {
-                  createChat(flusher);
-                } catch (error) {
-                  stopObserver = false;
-                  logToConsole(`Failed to create chat`);
-                }
-                if (stopObserver) observer.disconnect();
+    const observeVideo = () => {
+      const videoObserver = new MutationObserver(() => {
+        let video = document.getElementsByTagName('video');
+        video = video[video.length - 1];
+        if (video) {
+          logToConsole(`KICK video found`);
+          videoObserver.disconnect();
+          setTimeout(() => {
+            /* const videoClass = AeroKick ? "#bk-video-player" : ".video-js"; */
+            let video = document.getElementsByTagName('video');
+            video = video[video.length - 1];
+            let channelName = document.querySelector(".stream-username");
+            if (channelName && video) {
+              channelName = channelName.innerText.trim();
+              const AeroKick = video.classList.contains('bk-aspect-video');
+              if (AeroKick) logToConsole(`detected: AeroKick`);
+              const flusher = new Flusher(video, "KICK", channelName, AeroKick);
+              try {
+                createChat(flusher);
+                return;
+              } catch (error) {
+                logToConsole(`Failed to create chat`);
               }
             }
-          });
+            logToConsole(`KICK start video observer`);
+            const observer = new MutationObserver(mutations => {
+              mutations.forEach(mutation => {
+                if (!stopObserver && mutation.addedNodes) {
+                  if (document.querySelector(".stream-username")) {
+                    if (document.getElementsByTagName('video')) {
+                      logToConsole(`KICK stop video observer`);
+                      stopObserver = true;
+                      let video = document.getElementsByTagName('video');
+                      video = video[video.length - 1];
+                      const channelName = document.querySelector(".stream-username").innerText.trim();
+                      const AeroKick = video.classList.contains('bk-aspect-video');
+                      if (AeroKick) logToConsole(`detected: AeroKick`);
+                      const flusher = new Flusher(video, "KICK", channelName, AeroKick);
+                      try {
+                        createChat(flusher);
+                      } catch (error) {
+                        stopObserver = false;
+                        logToConsole(`Failed to create chat`);
+                      }
+                      if (stopObserver) observer.disconnect();
+                    }
+                  }
+                }
+              });
+            });
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true
+            });
+          }, 1000);
         }
       });
-    });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+      videoObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    };
+    observeVideo();
   }
 }
 /* harmony default export */ const kick = (Kick);
@@ -2134,6 +2186,6 @@ class Ip2 {
 ;// CONCATENATED MODULE: ./modules/content.js
 
 
-window.location.hostname.includes('kick.com') ? kick.init() : ip2.init();
+window.location.hostname.includes('kick.com') ? setTimeout(kick.init(), 2000) : ip2.init();
 /******/ })()
 ;

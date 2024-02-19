@@ -1,13 +1,13 @@
 import { FlusherStates } from './states.js';
 import { FlusherProps } from './props.js';
 import { FlusherMessages } from './messages.js';
-import { visibilityChange , logToConsole } from "../utils/utils.js";
+import { visibilityChange, logToConsole } from "../utils/utils.js";
 import { stopScrollingInterval } from '../utils/resize.js'
 
 import Badges from '../utils/badges.js';
 
 export class Flusher {
-	constructor(video, domain, channelName) {
+	constructor(video, domain, channelName, aeroKick) {
 		this.video = video;
 		this.states = new FlusherStates();
 		this.props = new FlusherProps();
@@ -15,9 +15,8 @@ export class Flusher {
 		this.props.domain = domain;
 		this.props.external = domain === 'KICK' ? false : true;
 		this.props.isVod = window.location.href.includes('/video/');
-
-		const element = document.querySelector('.stream-username');
-		this.props.channelName = channelName ?? (element ? element.innerText.trim() : '');
+		this.props.isAeroKick = aeroKick ?? false;
+		this.props.channelName = channelName;
 
 		this.provider = new FlusherMessages();
 
