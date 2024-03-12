@@ -386,7 +386,7 @@ async function createMessage(message, flusher) {
   let match;
   while ((match = emoteRegex.exec(reduced)) !== null) {
     const textBeforeEmote = reduced.slice(lastIndex, match.index);
-    if (textBeforeEmote.trim() !== '') {
+    if (textBeforeEmote.trim() !== "") {
       const textBeforeNode = document.createElement("span");
       textBeforeNode.textContent = textBeforeEmote;
       textBeforeNode.classList.add("flusher-content-text");
@@ -401,27 +401,27 @@ async function createMessage(message, flusher) {
     lastIndex = emoteRegex.lastIndex;
   }
   const textAfterLastEmote = reduced.slice(lastIndex);
-  if (textAfterLastEmote.trim() !== '') {
+  if (textAfterLastEmote.trim() !== "") {
     const textAfterNode = document.createElement("span");
     textAfterNode.textContent = textAfterLastEmote;
     textAfterNode.classList.add("flusher-content-text");
     contentSpan.appendChild(textAfterNode);
   } else {
     const lastChild = contentSpan.lastChild;
-    if (lastChild.tagName === 'IMG') {
-      lastChild.className = 'last-flusher-emote';
+    if (lastChild.tagName === "IMG") {
+      lastChild.className = "last-flusher-emote";
     }
   }
   badgeSpan.firstChild ? messageDiv.append(badgeSpan) : null;
   messageDiv.append(usernameSpan, boldSpan, contentSpan);
-  messageDiv.setAttribute('data-chat-entry', message.id);
+  messageDiv.setAttribute("data-chat-entry", message.id);
   message.container = messageDiv;
   appendMessage(message, flusher);
   function reduceRepeatedSentences(input) {
     const regexSentence = /(\b.+?\b)\1+/g;
-    const sentence = input.replace(regexSentence, '$1');
+    const sentence = input.replace(regexSentence, "$1");
     const regexChar = /(.)(\1{10,})/g;
-    return sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
+    return sentence.replace(regexChar, "$1$1$1$1$1$1$1$1$1$1");
   }
 }
 async function getBadges(data, flusher) {
@@ -432,22 +432,22 @@ async function getBadges(data, flusher) {
     const cachedBadge = getBadgeImage(badge, flusher);
     if (!cachedBadge) continue;
     if (cachedBadge?.src) {
-      const badgeElement = document.createElement('img');
+      const badgeElement = document.createElement("img");
       badgeElement.src = cachedBadge.src;
       badgeElement.alt = badge.type;
-      badgeElement.classList.add('flusher-badge');
+      badgeElement.classList.add("flusher-badge");
       badgeArray.push(badgeElement);
     } else {
-      cachedBadge.classList.add('flusher-badge');
+      cachedBadge.classList.add("flusher-badge");
       badgeArray.push(cachedBadge);
     }
   }
   function getBadgeImage(badge, flusher) {
     let badgeImage;
-    if (badge.type === 'subscriber') {
+    if (badge.type === "subscriber") {
       const months = badge.count;
       const correspondingBadge = findClosestBadge(months);
-      badgeImage = correspondingBadge ? correspondingBadge : flusher.badges['subscriber']?.cloneNode(true);
+      badgeImage = correspondingBadge ? correspondingBadge : flusher.badges["subscriber"]?.cloneNode(true);
     } else {
       badgeImage = flusher.badges[badge.type]?.cloneNode(true) || null;
     }
@@ -458,32 +458,32 @@ async function getBadges(data, flusher) {
       if (currentBadge.months <= months && (!closest || currentBadge.months > closest.months)) {
         return currentBadge;
       }
-      return closest || flusher.badges['subscriber']?.cloneNode(true);
-    }, null)?.badge_image || flusher.props.badgeCache[flusher.props.badgeCache.length - 1]?.badge_image || flusher.badges['subscriber']?.cloneNode(true);
+      return closest || flusher.badges["subscriber"]?.cloneNode(true);
+    }, null)?.badge_image || flusher.props.badgeCache[flusher.props.badgeCache.length - 1]?.badge_image || flusher.badges["subscriber"]?.cloneNode(true);
   }
 
   /* Enable when iframe chatroom available */
 
   /* badges.forEach(badge => {
-  	let badgeText = badge.text;
-  	if (badge.count) {
-  		badgeText = `${badge.type}-${badge.count}`;
-  	}
-  	const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
-  	if (cachedBadge) {
-  		badgeArray.push(cachedBadge.html);
-  		badgeCount++;
-  		return;
-  	}
+  let badgeText = badge.text;
+  if (badge.count) {
+  	badgeText = `${badge.type}-${badge.count}`;
+  }
+  const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+  if (cachedBadge) {
+  	badgeArray.push(cachedBadge.html);
+  	badgeCount++;
+  	return;
+  }
   }); */
 
   /* let attempts = 0;
   while (badgeCount !== badges.length && attempts < 10) {
-  	const newBadges = checkForBadges(data, flusher);
-  	badgeArray = newBadges;
-  		badgeCount = badgeArray.length;
-  	attempts++;
-  		await new Promise(resolve => setTimeout(resolve, 750));
+  const newBadges = checkForBadges(data, flusher);
+  badgeArray = newBadges;
+  	badgeCount = badgeArray.length;
+  attempts++;
+  	await new Promise(resolve => setTimeout(resolve, 750));
   } */
 
   return badgeArray;
@@ -493,8 +493,8 @@ async function getBadges(data, flusher) {
     flusher.props.isProcessingMessages = false;
     let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
     if (firstChatIdentity !== null) {
-      let identity = firstChatIdentity.closest('.chat-message-identity');
-      identity.querySelectorAll('div.badge-tooltip').forEach(function (baseBadge, index) {
+      let identity = firstChatIdentity.closest(".chat-message-identity");
+      identity.querySelectorAll("div.badge-tooltip").forEach(function (baseBadge, index) {
         let badge = badges[index];
         if (badge === undefined) return;
         let badgeText = badge.text;
@@ -509,9 +509,9 @@ async function getBadges(data, flusher) {
         const imgElement = baseBadge.querySelector(`img`);
         if (imgElement) {
           const imgUrl = imgElement.src;
-          const newImg = document.createElement('img');
+          const newImg = document.createElement("img");
           newImg.src = imgUrl;
-          newImg.classList.add('flusher-badge');
+          newImg.classList.add("flusher-badge");
           flusher.props.badgeCache.push({
             type: badgeText,
             html: newImg
@@ -519,10 +519,10 @@ async function getBadges(data, flusher) {
           badgeElements.push(newImg);
           return;
         }
-        const svgElement = baseBadge.querySelector('svg');
+        const svgElement = baseBadge.querySelector("svg");
         if (svgElement) {
           const svgCopy = svgElement.cloneNode(true);
-          svgCopy.classList.add('flusher-badge');
+          svgCopy.classList.add("flusher-badge");
           flusher.props.badgeCache.push({
             type: badgeText,
             html: svgCopy
@@ -530,31 +530,66 @@ async function getBadges(data, flusher) {
           badgeElements.push(svgCopy);
           return;
         }
-        console.warn('badge not found: ' + badgeText);
+        console.warn("badge not found: " + badgeText);
       });
     }
     return badgeElements;
   }
 }
 function createUserBanMessage(data, flusher) {
-  logToConsole(`createUserBanMessage`);
+  logToConsole("createUserBanMessage");
   const bannedUser = data.user.username;
+  const bannedByUser = data.banned_by.username;
   const banMessageContent = document.createElement("div");
   banMessageContent.classList.add("flusher-message", "flusher-red");
-  const bannedUserSpan = document.createElement("span");
-  bannedUserSpan.textContent = bannedUser;
-  const bannedBySpan = document.createElement("span");
-  bannedBySpan.textContent = data.banned_by.username;
-  const emoji = document.createElement('span');
-  emoji.textContent = ' ' + String.fromCodePoint(0x1F6AB) + ' ';
-  const banText = document.createTextNode("banned by");
   const banMessageSpan = document.createElement("span");
-  banMessageSpan.style.color = "#FF0000";
-  banMessageSpan.append(bannedUserSpan, emoji, banText, emoji.cloneNode(true), bannedBySpan);
+  let logText;
+  if (data.expires_at) {
+    const expiresAt = new Date(data.expires_at);
+    const timeDifference = expiresAt - new Date();
+    let timeDiffText;
+    if (timeDifference > 0) {
+      timeDiffText = humanizeDuration(timeDifference + 5000);
+    } else {
+      timeDiffText = "indefinitely";
+    }
+    logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+    const expiresText = document.createTextNode(logText);
+    banMessageSpan.appendChild(expiresText);
+  } else {
+    logText = `${bannedUser} banned indefinitely by ${bannedByUser}`;
+    const expiresText = document.createTextNode(logText);
+    banMessageSpan.appendChild(expiresText);
+  }
   banMessageContent.appendChild(banMessageSpan);
   data.created_at = Date.now();
   data.container = banMessageContent;
+  logToConsole(logText);
   appendMessage(data, flusher);
+  function humanizeDuration(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+    if (years > 0) {
+      return years === 1 ? "1 year" : `${years} years`;
+    } else if (months > 0) {
+      return months === 1 ? "1 month" : `${months} months`;
+    } else if (weeks > 0) {
+      return weeks === 1 ? "1 week" : `${weeks} weeks`;
+    } else if (days > 0) {
+      return days === 1 ? "1 day" : `${days} days`;
+    } else if (hours > 0) {
+      return hours === 1 ? "1 hour" : `${hours} hours`;
+    } else if (minutes > 0) {
+      return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+    } else {
+      return seconds === 1 ? "1 second" : `${seconds} seconds`;
+    }
+  }
 }
 function createSubMessage(data, flusher) {
   logToConsole(`createSubMessage`);
@@ -562,11 +597,11 @@ function createSubMessage(data, flusher) {
   const months = data.months;
   const subscriptionMessageContent = document.createElement("div");
   subscriptionMessageContent.classList.add("flusher-message", "flusher-green");
-  const emojiSpan = document.createElement('span');
-  emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
   const subscriptionMessageSpan = document.createElement("span");
   subscriptionMessageSpan.style.color = "#00FF00";
-  subscriptionMessageSpan.textContent = `${months > 1 ? months + ' months' : '1 month'} subscription by ${username}`;
+  subscriptionMessageSpan.textContent = `${months > 1 ? months + " months" : "1 month"} subscription by ${username}`;
   const subSpan = document.createElement("span");
   subSpan.style.color = "#00FF00";
   subSpan.append(emojiSpan, subscriptionMessageSpan);
@@ -581,10 +616,10 @@ function createHostMessage(data, flusher) {
   const viewersCount = data.number_viewers;
   const hostMessageContent = document.createElement("div");
   hostMessageContent.classList.add("flusher-message", "flusher-green");
-  const emojiSpan = document.createElement('span');
-  emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
   const viewersCountSpan = document.createElement("span");
-  viewersCountSpan.textContent = `${viewersCount > 1 ? viewersCount + ' viewers' : '1 viewer'} hosted by ` + hostUsername;
+  viewersCountSpan.textContent = `${viewersCount > 1 ? viewersCount + " viewers" : "1 viewer"} hosted by ` + hostUsername;
   const hostMessageSpan = document.createElement("span");
   hostMessageSpan.style.color = "#00FF00";
   hostMessageSpan.append(emojiSpan, viewersCountSpan);
@@ -594,15 +629,20 @@ function createHostMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createGiftedMessage(data, flusher) {
+  if (!flusher.states.flushState && !flusher.props.external) {
+    flusher.props.isProcessingMessages = false;
+    processMessageQueue(flusher);
+    return;
+  }
   logToConsole(`createGiftedMessage`);
   const gifterUsername = data.gifter_username;
   const giftedUsernames = data.gifted_usernames;
   const giftedContent = document.createElement("div");
   giftedContent.classList.add("flusher-message", "flusher-green");
-  const emojiSpan = document.createElement('span');
-  emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
   const gifterUsernameSpan = document.createElement("span");
-  gifterUsernameSpan.textContent = `${giftedUsernames.length > 1 ? giftedUsernames.length + ' Subscriptions' : '1 Subscription'} gifted by ` + gifterUsername;
+  gifterUsernameSpan.textContent = `${giftedUsernames.length > 1 ? giftedUsernames.length + " Subscriptions" : "1 Subscription"} gifted by ` + gifterUsername;
   const giftedSpan = document.createElement("span");
   giftedSpan.style.color = "#00FF00";
   giftedSpan.append(emojiSpan, gifterUsernameSpan);
@@ -623,10 +663,10 @@ function createFollowersMessage(data, flusher) {
     }
     const messageContent = document.createElement("div");
     messageContent.classList.add("flusher-message");
-    const emojiSpan = document.createElement('span');
-    emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
+    const emojiSpan = document.createElement("span");
+    emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
     const followersMessageSpan = document.createElement("span");
-    followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + ' new followers' : '1 new follower'}`;
+    followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"}`;
     const followersSpan = document.createElement("span");
     followersSpan.append(emojiSpan, followersMessageSpan);
     messageContent.append(followersSpan);
@@ -645,7 +685,7 @@ function createFollowersMessage(data, flusher) {
 
 class FlusherMessages {
   constructor() {
-    logToConsole('Create MessageProvider');
+    logToConsole("Create MessageProvider");
     this.socket = null;
     this.nativeChatObserver = null;
     this.channels = new Set();
@@ -658,9 +698,9 @@ class FlusherMessages {
       return;
     }
     const subscriptionMessage = {
-      event: 'pusher:subscribe',
+      event: "pusher:subscribe",
       data: {
-        auth: '',
+        auth: "",
         channel: `chatrooms.${id}.v2`
       }
     };
@@ -688,31 +728,31 @@ class FlusherMessages {
         });
         processMessageQueue(flusher);
       } else {
-        logToConsole('No messages found in the response.');
+        logToConsole("No messages found in the response.");
       }
     } catch (error) {
-      console.error('Error fetching messages:', error.message);
+      console.error("Error fetching messages:", error.message);
     }
   }
   setupWebSocket(flusher) {
-    logToConsole('Setup WebSocket');
+    logToConsole("Setup WebSocket");
     if (this.socket) return;
-    const webSocketUrl = 'wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false';
+    const webSocketUrl = "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false";
     this.socket = new WebSocket(webSocketUrl);
     this.socket.onmessage = event => {
       const data = JSON.parse(event.data);
       document.body.contains(flusher.video) ? this.onMessage(data, flusher) : this.disposeChannel();
     };
-    this.socket.addEventListener('open', event => {
+    this.socket.addEventListener("open", event => {
       logToConsole(`WebSocket connection opened ${flusher.props.channelName}`);
       this.subscribeChannel(flusher);
     });
-    this.socket.addEventListener('close', event => {
+    this.socket.addEventListener("close", event => {
       logToConsole(`WebSocket connection closed ${flusher.props.channelName}`);
       this.channels.clear();
     });
-    this.socket.addEventListener('error', event => {
-      console.error('WebSocket error:', event);
+    this.socket.addEventListener("error", event => {
+      console.error("WebSocket error:", event);
     });
   }
   onMessage(data, flusher) {
@@ -729,11 +769,11 @@ class FlusherMessages {
   }
   async interceptNative(flusher) {
     logToConsole(`Intercept Native Chat`);
-    const AeroKick = document.body.classList.contains('aerokick-customization');
+    const AeroKick = document.body.classList.contains("aerokick-customization");
     if (AeroKick) logToConsole(`detected: AeroKick for Chat`);
-    const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector('#chatroom-replay') : document.querySelector(AeroKick ? '.chat-container .bk-overflow-y-auto' : '.overflow-y-scroll.py-3'), AeroKick);
-    const b = typeof browser !== 'undefined' ? browser : chrome;
-    const defaultAvatar = b.runtime.getURL('lib/kick/user-profile-pic.png');
+    const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector("#chatroom-replay") : document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : ".overflow-y-scroll.py-3"), AeroKick);
+    const b = typeof browser !== "undefined" ? browser : chrome;
+    const defaultAvatar = b.runtime.getURL("lib/kick/user-profile-pic.png");
     if (!flusher.states.flushState) setTimeout(() => {
       logToConsole(`Parse existing`);
       nativeChat.childNodes.forEach(addedNode => {
@@ -743,7 +783,7 @@ class FlusherMessages {
     this.nativeChatObserver = new MutationObserver(mutations => {
       const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
       nodesList.forEach(mutation => {
-        if (mutation.type === 'childList') {
+        if (mutation.type === "childList") {
           mutation.addedNodes.forEach(addedNode => {
             checkDupe(addedNode, AeroKick);
           });
@@ -758,31 +798,31 @@ class FlusherMessages {
     function checkDupe(addedNode, AeroKick) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
       if (AeroKick && !flusher.props.isVod) {
-        const button = addedNode.querySelector('button');
+        const button = addedNode.querySelector("button");
         if (!button) {
-          console.log('Kick Chat Flusher - Button does not exist in the added node:', addedNode);
+          console.log("Kick Chat Flusher - Button does not exist in the added node:", addedNode);
           return;
         }
       }
-      const id = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector('button').getAttribute('data-radial-id') : addedNode.getAttribute('data-chat-entry');
-      if (id === 'history_breaker' || flusher.states.flushState && (!id || id === '')) return;
-      if (id || id === '') {
+      const id = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-id") : addedNode.getAttribute("data-chat-entry");
+      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "")) return;
+      if (id || id === "") {
         if (!flusher.states.spamState || flusher.states.flushState) {
-          let uniqueString = '';
-          const userId = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector('button').getAttribute('data-radial-username') : addedNode.querySelector('[data-chat-entry-user-id]')?.getAttribute('data-chat-entry-user-id');
-          uniqueString += userId + '-';
-          const divTextContent = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector('span.bk-inline').textContent : addedNode.querySelector('.chat-entry-content')?.textContent;
-          uniqueString += divTextContent + '-';
+          let uniqueString = "";
+          const userId = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-username") : addedNode.querySelector("[data-chat-entry-user-id]")?.getAttribute("data-chat-entry-user-id");
+          uniqueString += userId + "-";
+          const divTextContent = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("span.bk-inline").textContent : addedNode.querySelector(".chat-entry-content")?.textContent;
+          uniqueString += divTextContent + "-";
           if (AeroKick && flusher.props.isAeroKick) {
-            const emoteElements = addedNode.querySelectorAll('img');
+            const emoteElements = addedNode.querySelectorAll("img");
             emoteElements.forEach(emoteElement => {
-              const emoteValue = emoteElement.getAttribute('alt');
+              const emoteValue = emoteElement.getAttribute("alt");
               uniqueString += emoteValue;
             });
           } else {
-            const emoteElements = addedNode.querySelectorAll('[data-emote-name]');
+            const emoteElements = addedNode.querySelectorAll("[data-emote-name]");
             emoteElements.forEach(emoteElement => {
-              const emoteValue = emoteElement.getAttribute('data-emote-name');
+              const emoteValue = emoteElement.getAttribute("data-emote-name");
               uniqueString += emoteValue;
             });
           }
@@ -803,9 +843,9 @@ class FlusherMessages {
       if (AeroKick) {
         clonedNode.style.fontSize = null;
         clonedNode.style.marginTop = null;
-        clonedNode.classList.remove('relative', 'bk-pl-1.5');
+        clonedNode.classList.remove("relative", "bk-pl-1.5");
         if (flusher.states.flushState) {
-          var elements = clonedNode.querySelectorAll('[class*=bk-top-]');
+          var elements = clonedNode.querySelectorAll("[class*=bk-top-]");
           elements.forEach(element => {
             var classes = element.classList;
             var classesToRemove = Array.from(classes).filter(className => className.includes("bk-top-"));
@@ -816,57 +856,57 @@ class FlusherMessages {
         }
         const avatar = clonedNode.querySelector('img[alt="avatar"]');
         if (avatar) {
-          avatar.closest('button').classList.remove('bk-ease-in-out', 'bk-duration-100', 'bk-transition-colors', 'bk-translate-y-px');
-          avatar.style.animation = 'none';
-          const username = clonedNode.querySelector('.bk-text-transparent');
-          if (username) username.style.color = username.style.backgroundColor ?? 'white';
+          avatar.closest("button").classList.remove("bk-ease-in-out", "bk-duration-100", "bk-transition-colors", "bk-translate-y-px");
+          avatar.style.animation = "none";
+          const username = clonedNode.querySelector(".bk-text-transparent");
+          if (username) username.style.color = username.style.backgroundColor ?? "white";
           avatar.onerror = function () {
-            this.style.display = 'none';
+            this.style.display = "none";
             this.onerror = null;
             this.src = defaultAvatar;
-            this.style.display = 'block';
+            this.style.display = "block";
           };
         }
       }
 
       /* function getRandomColor() {
-         const letters = '0123456789ABCDEF';
-         let color = '#';
-         for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+               color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
          }
-         return color;
-      }
-       const randomColor = getRandomColor();
-      node.style.border = `2px solid ${randomColor}`;
-      clonedNode.style.border = `2px solid ${randomColor}`; */
+          const randomColor = getRandomColor();
+         node.style.border = `2px solid ${randomColor}`;
+         clonedNode.style.border = `2px solid ${randomColor}`; */
 
-      if (id || id === '') {
+      if (id || id === "") {
         if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
-          clonedNode.querySelectorAll('span:nth-child(3) span').forEach(function (element) {
+          clonedNode.querySelectorAll("span:nth-child(3) span").forEach(function (element) {
             if (element.textContent.trim().length > 0) {
               const regexSentence = /(\b.+?\b)\1+/g;
-              const sentence = element.textContent.replace(regexSentence, '$1');
+              const sentence = element.textContent.replace(regexSentence, "$1");
               const regexChar = /(.)(\1{10,})/g;
-              element.textContent = sentence.replace(regexChar, '$1$1$1$1$1$1$1$1$1$1');
+              element.textContent = sentence.replace(regexChar, "$1$1$1$1$1$1$1$1$1$1");
             }
           });
         }
         if (!flusher.states.reply || flusher.states.flushState) {
           if (AeroKick) {
-            const chatEntry = clonedNode.querySelector('.bk-text-sm');
-            if (chatEntry) chatEntry.style.display = 'none';
+            const chatEntry = clonedNode.querySelector(".bk-text-sm");
+            if (chatEntry) chatEntry.style.display = "none";
           } else {
-            const chatEntry = clonedNode.querySelector('.chat-entry');
+            const chatEntry = clonedNode.querySelector(".chat-entry");
             if (chatEntry && chatEntry.childElementCount > 1) {
-              chatEntry.firstElementChild.style.display = 'none';
+              chatEntry.firstElementChild.style.display = "none";
             }
           }
         }
         if (flusher.props.isVod && (flusher.states.flushState || !flusher.states.timeState)) {
-          const chatEntryDiv = clonedNode.querySelector('.chat-entry div');
+          const chatEntryDiv = clonedNode.querySelector(".chat-entry div");
           if (chatEntryDiv && chatEntryDiv.firstElementChild) {
-            chatEntryDiv.firstElementChild.style.display = 'none';
+            chatEntryDiv.firstElementChild.style.display = "none";
           }
         }
       }
@@ -874,10 +914,10 @@ class FlusherMessages {
       flusher.props.elementQueue.push(clonedNode);
       processElementQueue(flusher);
     }
-    function waitForChat(parent, AeroKick) {
+    function waitForChat(parent) {
       logToConsole(`Looking for Native Chat`);
       if (!parent) parent = document.body;
-      const chatEntry = parent.querySelector('.rounded-md.bk-block') || parent.querySelector('[data-chat-entry]');
+      const chatEntry = parent.querySelector(".rounded-md.bk-block") || parent.querySelector("[data-chat-entry]");
       if (chatEntry) {
         logToConsole(`Native Chat found`);
         return chatEntry.parentElement;
@@ -891,9 +931,9 @@ class FlusherMessages {
         let found = false;
         const mutationCallback = function (mutationsList, observer) {
           for (const mutation of mutationsList) {
-            if (mutation.type === 'childList') {
+            if (mutation.type === "childList") {
               mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1 && (node.classList.contains('bk-block.rounded-md') || node.hasAttribute('data-chat-entry'))) {
+                if (node.nodeType === 1 && (node.classList.contains("bk-block.rounded-md") || node.hasAttribute("data-chat-entry"))) {
                   if (found) return;
                   observer.disconnect();
                   resolve(node.parentNode);
@@ -927,7 +967,7 @@ class FlusherMessages {
             flusher.props.badgeCache.push(...data.subscriber_badges);
           }
         } catch (error) {
-          console.error('Error fetching data:', error);
+          console.error("Error fetching data:", error);
         }
       }
       if (!this.socket && !flusher.props.isVod) this.subscribeChannel(flusher);
@@ -1640,12 +1680,12 @@ function togglePointerEvents(flusher) {
 
 
 function checkResize(flusher) {
-  logToConsole('Check Resize');
-  const target = flusher.props.external ? flusher.video : flusher.video.querySelector('video') ?? flusher.video;
+  logToConsole("Check Resize");
+  const target = flusher.props.external ? flusher.video : flusher.video.querySelector("video") ?? flusher.video;
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver(entries => {
-    if (flusher.container !== null) flusher.container.style.display = 'none';
+    if (flusher.container !== null) flusher.container.style.display = "none";
     for (let entry of entries) {
       if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
       flusher.resizeTimer = setTimeout(() => {
@@ -1656,7 +1696,7 @@ function checkResize(flusher) {
           window.currentUrl = window.location.href;
           if ((width === null || width === 0) && (!height || height === 0)) {
             if (flusher !== null) {
-              logToConsole('Remove Chat');
+              logToConsole("Remove Chat");
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
@@ -1670,17 +1710,19 @@ function checkResize(flusher) {
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
-          flusher.container.style.setProperty('--flusher-width', `-${flusher.props.parentWidth}px`);
-          flusher.toggle.setAttribute('domain', flusher.props.domain);
-          const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? 'horizontal' : 'vertical' : flusher.states.flushState ? 'horizontal' : 'vertical';
-          flusher.container.setAttribute('layout', newFlushState);
-          flusher.container.setAttribute('enabled', flusher.states.chatEnabled);
-          flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
-          flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
-          flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
-          flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
-          flusher.container.setAttribute('time', flusher.states.timeState);
-          if (flusher.props.isAeroKick) flusher.container.setAttribute('aerokick', '');
+          flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
+          flusher.toggle.setAttribute("domain", flusher.props.domain);
+          const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
+          flusher.container.setAttribute("layout", newFlushState);
+          flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
+          setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
+          setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
+          flusher.container.setAttribute("background", flusher.states.backgroundStates[flusher.states.backgroundState]);
+          setAttribute(flusher.container, "font", flusher.states.sizeStates, flusher.states.fontState);
+          flusher.container.setAttribute("time", flusher.states.timeState);
+          if (flusher.props.isAeroKick) {
+            flusher.container.setAttribute("aerokick", "");
+          }
           toggleEnableMenu();
           const documentWidth = document.documentElement.clientWidth;
           if (documentWidth < flusher.props.parentWidth / 2 + 10) {
@@ -1691,7 +1733,7 @@ function checkResize(flusher) {
             stopScrollingInterval(flusher);
           }
           flusher.props.elementHeight = null;
-          flusher.container.style.display = 'flex';
+          flusher.container.style.display = "flex";
           createIntroMessage(flusher);
           if (oldWidth == null || oldWidth == 0) {
             if (flusher.container === null) return;
@@ -1699,7 +1741,7 @@ function checkResize(flusher) {
             flusher.props.loading = false;
             processMessageQueue(flusher);
             togglePointerEvents(flusher);
-            logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? 'VOD' : 'LIVE'}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
+            logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
           } else {
             flusher.states.flushState ? flusher.clear() : flusher.resetPosition();
           }
@@ -1711,15 +1753,15 @@ function checkResize(flusher) {
   function createIntroMessage(flusher) {
     const introContent = document.createElement("div");
     introContent.classList.add("flusher-message");
-    const emojiSpan = document.createElement('span');
-    emojiSpan.textContent = String.fromCodePoint(0x1F389) + ' ';
+    const emojiSpan = document.createElement("span");
+    emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
     const introSpan = document.createElement("span");
-    introSpan.textContent = `thanks for testing (version 0.8.3)`;
+    introSpan.textContent = `thanks for testing (version..)`;
     const introMessageSpan = document.createElement("span");
     introMessageSpan.append(emojiSpan, introSpan);
     introContent.appendChild(introMessageSpan);
-    introContent.style.setProperty('--row', 0);
-    introContent.classList.add('flusher-message');
+    introContent.style.setProperty("--row", 0);
+    introContent.classList.add("flusher-message");
     const parent = flusher.props.external ? flusher.container : document.body;
     parent.append(introContent);
     flusher.props.elementHeight = introContent.clientHeight;
@@ -1730,9 +1772,15 @@ function checkResize(flusher) {
 }
 function startScrollingInterval(flusher) {
   if (flusher.props.scrollIntervalId) return;
+  scrollChat(flusher);
   flusher.props.scrollIntervalId = setInterval(function () {
     scrollChat(flusher);
   }, 10000);
+}
+function setAttribute(element, attribute, states, stateKey) {
+  const state = states[stateKey];
+  const value = state.replace(/\s/g, "");
+  element.setAttribute(attribute, value);
 }
 function stopScrollingInterval(flusher) {
   if (!flusher.props.scrollIntervalId) return;
@@ -1740,14 +1788,14 @@ function stopScrollingInterval(flusher) {
   flusher.props.scrollIntervalId = null;
 }
 function scrollChat(flusher) {
-  const chatBtn = document.querySelector('#chatroom .justify-center.absolute');
-  const chatContainer = document.querySelector('#chatroom [data-chat-entry]');
+  const chatBtn = document.querySelector("#chatroom .justify-center.absolute");
+  const chatContainer = document.querySelector("#chatroom [data-chat-entry]");
   if (flusher.props.isFullscreen && !flusher.props.isVod) {
     if (chatBtn !== null) {
       chatBtn.click();
     }
     if (chatContainer !== null) {
-      const chatContainerParent = chatContainer.closest('.overflow-y-scroll');
+      const chatContainerParent = chatContainer.closest(".overflow-y-scroll");
       if (chatContainerParent !== null) {
         chatContainerParent.scrollTop = chatContainerParent.scrollHeight;
       }
@@ -2053,7 +2101,6 @@ class Kick {
           logToConsole(`KICK video found`);
           videoObserver.disconnect();
           setTimeout(() => {
-            /* const videoClass = AeroKick ? "#bk-video-player" : ".video-js"; */
             let video = document.getElementsByTagName('video');
             video = video[video.length - 1];
             let channelName = document.querySelector(".stream-username");
@@ -2074,11 +2121,11 @@ class Kick {
               mutations.forEach(mutation => {
                 if (!stopObserver && mutation.addedNodes) {
                   if (document.querySelector(".stream-username")) {
-                    if (document.getElementsByTagName('video')) {
+                    let video = document.getElementsByTagName('video');
+                    video = video[video.length - 1];
+                    if (video) {
                       logToConsole(`KICK stop video observer`);
                       stopObserver = true;
-                      let video = document.getElementsByTagName('video');
-                      video = video[video.length - 1];
                       const channelName = document.querySelector(".stream-username").innerText.trim();
                       const AeroKick = video.classList.contains('bk-aspect-video');
                       if (AeroKick) logToConsole(`detected: AeroKick`);

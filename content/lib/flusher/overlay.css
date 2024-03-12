@@ -6,7 +6,7 @@
   font-size: medium;
   font-weight: 500;
   max-width: calc(100% - 20px);
-  padding: 0 .5rem;
+  padding: 0 0.5rem;
   pointer-events: none;
   position: absolute;
   white-space: nowrap;
@@ -36,7 +36,7 @@
   padding: 0 !important;
 }
 
-.flusher-messages[layout="vertical"][aerokick]>div,
+.flusher-messages[layout="vertical"][aerokick] > div,
 .flusher-messages[layout="vertical"] .chat-entry {
   background: none;
   font-size: 1rem;
@@ -50,7 +50,8 @@
 .chat-entry span[class="truncate"] {
   color: white !important;
   opacity: 1;
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black, 1px 1px 1px black;
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
 .flusher-messages {
@@ -86,7 +87,7 @@
   background-color: rgba(27, 27, 27, 0.6);
   display: flex;
   border-radius: 8px;
-  font-size: .875rem;
+  font-size: 0.875rem;
   font-weight: 600;
   height: 2em;
   max-width: calc(100% - 20px);
@@ -105,15 +106,16 @@
   white-space: nowrap;
 }
 
-.flusher-messages a{
+.flusher-messages a {
   color: white;
   opacity: 1;
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black, 1px 1px 1px black;
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
 .flusher-messages .flusher-message .font-bold {
   color: white;
-  padding-right: .1rem;
+  padding-right: 0.1rem;
 }
 
 .flusher-messages[layout="horizontal"] .last-flusher-emote {
@@ -146,12 +148,13 @@
 .flusher-messages[layout="vertical"] .flusher-message {
   border-radius: 8px;
   box-sizing: border-box;
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.2rem;
   margin-top: 2px;
   max-width: 100%;
-  text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black, 1px 1px 3px black;
+  text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black,
+    1px 1px 3px black;
   word-break: break-word;
 }
 
@@ -167,18 +170,18 @@
   vertical-align: middle;
 }
 
-.flusher-messages[layout="vertical"][background="LARGE"]>div {
+.flusher-messages[layout="vertical"][background="LARGE"] > div {
   background: initial;
   background-color: rgba(27, 27, 27, 0.5);
   border-radius: 8px;
   margin: 0.1rem 0rem;
-  padding: .2rem .4rem;
+  padding: 0.2rem 0.4rem;
   width: 100%;
 }
 
-.flusher-messages[layout="vertical"][background="OFF"]>div {
+.flusher-messages[layout="vertical"][background="OFF"] > div {
   margin: 0;
-  padding: 0 .2rem;
+  padding: 0 0.2rem;
   width: auto;
 }
 
@@ -293,27 +296,27 @@
   user-select: none;
 }
 
-.flusher-messages[font="NORMAL"] div>span:nth-child(n + 3) img {
+.flusher-messages[font="NORMAL"] div > span:nth-child(n + 3) img {
   height: 28px;
 }
 
-.flusher-messages[font="SMALL"] div>span:nth-child(n + 3) img {
+.flusher-messages[font="SMALL"] div > span:nth-child(n + 3) img {
   height: 22px;
 }
 
-.flusher-messages[font="LARGE"] div>span:nth-child(n + 3) img {
+.flusher-messages[font="LARGE"] div > span:nth-child(n + 3) img {
   height: 32px;
 }
 
-.flusher-messages[layout="vertical"][font="LARGE"]>div {
-  padding: .1rem .4rem;
+.flusher-messages[layout="vertical"][font="LARGE"] > div {
+  padding: 0.1rem 0.4rem;
 }
 
-.flusher-messages[layout="vertical"][background="SMALL"]>div {
+.flusher-messages[layout="vertical"][background="SMALL"] > div {
   background-color: rgba(27, 27, 27, 0.5);
   border-radius: 8px;
   margin: 0.1rem 0rem;
-  padding: .2rem .4rem;
+  padding: 0.2rem 0.4rem;
 }
 
 .flusher-messages[font="SMALL"] span {
@@ -337,57 +340,90 @@
   padding-bottom: 0.1rem;
 }
 
-.flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
+.flusher-messages[font="NORMAL"][layout="vertical"]
+  .chat-entry
+  div
+  > span:nth-child(n + 3) {
+  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
+    1px 1px 2px black;
 }
 
-.flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
+.flusher-messages[font="NORMAL"][layout="vertical"][aerokick]
+  .bk-text-transparent,
+.flusher-messages[font="NORMAL"][layout="vertical"]
+  .chat-entry
+  span[class="chat-entry-username"] {
+  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
+    1px 1px 2px black;
 }
 
-.flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
+.flusher-messages[font="NORMAL"][layout="vertical"]
+  .chat-entry
+  span[class="font-bold text-white"] {
+  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
+    1px 1px 2px black;
 }
 
 .flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry {
-  padding: .1rem .2rem !important;
+  padding: 0.1rem 0.2rem !important;
   min-height: 28px;
 }
 
-.flusher-messages[font="SMALL"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black, 1px 1px 1px black;
+.flusher-messages[font="SMALL"][layout="vertical"]
+  .chat-entry
+  div
+  > span:nth-child(n + 3) {
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
-.flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[font="SMALL"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black, 1px 1px 1px black;
+.flusher-messages[font="NORMAL"][layout="vertical"][aerokick]
+  .bk-text-transparent,
+.flusher-messages[font="SMALL"][layout="vertical"]
+  .chat-entry
+  span[class="chat-entry-username"] {
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
-.flusher-messages[font="SMALL"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black, 1px 1px 1px black;
+.flusher-messages[font="SMALL"][layout="vertical"]
+  .chat-entry
+  span[class="font-bold text-white"] {
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
 .flusher-messages[font="SMALL"] .chat-entry {
-  padding: 0rem .2rem !important;
+  padding: 0rem 0.2rem !important;
   min-height: 24px;
 }
 
-.flusher-messages[font="LARGE"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
+.flusher-messages[font="LARGE"][layout="vertical"]
+  .chat-entry
+  div
+  > span:nth-child(n + 3) {
+  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
+    1px 1px 2px black;
 }
 
-.flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[font="LARGE"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
+.flusher-messages[font="NORMAL"][layout="vertical"][aerokick]
+  .bk-text-transparent,
+.flusher-messages[font="LARGE"][layout="vertical"]
+  .chat-entry
+  span[class="chat-entry-username"] {
+  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
+    1px 1px 2px black;
 }
 
-.flusher-messages[font="LARGE"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black;
+.flusher-messages[font="LARGE"][layout="vertical"]
+  .chat-entry
+  span[class="font-bold text-white"] {
+  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
+    1px 1px 2px black;
 }
 
 .flusher-messages[font="LARGE"] .chat-entry {
-  padding: .2rem .2rem !important;
+  padding: 0.2rem 0.2rem !important;
   min-height: 30px;
 }
 
@@ -397,7 +433,7 @@
 
 .flusher-message {
   align-items: center;
-  padding: 0 .5rem;
+  padding: 0 0.5rem;
 }
 
 .flusher-no-grab {
@@ -425,7 +461,10 @@
 
 .flusher-messages[layout="vertical"] .flusher-red,
 .flusher-messages[layout="vertical"] .flusher-green {
-  margin: 0.4rem 0.2rem;
+  margin: 0.4rem 0.2rem !important;
+  padding: 0.2rem 0.3rem !important;
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
 .flusher-username {

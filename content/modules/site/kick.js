@@ -18,7 +18,6 @@ class Kick {
           videoObserver.disconnect();
 
           setTimeout(() => {
-            /* const videoClass = AeroKick ? "#bk-video-player" : ".video-js"; */
             let video = document.getElementsByTagName('video');
             video = video[video.length - 1];
 
@@ -43,11 +42,11 @@ class Kick {
               mutations.forEach((mutation) => {
                 if (!stopObserver && mutation.addedNodes) {
                   if (document.querySelector(".stream-username")) {
-                    if (document.getElementsByTagName('video')) {
+                    let video = document.getElementsByTagName('video');
+                    video = video[video.length - 1];  
+                    if (video) {
                       logToConsole(`KICK stop video observer`);
                       stopObserver = true;
-                      let video = document.getElementsByTagName('video');
-                      video = video[video.length - 1];  
                       const channelName = document.querySelector(".stream-username").innerText.trim()
                       const AeroKick = video.classList.contains('bk-aspect-video');
                       if (AeroKick) logToConsole(`detected: AeroKick`);
