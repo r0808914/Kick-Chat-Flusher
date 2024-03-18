@@ -3,6 +3,8 @@ export function appendVertical(message, flusher) {
 	const lastItem = flusher.container.firstChild;
 
 	if (flusher.props.external) {
+		if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
+
 		const timestamp = new Date(message.created_at);
 		message.container.dataset.timestamp = timestamp;
 		if (lastItem) {
@@ -25,7 +27,13 @@ export function appendVertical(message, flusher) {
 			flusher.container.append(message.container);
 		}
 	} else {
-		flusher.container['insertBefore'](message.container ?? message, lastItem);
+		if (message.container) {
+			if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
+			flusher.container['insertBefore'](message.container, lastItem);
+		} else {
+			if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
+			flusher.container['insertBefore'](message, lastItem);
+		}
 	}
 
 	while (flusher.container.children.length > flusher.props.maxRows) {

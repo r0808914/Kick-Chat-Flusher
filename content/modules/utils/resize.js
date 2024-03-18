@@ -63,12 +63,15 @@ export function checkResize(flusher) {
                 ? "horizontal"
                 : "vertical"
               : flusher.states.flushState
-              ? "horizontal"
-              : "vertical";
+                ? "horizontal"
+                : "vertical";
 
           flusher.container.setAttribute("layout", newFlushState);
 
           flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
+
+          flusher.container.setAttribute("shadow", flusher.states.shadow);
+
           setAttribute(
             flusher.container,
             "position",
@@ -122,8 +125,7 @@ export function checkResize(flusher) {
             togglePointerEvents(flusher);
 
             logToConsole(
-              `(${flusher.props.channelName} ${flusher.props.domain} ${
-                flusher.props.isVod ? "VOD" : "LIVE"
+              `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"
               }): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`
             );
           } else {

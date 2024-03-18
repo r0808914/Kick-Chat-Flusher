@@ -6,7 +6,7 @@ module.exports = {
    optimization: {
       minimize: false
    },
-   // devtool: 'source-map', // or 'cheap-module-source-map', etc.
+   /* devtool: 'source-map', */ // or 'cheap-module-source-map', etc.
    output: {
       path: path.resolve(__dirname, 'dist'),
       filename: 'kick-chat-flusher.js'

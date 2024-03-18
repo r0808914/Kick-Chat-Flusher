@@ -13,9 +13,11 @@ class FlusherStates {
     this.sizeState = 1;
     this.fontState = 1;
     this.reply = false;
+    this.slide = true;
     this.flushState = false;
     this.chatEnabled = true;
-    this.spamState = true;
+    this.shadow = true;
+    this.spamState = false;
     this.timeState = false;
   }
 }
@@ -194,6 +196,7 @@ function appendVertical(message, flusher) {
   if (!message) return;
   const lastItem = flusher.container.firstChild;
   if (flusher.props.external) {
+    if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
     const timestamp = new Date(message.created_at);
     message.container.dataset.timestamp = timestamp;
     if (lastItem) {
@@ -216,7 +219,13 @@ function appendVertical(message, flusher) {
       flusher.container.append(message.container);
     }
   } else {
-    flusher.container['insertBefore'](message.container ?? message, lastItem);
+    if (message.container) {
+      if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
+      flusher.container['insertBefore'](message.container, lastItem);
+    } else {
+      if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
+      flusher.container['insertBefore'](message, lastItem);
+    }
   }
   while (flusher.container.children.length > flusher.props.maxRows) {
     const oldest = flusher.container.lastChild;
@@ -1211,6 +1220,26 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
+      <div class="flusher-slide flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Slide</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-shadow flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Text Shadow</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="flusher-time flusher-actions-item" style="display: flex;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Show Time</div>
         <div class="flex h-10 w-fit items-center justify-end">
@@ -1556,6 +1585,27 @@ function createMenu(flusher) {
     });
     flusher.props.external || flusher.props.isVod ? replyToggleContainer.style.display = 'none' : replyToggleContainer.style.display = 'flex';
     if (flusher.states.reply) replyToggle.classList.toggle(toggledClass);
+    const slideToggleContainer = parent.querySelector('.flusher-slide');
+    const slideToggle = slideToggleContainer.querySelector('.flusher-toggle');
+    slideToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newSlideEnabled = toggleElement.classList.contains(toggledClass);
+      flusher.states.slide = newSlideEnabled;
+      setExtensionStorageItem('flusher-slide', newSlideEnabled);
+    });
+    if (flusher.states.slide) slideToggle.classList.toggle(toggledClass);
+    const shadowToggleContainer = parent.querySelector('.flusher-shadow');
+    const shadowToggle = shadowToggleContainer.querySelector('.flusher-toggle');
+    shadowToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newShadowEnabled = toggleElement.classList.contains(toggledClass);
+      flusher.states.shadow = newShadowEnabled;
+      flusher.container.setAttribute('shadow', newShadowEnabled);
+      setExtensionStorageItem('flusher-shadow', newShadowEnabled);
+    });
+    if (flusher.states.shadow) shadowToggle.classList.toggle(toggledClass);
     const timeToggleContainer = messageMenu.querySelector('.flusher-time');
     const timeToggle = timeToggleContainer.querySelector('.flusher-toggle');
     timeToggle.addEventListener('mousedown', function (event) {
@@ -1715,6 +1765,7 @@ function checkResize(flusher) {
           const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
           flusher.container.setAttribute("layout", newFlushState);
           flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
+          flusher.container.setAttribute("shadow", flusher.states.shadow);
           setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
           setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
           flusher.container.setAttribute("background", flusher.states.backgroundStates[flusher.states.backgroundState]);
@@ -2072,6 +2123,8 @@ async function createChat(flusher) {
   flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
   flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
   flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
+  flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
+  flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
   flusher.toggle = createMenu(flusher);
   flusher.video.parentNode.append(chatFlusher);
   flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);

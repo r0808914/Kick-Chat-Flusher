@@ -8,9 +8,11 @@ export class FlusherStates {
     this.sizeState = 1;
     this.fontState = 1;
     this.reply = false;
+    this.slide = true;
     this.flushState = false;
     this.chatEnabled = true;
-    this.spamState = true;
+    this.shadow = true;
+    this.spamState = false;
     this.timeState = false;
   }
 }

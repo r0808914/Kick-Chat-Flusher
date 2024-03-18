@@ -10,7 +10,7 @@ export async function createChat(flusher) {
 
    const chatFlusher = document.createElement("div");
    chatFlusher.classList.add("flusher");
-   if(flusher.props.isAeroKick) chatFlusher.style.zIndex = 1000;
+   if (flusher.props.isAeroKick) chatFlusher.style.zIndex = 1000;
 
    const flusherDiv = document.createElement("div");
    flusherDiv.classList.add("flusher-messages");
@@ -50,6 +50,8 @@ export async function createChat(flusher) {
    flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
    flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
    flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
+   flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
+   flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
 
    flusher.toggle = createMenu(flusher);
 

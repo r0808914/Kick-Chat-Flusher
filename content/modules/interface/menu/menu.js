@@ -217,6 +217,36 @@ export function createMenu(flusher) {
       (flusher.props.external || flusher.props.isVod) ? replyToggleContainer.style.display = 'none' : replyToggleContainer.style.display = 'flex';
       if (flusher.states.reply) replyToggle.classList.toggle(toggledClass);
 
+      const slideToggleContainer = parent.querySelector('.flusher-slide');
+      const slideToggle = slideToggleContainer.querySelector('.flusher-toggle');
+      slideToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newSlideEnabled = toggleElement.classList.contains(toggledClass);
+         flusher.states.slide = newSlideEnabled;
+
+         setExtensionStorageItem('flusher-slide', newSlideEnabled);
+      });
+
+      if (flusher.states.slide) slideToggle.classList.toggle(toggledClass);
+
+      const shadowToggleContainer = parent.querySelector('.flusher-shadow');
+      const shadowToggle = shadowToggleContainer.querySelector('.flusher-toggle');
+      shadowToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newShadowEnabled = toggleElement.classList.contains(toggledClass);
+         flusher.states.shadow = newShadowEnabled;
+
+         flusher.container.setAttribute('shadow', newShadowEnabled);
+
+         setExtensionStorageItem('flusher-shadow', newShadowEnabled);
+      });
+
+      if (flusher.states.shadow) shadowToggle.classList.toggle(toggledClass);
+
       const timeToggleContainer = messageMenu.querySelector('.flusher-time');
       const timeToggle = timeToggleContainer.querySelector('.flusher-toggle');
       timeToggle.addEventListener('mousedown', function (event) {

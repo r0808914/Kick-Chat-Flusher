@@ -225,6 +225,26 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
+      <div class="flusher-slide flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Slide</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-shadow flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Text Shadow</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="flusher-time flusher-actions-item" style="display: flex;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Show Time</div>
         <div class="flex h-10 w-fit items-center justify-end">
