@@ -24,7 +24,7 @@ export class Flusher {
 	}
 
 	resetConnection() {
-		logToConsole('Reset Connection');
+		/* logToConsole('Reset Connection'); */
 
 		if (!this.props.flusher) return;
 		clearChat(this.props.flusher);

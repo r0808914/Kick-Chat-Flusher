@@ -1,5 +1,5 @@
 export function visibilityChange(flusher) {
-	logToConsole(`Add visibilityChange`);
+	/* logToConsole(`Add visibilityChange`); */
 
 	document.addEventListener('visibilitychange', function handleVisibilityChange() {
 		if (!flusher || !flusher.states.flushState) return;

@@ -8,7 +8,7 @@ import { logToConsole } from "./utils.js";
 import Kick from "../site/kick.js";
 
 export function checkResize(flusher) {
-  logToConsole("Check Resize");
+  /* logToConsole("Check Resize"); */
   const target = flusher.props.external
     ? flusher.video
     : flusher.video.querySelector("video") ?? flusher.video;
@@ -30,11 +30,11 @@ export function checkResize(flusher) {
 
           if ((width === null || width === 0) && (!height || height === 0)) {
             if (flusher !== null) {
-              logToConsole("Remove Chat");
+              /* logToConsole("Remove Chat"); */
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
-              flusher.provider.unbindRequests();
+              flusher.provider.unbindRequests(flusher);
               flusher = null;
               if (init) Kick.init();
             }
@@ -42,9 +42,9 @@ export function checkResize(flusher) {
             return;
           }
 
-          logToConsole(
+          /* logToConsole(
             `Width ${Math.round(width)} height ${Math.round(height)}`
-          );
+          ); */
 
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;

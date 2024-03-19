@@ -4,7 +4,7 @@ import { logToConsole } from '../utils/utils.js';
 
 class Kick {
   static init() {
-    logToConsole(`Initialize`);
+    /* logToConsole(`Initialize`); */
 
     let stopObserver = false;
 
@@ -14,7 +14,7 @@ class Kick {
         video = video[video.length - 1];
 
         if (video) {
-          logToConsole(`KICK video found`);
+          /* logToConsole(`KICK video found`); */
           videoObserver.disconnect();
 
           setTimeout(() => {
@@ -26,7 +26,7 @@ class Kick {
             if (channelName && video) {
               channelName = channelName.innerText.trim();
               const AeroKick = video.classList.contains('bk-aspect-video');
-              if (AeroKick) logToConsole(`detected: AeroKick`);
+              if (AeroKick) logToConsole(`AeroKick Detected`);
               const flusher = new Flusher(video, "KICK", channelName, AeroKick);
               try {
                 createChat(flusher);
@@ -36,20 +36,20 @@ class Kick {
               }
             }
 
-            logToConsole(`KICK start video observer`);
+            /* logToConsole(`KICK start video observer`); */
 
             const observer = new MutationObserver((mutations) => {
               mutations.forEach((mutation) => {
                 if (!stopObserver && mutation.addedNodes) {
                   if (document.querySelector(".stream-username")) {
                     let video = document.getElementsByTagName('video');
-                    video = video[video.length - 1];  
+                    video = video[video.length - 1];
                     if (video) {
-                      logToConsole(`KICK stop video observer`);
+                      /* logToConsole(`KICK stop video observer`); */
                       stopObserver = true;
                       const channelName = document.querySelector(".stream-username").innerText.trim()
                       const AeroKick = video.classList.contains('bk-aspect-video');
-                      if (AeroKick) logToConsole(`detected: AeroKick`);
+                      if (AeroKick) logToConsole(`AeroKick Detected`);
                       const flusher = new Flusher(video, "KICK", channelName, AeroKick);
                       try {
                         createChat(flusher);

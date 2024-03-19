@@ -269,28 +269,28 @@ async function getBadges(data, flusher) {
   /* Enable when iframe chatroom available */
 
   /* badges.forEach(badge => {
-		let badgeText = badge.text;
-		if (badge.count) {
-			badgeText = `${badge.type}-${badge.count}`;
-		}
-		const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
-		if (cachedBadge) {
-			badgeArray.push(cachedBadge.html);
-			badgeCount++;
-			return;
-		}
-	}); */
+    let badgeText = badge.text;
+    if (badge.count) {
+      badgeText = `${badge.type}-${badge.count}`;
+    }
+    const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+    if (cachedBadge) {
+      badgeArray.push(cachedBadge.html);
+      badgeCount++;
+      return;
+    }
+  }); */
 
   /* let attempts = 0;
-	while (badgeCount !== badges.length && attempts < 10) {
-		const newBadges = checkForBadges(data, flusher);
-		badgeArray = newBadges;
+  while (badgeCount !== badges.length && attempts < 10) {
+    const newBadges = checkForBadges(data, flusher);
+    badgeArray = newBadges;
 
-		badgeCount = badgeArray.length;
-		attempts++;
+    badgeCount = badgeArray.length;
+    attempts++;
 
-		await new Promise(resolve => setTimeout(resolve, 750));
-	} */
+    await new Promise(resolve => setTimeout(resolve, 750));
+  } */
 
   return badgeArray;
 
@@ -362,7 +362,7 @@ async function getBadges(data, flusher) {
 }
 
 function createUserBanMessage(data, flusher) {
-  logToConsole("createUserBanMessage");
+  /* logToConsole("createUserBanMessage") */;
 
   const bannedUser = data.user.username;
   const bannedByUser = data.banned_by.username;
@@ -431,7 +431,9 @@ function createUserBanMessage(data, flusher) {
 }
 
 function createSubMessage(data, flusher) {
-  logToConsole(`createSubMessage`);
+  /* logToConsole(`createSubMessage`); */
+
+  if (!flusher.states.flushState && !flusher.props.external) return;
 
   const username = data.username;
   const months = data.months;
@@ -444,9 +446,8 @@ function createSubMessage(data, flusher) {
 
   const subscriptionMessageSpan = document.createElement("span");
   subscriptionMessageSpan.style.color = "#00FF00";
-  subscriptionMessageSpan.textContent = `${
-    months > 1 ? months + " months" : "1 month"
-  } subscription by ${username}`;
+  subscriptionMessageSpan.textContent = `${months > 1 ? months + " months" : "1 month"
+    } subscription by ${username}`;
 
   const subSpan = document.createElement("span");
   subSpan.style.color = "#00FF00";
@@ -462,7 +463,7 @@ function createSubMessage(data, flusher) {
 }
 
 function createHostMessage(data, flusher) {
-  logToConsole(`createHostMessage`);
+  /* logToConsole(`createHostMessage`); */
 
   const hostUsername = data.host_username;
   const viewersCount = data.number_viewers;
@@ -498,7 +499,7 @@ function createGiftedMessage(data, flusher) {
     return;
   }
 
-  logToConsole(`createGiftedMessage`);
+  /* logToConsole(`createGiftedMessage`); */
 
   const gifterUsername = data.gifter_username;
   const giftedUsernames = data.gifted_usernames;
@@ -511,10 +512,9 @@ function createGiftedMessage(data, flusher) {
 
   const gifterUsernameSpan = document.createElement("span");
   gifterUsernameSpan.textContent =
-    `${
-      giftedUsernames.length > 1
-        ? giftedUsernames.length + " Subscriptions"
-        : "1 Subscription"
+    `${giftedUsernames.length > 1
+      ? giftedUsernames.length + " Subscriptions"
+      : "1 Subscription"
     } gifted by ` + gifterUsername;
   const giftedSpan = document.createElement("span");
   giftedSpan.style.color = "#00FF00";
@@ -530,7 +530,7 @@ function createGiftedMessage(data, flusher) {
 }
 
 function createFollowersMessage(data, flusher) {
-  logToConsole(`createFollowersMessage`);
+  /* logToConsole(`createFollowersMessage`); */
 
   const followersCount = data.followersCount;
 
@@ -549,9 +549,8 @@ function createFollowersMessage(data, flusher) {
     emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
 
     const followersMessageSpan = document.createElement("span");
-    followersMessageSpan.textContent = `${
-      followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"
-    }`;
+    followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"
+      }`;
 
     const followersSpan = document.createElement("span");
     followersSpan.append(emojiSpan, followersMessageSpan);

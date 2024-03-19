@@ -4,9 +4,9 @@ import { getFont, logToConsole } from '../utils/utils.js';
 
 export async function createChat(flusher) {
    if (flusher.video.hasAttribute('flusher')) return;
-   flusher.video.setAttribute('flusher', "")
+   flusher.video.setAttribute('flusher', "");
 
-   logToConsole(`Create Chat`)
+   /* logToConsole(`Create Chat`); */
 
    const chatFlusher = document.createElement("div");
    chatFlusher.classList.add("flusher");

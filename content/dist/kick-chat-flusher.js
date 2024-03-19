@@ -238,7 +238,8 @@ function appendVertical(message, flusher) {
 }
 ;// CONCATENATED MODULE: ./modules/utils/utils.js
 function visibilityChange(flusher) {
-  logToConsole(`Add visibilityChange`);
+  /* logToConsole(`Add visibilityChange`); */
+
   document.addEventListener('visibilitychange', function handleVisibilityChange() {
     if (!flusher || !flusher.states.flushState) return;
     if (document.hidden) {
@@ -474,25 +475,25 @@ async function getBadges(data, flusher) {
   /* Enable when iframe chatroom available */
 
   /* badges.forEach(badge => {
-  let badgeText = badge.text;
-  if (badge.count) {
-  	badgeText = `${badge.type}-${badge.count}`;
-  }
-  const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
-  if (cachedBadge) {
-  	badgeArray.push(cachedBadge.html);
-  	badgeCount++;
-  	return;
-  }
+    let badgeText = badge.text;
+    if (badge.count) {
+      badgeText = `${badge.type}-${badge.count}`;
+    }
+    const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+    if (cachedBadge) {
+      badgeArray.push(cachedBadge.html);
+      badgeCount++;
+      return;
+    }
   }); */
 
   /* let attempts = 0;
   while (badgeCount !== badges.length && attempts < 10) {
-  const newBadges = checkForBadges(data, flusher);
-  badgeArray = newBadges;
-  	badgeCount = badgeArray.length;
-  attempts++;
-  	await new Promise(resolve => setTimeout(resolve, 750));
+    const newBadges = checkForBadges(data, flusher);
+    badgeArray = newBadges;
+     badgeCount = badgeArray.length;
+    attempts++;
+     await new Promise(resolve => setTimeout(resolve, 750));
   } */
 
   return badgeArray;
@@ -546,7 +547,7 @@ async function getBadges(data, flusher) {
   }
 }
 function createUserBanMessage(data, flusher) {
-  logToConsole("createUserBanMessage");
+  /* logToConsole("createUserBanMessage") */;
   const bannedUser = data.user.username;
   const bannedByUser = data.banned_by.username;
   const banMessageContent = document.createElement("div");
@@ -601,7 +602,9 @@ function createUserBanMessage(data, flusher) {
   }
 }
 function createSubMessage(data, flusher) {
-  logToConsole(`createSubMessage`);
+  /* logToConsole(`createSubMessage`); */
+
+  if (!flusher.states.flushState && !flusher.props.external) return;
   const username = data.username;
   const months = data.months;
   const subscriptionMessageContent = document.createElement("div");
@@ -620,7 +623,8 @@ function createSubMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createHostMessage(data, flusher) {
-  logToConsole(`createHostMessage`);
+  /* logToConsole(`createHostMessage`); */
+
   const hostUsername = data.host_username;
   const viewersCount = data.number_viewers;
   const hostMessageContent = document.createElement("div");
@@ -643,7 +647,9 @@ function createGiftedMessage(data, flusher) {
     processMessageQueue(flusher);
     return;
   }
-  logToConsole(`createGiftedMessage`);
+
+  /* logToConsole(`createGiftedMessage`); */
+
   const gifterUsername = data.gifter_username;
   const giftedUsernames = data.gifted_usernames;
   const giftedContent = document.createElement("div");
@@ -661,7 +667,8 @@ function createGiftedMessage(data, flusher) {
   appendMessage(data, flusher);
 }
 function createFollowersMessage(data, flusher) {
-  logToConsole(`createFollowersMessage`);
+  /* logToConsole(`createFollowersMessage`); */
+
   const followersCount = data.followersCount;
   if (flusher.props.lastFollowersCount !== null) {
     const followersDiff = followersCount - flusher.props.lastFollowersCount;
@@ -694,7 +701,7 @@ function createFollowersMessage(data, flusher) {
 
 class FlusherMessages {
   constructor() {
-    logToConsole("Create MessageProvider");
+    /* logToConsole("Create MessageProvider"); */
     this.socket = null;
     this.nativeChatObserver = null;
     this.channels = new Set();
@@ -703,7 +710,7 @@ class FlusherMessages {
     const id = flusher.props.chatroomId;
     if (!id) return;
     if (this.channels.has(id)) {
-      logToConsole(`Channel ${id} is already subscribed.`);
+      /* logToConsole(`Channel ${id} Is Already Subscribed.`); */
       return;
     }
     const subscriptionMessage = {
@@ -717,7 +724,7 @@ class FlusherMessages {
       this.setupWebSocket(flusher, subscriptionMessage, id);
       return;
     }
-    logToConsole(`Subscribe Channel:  ${id}`);
+    logToConsole(`WebSocket Connection Opened: ${flusher.props.channelName} (${id})`);
     this.socket.send(JSON.stringify(subscriptionMessage));
     this.channels.add(id);
     if (flusher.props.external) this.getHistory(flusher);
@@ -731,20 +738,20 @@ class FlusherMessages {
       }
       const data = await response.json();
       if (data && data.data && data.data.messages) {
-        logToConsole(`History has ${data.data.messages.length} messages`);
+        /* logToConsole(`History Has ${data.data.messages.length} Messages`); */
         data.data.messages.forEach(message => {
           flusher.props.messageQueue.push(message);
         });
         processMessageQueue(flusher);
       } else {
-        logToConsole("No messages found in the response.");
+        /* logToConsole("No Messages Found In The Response."); */
       }
     } catch (error) {
-      console.error("Error fetching messages:", error.message);
+      console.error("Error Fetching Messages:", error.message);
     }
   }
   setupWebSocket(flusher) {
-    logToConsole("Setup WebSocket");
+    /* logToConsole(`Setup WebSocket: ${flusher.props.channelName} (${flusher.props.chatroomId})`); */
     if (this.socket) return;
     const webSocketUrl = "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false";
     this.socket = new WebSocket(webSocketUrl);
@@ -753,11 +760,10 @@ class FlusherMessages {
       document.body.contains(flusher.video) ? this.onMessage(data, flusher) : this.disposeChannel();
     };
     this.socket.addEventListener("open", event => {
-      logToConsole(`WebSocket connection opened ${flusher.props.channelName}`);
       this.subscribeChannel(flusher);
     });
     this.socket.addEventListener("close", event => {
-      logToConsole(`WebSocket connection closed ${flusher.props.channelName}`);
+      logToConsole(`WebSocket Connection Closed: ${flusher.props.channelName} (${flusher.props.chatroomId})`);
       this.channels.clear();
     });
     this.socket.addEventListener("error", event => {
@@ -777,14 +783,15 @@ class FlusherMessages {
     }
   }
   async interceptNative(flusher) {
-    logToConsole(`Intercept Native Chat`);
+    /* logToConsole(`Intercept Native Chat`); */
+
     const AeroKick = document.body.classList.contains("aerokick-customization");
-    if (AeroKick) logToConsole(`detected: AeroKick for Chat`);
+    if (AeroKick) logToConsole(`AeroKick Detected`);
     const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector("#chatroom-replay") : document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : ".overflow-y-scroll.py-3"), AeroKick);
     const b = typeof browser !== "undefined" ? browser : chrome;
     const defaultAvatar = b.runtime.getURL("lib/kick/user-profile-pic.png");
     if (!flusher.states.flushState) setTimeout(() => {
-      logToConsole(`Parse existing`);
+      /* logToConsole(`Parse Existing`); */
       nativeChat.childNodes.forEach(addedNode => {
         checkDupe(addedNode, AeroKick);
       });
@@ -924,11 +931,12 @@ class FlusherMessages {
       processElementQueue(flusher);
     }
     function waitForChat(parent) {
-      logToConsole(`Looking for Native Chat`);
+      /* logToConsole(`Looking For Native Chat`); */
+
       if (!parent) parent = document.body;
       const chatEntry = parent.querySelector(".rounded-md.bk-block") || parent.querySelector("[data-chat-entry]");
       if (chatEntry) {
-        logToConsole(`Native Chat found`);
+        /* logToConsole(`Native Chat Found`); */
         return chatEntry.parentElement;
       }
       return new Promise(resolve => {
@@ -947,7 +955,7 @@ class FlusherMessages {
                   observer.disconnect();
                   resolve(node.parentNode);
                   found = true;
-                  logToConsole(`Native Chat found`);
+                  /* logToConsole(`Native Chat Found`); */
                 }
               });
             }
@@ -959,20 +967,26 @@ class FlusherMessages {
     }
   }
   async bindRequests(flusher) {
-    logToConsole(`Bind Requests`);
+    /* logToConsole(`Bind Requests`); */
+
     if (!flusher) return;
     if (!flusher.props.external && !this.nativeChatObserver) this.interceptNative(flusher);
-    setTimeout(async () => {
+    flusher.props.bindTimeout = setTimeout(async () => {
       if (!flusher) return;
       if (!flusher.props.chatroomId && !flusher.props.isVod) {
         try {
-          const response = await fetch(`https://kick.com/api/v1/channels/${flusher.props.channelName}`);
+          const channelName = flusher.props.channelName.toLowerCase().replace(/\s/g, '');
+          const response = await fetch(`https://kick.com/api/v1/channels/${channelName}`);
           const data = await response.json();
           flusher.props.chatroomId = data && data.chatroom && data.chatroom.id;
-          logToConsole(`chatroomId: ${flusher.props.chatroomId} ${flusher.props.channelName}`);
+
+          /* logToConsole(
+            `chatroomId: ${flusher.props.chatroomId}`
+          ); */
+
           flusher.props.hostId = data.id;
           if (flusher.props.external) {
-            logToConsole(`${data.subscriber_badges.length} Badges`);
+            /* logToConsole(`${data.subscriber_badges.length} Badges`); */
             flusher.props.badgeCache.push(...data.subscriber_badges);
           }
         } catch (error) {
@@ -983,12 +997,13 @@ class FlusherMessages {
     }, flusher.props.external ? 0 : 5000);
   }
   unbindRequests(flusher) {
-    logToConsole(`Unbind Requests`);
+    /* logToConsole(`Unbind Requests`); */
     this.disposeChannel(flusher);
     if (!flusher?.props?.external) {
-      logToConsole(`Dispose Native Chat`);
+      /* logToConsole(`Dispose Native Chat`); */
       if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
       this.nativeChatObserver = null;
+      clearTimeout(flusher.props.bindTimeout);
     }
   }
 }
@@ -1674,7 +1689,7 @@ function createMenu(flusher) {
       [key]: value
     };
     chrome.storage.local.set(data, () => {
-      logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`);
+      /* logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`); */
     });
   }
 }
@@ -1730,7 +1745,7 @@ function togglePointerEvents(flusher) {
 
 
 function checkResize(flusher) {
-  logToConsole("Check Resize");
+  /* logToConsole("Check Resize"); */
   const target = flusher.props.external ? flusher.video : flusher.video.querySelector("video") ?? flusher.video;
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
@@ -1746,17 +1761,21 @@ function checkResize(flusher) {
           window.currentUrl = window.location.href;
           if ((width === null || width === 0) && (!height || height === 0)) {
             if (flusher !== null) {
-              logToConsole("Remove Chat");
+              /* logToConsole("Remove Chat"); */
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
-              flusher.provider.unbindRequests();
+              flusher.provider.unbindRequests(flusher);
               flusher = null;
               if (init) kick.init();
             }
             return;
           }
-          logToConsole(`Width ${Math.round(width)} height ${Math.round(height)}`);
+
+          /* logToConsole(
+            `Width ${Math.round(width)} height ${Math.round(height)}`
+          ); */
+
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
@@ -2011,7 +2030,8 @@ class Flusher {
     visibilityChange(this);
   }
   resetConnection() {
-    logToConsole('Reset Connection');
+    /* logToConsole('Reset Connection'); */
+
     if (!this.props.flusher) return;
     clearChat(this.props.flusher);
     isVod = false;
@@ -2085,7 +2105,9 @@ class Flusher {
 async function createChat(flusher) {
   if (flusher.video.hasAttribute('flusher')) return;
   flusher.video.setAttribute('flusher', "");
-  logToConsole(`Create Chat`);
+
+  /* logToConsole(`Create Chat`); */
+
   const chatFlusher = document.createElement("div");
   chatFlusher.classList.add("flusher");
   if (flusher.props.isAeroKick) chatFlusher.style.zIndex = 1000;
@@ -2144,14 +2166,15 @@ async function createChat(flusher) {
 
 class Kick {
   static init() {
-    logToConsole(`Initialize`);
+    /* logToConsole(`Initialize`); */
+
     let stopObserver = false;
     const observeVideo = () => {
       const videoObserver = new MutationObserver(() => {
         let video = document.getElementsByTagName('video');
         video = video[video.length - 1];
         if (video) {
-          logToConsole(`KICK video found`);
+          /* logToConsole(`KICK video found`); */
           videoObserver.disconnect();
           setTimeout(() => {
             let video = document.getElementsByTagName('video');
@@ -2160,7 +2183,7 @@ class Kick {
             if (channelName && video) {
               channelName = channelName.innerText.trim();
               const AeroKick = video.classList.contains('bk-aspect-video');
-              if (AeroKick) logToConsole(`detected: AeroKick`);
+              if (AeroKick) logToConsole(`AeroKick Detected`);
               const flusher = new Flusher(video, "KICK", channelName, AeroKick);
               try {
                 createChat(flusher);
@@ -2169,7 +2192,9 @@ class Kick {
                 logToConsole(`Failed to create chat`);
               }
             }
-            logToConsole(`KICK start video observer`);
+
+            /* logToConsole(`KICK start video observer`); */
+
             const observer = new MutationObserver(mutations => {
               mutations.forEach(mutation => {
                 if (!stopObserver && mutation.addedNodes) {
@@ -2177,11 +2202,11 @@ class Kick {
                     let video = document.getElementsByTagName('video');
                     video = video[video.length - 1];
                     if (video) {
-                      logToConsole(`KICK stop video observer`);
+                      /* logToConsole(`KICK stop video observer`); */
                       stopObserver = true;
                       const channelName = document.querySelector(".stream-username").innerText.trim();
                       const AeroKick = video.classList.contains('bk-aspect-video');
-                      if (AeroKick) logToConsole(`detected: AeroKick`);
+                      if (AeroKick) logToConsole(`AeroKick Detected`);
                       const flusher = new Flusher(video, "KICK", channelName, AeroKick);
                       try {
                         createChat(flusher);

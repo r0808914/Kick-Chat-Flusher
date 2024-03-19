@@ -342,7 +342,7 @@ export function createMenu(flusher) {
    function setExtensionStorageItem(key, value) {
       const data = { [key]: value };
       chrome.storage.local.set(data, () => {
-         logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`);
+         /* logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`); */
       });
    }
 }
