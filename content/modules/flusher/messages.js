@@ -211,7 +211,6 @@ export class FlusherMessages {
           if (addedNode.style.opacity ?? 1 < 1) {
             const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
             if (isUserBanned) { console.log(userId + ' allowed'); } else {
-              console.log('history detected');
               return;
             }
           }

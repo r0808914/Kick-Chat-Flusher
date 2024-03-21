@@ -1,5 +1,4 @@
-.flusher
-{
+.flusher {
 	height: 100%;
 	left: 0;
 	overflow: hidden;
@@ -9,22 +8,22 @@
 	width: 100%;
 	z-index: 1;
 }
-.item-box:hover .toggle-icon[domain="IP2"]
-{
+
+.item-box:hover .toggle-icon[domain="IP2"] {
 	display: block;
 }
-.svg-toggle
-{
+
+.svg-toggle {
 	color: rgb(83, 252, 24) !important;
 	fill: rgb(83, 252, 24) !important;
 	z-index: 2;
 }
-.toggle-icon
-{
+
+.toggle-icon {
 	z-index: 2;
 }
-.toggle-icon[domain="IP2"]
-{
+
+.toggle-icon[domain="IP2"] {
 	bottom: 10%;
 	display: none;
 	left: 50%;
@@ -32,12 +31,12 @@
 	transform: translate(-50%, -50%);
 	width: 20px;
 }
-.vjs-control-bar
-{
+
+.vjs-control-bar {
 	z-index: 2;
 }
-#flusher
-{
+
+#flusher {
 	height: 100%;
 	left: 0;
 	overflow: hidden;
@@ -46,4 +45,8 @@
 	top: 0;
 	width: 100%;
 	z-index: 1;
+}
+
+#shadowbox {
+	transform: scale(0.8);
 }
