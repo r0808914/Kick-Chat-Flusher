@@ -361,7 +361,7 @@ async function getBadges(data, flusher) {
   }
 }
 
-function createUserBanMessage(data, flusher) {
+export function createUserBanMessage(data, flusher) {
   /* logToConsole("createUserBanMessage") */;
 
   const bannedUser = data.user.username;
@@ -381,15 +381,20 @@ function createUserBanMessage(data, flusher) {
     let timeDiffText;
     if (timeDifference > 0) {
       timeDiffText = humanizeDuration(timeDifference + 5000);
+      const userId = data.user.id;
+      addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
+
+      logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+      const expiresText = document.createTextNode(logText);
+      banMessageSpan.appendChild(expiresText);
     } else {
-      timeDiffText = "indefinitely";
+      logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+      const expiresText = document.createTextNode(logText);
+      banMessageSpan.appendChild(expiresText);
     }
 
-    logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
-    const expiresText = document.createTextNode(logText);
-    banMessageSpan.appendChild(expiresText);
   } else {
-    logText = `${bannedUser} banned indefinitely by ${bannedByUser}`;
+    logText = `${bannedUser} permanently banned by ${bannedByUser}`;
     const expiresText = document.createTextNode(logText);
     banMessageSpan.appendChild(expiresText);
   }
@@ -402,6 +407,61 @@ function createUserBanMessage(data, flusher) {
   logToConsole(logText);
 
   appendMessage(data, flusher);
+
+  function addBannedUser(bannedUser, bannedByUser, userId, expiresAt) {
+    const existingUserIndex = flusher.props.bannedUsers.findIndex(user => user.username === bannedUser);
+    if (existingUserIndex !== -1) {
+      flusher.props.bannedUsers[existingUserIndex] = {
+        id: userId,
+        username: bannedUser,
+        bannedBy: bannedByUser,
+        expiresAt: expiresAt
+      };
+    } else {
+      flusher.props.bannedUsers.push({
+        id: userId,
+        username: bannedUser,
+        bannedBy: bannedByUser,
+        expiresAt: expiresAt
+      });
+      const now = new Date().getTime();
+      const expirationTime = new Date(expiresAt).getTime();
+      const timeUntilExpiration = expirationTime - now;
+      flusher.props.timeoutIds.push(setTimeout(() => removeBannedUser(bannedUser), timeUntilExpiration));
+    }
+  }
+
+  function removeBannedUser(username) {
+    const index = flusher.props.bannedUsers.findIndex(user => user.username === username);
+    if (index !== -1) {
+      const currentUser = flusher.props.bannedUsers[index];
+      const currentTime = new Date().getTime();
+
+      if ((currentTime + 5000) >= new Date(currentUser.expiresAt).getTime()) {
+        flusher.props.bannedUsers.splice(index, 1);
+
+        const unbanMessageContent = document.createElement("div");
+        unbanMessageContent.classList.add("flusher-message", "flusher-green");
+
+        const unbanMessageSpan = document.createElement("span");
+
+        let logText;
+
+        logText = `${username}'s ban expired`;
+        const unbanText = document.createTextNode(logText);
+        unbanMessageSpan.appendChild(unbanText);
+
+        unbanMessageContent.appendChild(unbanMessageSpan);
+
+        data.created_at = Date.now();
+        data.container = unbanMessageContent;
+
+        logToConsole(logText);
+
+        appendMessage(data, flusher);
+      }
+    }
+  }
 
   function humanizeDuration(milliseconds) {
     const seconds = Math.floor(milliseconds / 1000);
@@ -446,8 +506,7 @@ function createSubMessage(data, flusher) {
 
   const subscriptionMessageSpan = document.createElement("span");
   subscriptionMessageSpan.style.color = "#00FF00";
-  subscriptionMessageSpan.textContent = `${months > 1 ? months + " months" : "1 month"
-    } subscription by ${username}`;
+  subscriptionMessageSpan.textContent = `${months > 1 ? months + " months" : "1 month"} subscription by ${username}`;
 
   const subSpan = document.createElement("span");
   subSpan.style.color = "#00FF00";
@@ -534,38 +593,26 @@ function createFollowersMessage(data, flusher) {
 
   const followersCount = data.followersCount;
 
-  if (flusher.props.lastFollowersCount !== null) {
-    const followersDiff = followersCount - flusher.props.lastFollowersCount;
-    if (followersDiff === 0) {
-      flusher.props.isProcessingMessages = false;
-      processMessageQueue(flusher);
-      return;
-    }
-
-    const messageContent = document.createElement("div");
-    messageContent.classList.add("flusher-message");
-
-    const emojiSpan = document.createElement("span");
-    emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
-
-    const followersMessageSpan = document.createElement("span");
-    followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"
-      }`;
-
-    const followersSpan = document.createElement("span");
-    followersSpan.append(emojiSpan, followersMessageSpan);
-
-    messageContent.append(followersSpan);
-
-    data.created_at = Date.now();
-    data.container = messageContent;
-
-    appendMessage(data, flusher);
-
-    flusher.props.lastFollowersCount = followersCount;
-  } else {
-    flusher.props.lastFollowersCount = followersCount;
+  const followersDiff = followersCount - (flusher.props.lastFollowersCount ?? followersCount);
+  if (followersDiff === 0) {
+    flusher.props.lastFollowersCount = followersCount ?? null;
     flusher.props.isProcessingMessages = false;
     processMessageQueue(flusher);
+    return;
   }
+
+  const messageContent = document.createElement("div");
+  messageContent.classList.add("flusher-message");
+
+  const followersMessageSpan = document.createElement("span");
+  followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"}`;
+
+  messageContent.append(followersMessageSpan);
+
+  data.created_at = Date.now();
+  data.container = messageContent;
+
+  appendMessage(data, flusher);
+
+  flusher.props.lastFollowersCount = followersCount;
 }

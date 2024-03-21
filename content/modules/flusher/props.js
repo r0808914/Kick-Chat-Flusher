@@ -16,8 +16,10 @@ export class FlusherProps {
     this.lastPositionPerRow = [];
     this.rowQueue = [];
     this.timeoutIds = [];
+    this.bannedUsers = [];
     this.video = null;
     this.lastRow = 0;
     this.maxRows = 99;
+    this.isKickTools = false;
   }
 }

@@ -1,4 +1,4 @@
-import { processMessageQueue, processElementQueue } from "../queue/queue.js";
+import { processMessageQueue, processElementQueue, createUserBanMessage } from "../queue/queue.js";
 import { logToConsole } from "../utils/utils.js";
 
 export class FlusherMessages {
@@ -65,6 +65,29 @@ export class FlusherMessages {
     /* logToConsole(`Setup WebSocket: ${flusher.props.channelName} (${flusher.props.chatroomId})`); */
     if (this.socket) return;
 
+    /* console.log('run test');
+
+    const eventData = {
+      "event": "App\\Events\\UserBannedEvent",
+      "channel": "chatrooms.123456.v2",
+      "data": {
+        "id": "7b1d6e2c-ba4f-4d88-87b0-9c9e67a0e731",
+        "user": {
+          "id": 1234567,
+          "username": "User123",
+          "slug": "user123"
+        },
+        "banned_by": {
+          "id": 0,
+          "username": "Mod123",
+          "slug": "mod123"
+        },
+        "expires_at": "2024-03-21T14:18:30+00:00"
+      }
+    };
+
+    createUserBanMessage(eventData.data, flusher); */
+
     const webSocketUrl = "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false";
 
     this.socket = new WebSocket(webSocketUrl);
@@ -107,6 +130,8 @@ export class FlusherMessages {
 
   async interceptNative(flusher) {
     /* logToConsole(`Intercept Native Chat`); */
+    const self = this;
+    self.flusher = flusher;
 
     const AeroKick = document.body.classList.contains("aerokick-customization");
     if (AeroKick) logToConsole(`AeroKick Detected`);
@@ -172,16 +197,28 @@ export class FlusherMessages {
         return;
 
       if (id || id === "") {
+
+        const userId =
+          AeroKick && flusher.props.isAeroKick
+            ? addedNode
+              .querySelector("button")
+              .getAttribute("data-radial-username")
+            : addedNode
+              .querySelector("[data-chat-entry-user-id]")
+              ?.getAttribute("data-chat-entry-user-id");
+
+        if (self.flusher.props.isKickTools) {
+          if (addedNode.style.opacity ?? 1 < 1) {
+            const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
+            if (isUserBanned) { console.log(userId + ' allowed'); } else {
+              console.log('history detected');
+              return;
+            }
+          }
+        }
+
         if (!flusher.states.spamState || flusher.states.flushState) {
           let uniqueString = "";
-          const userId =
-            AeroKick && flusher.props.isAeroKick
-              ? addedNode
-                .querySelector("button")
-                .getAttribute("data-radial-username")
-              : addedNode
-                .querySelector("[data-chat-entry-user-id]")
-                ?.getAttribute("data-chat-entry-user-id");
           uniqueString += userId + "-";
 
           const divTextContent =
@@ -215,13 +252,13 @@ export class FlusherMessages {
         }
       }
 
-      setTimeout(() => addMessage(addedNode, id, defaultAvatar, AeroKick), 150);
+      setTimeout(() => addMessage(addedNode, id, defaultAvatar), 150);
     }
 
-    function addMessage(node, id, defaultAvatar, AeroKick) {
+    function addMessage(node, id, defaultAvatar) {
       const clonedNode = node.cloneNode(true);
 
-      if (AeroKick) {
+      if (self.flusher.props.isAeroKick) {
         clonedNode.style.fontSize = null;
         clonedNode.style.marginTop = null;
         clonedNode.classList.remove("relative", "bk-pl-1.5");

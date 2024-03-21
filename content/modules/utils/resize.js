@@ -34,6 +34,9 @@ export function checkResize(flusher) {
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
+              for (const id of flusher.props.timeoutIds) {
+                clearTimeout(id);
+              }
               flusher.provider.unbindRequests(flusher);
               flusher = null;
               if (init) Kick.init();
@@ -124,6 +127,8 @@ export function checkResize(flusher) {
             processMessageQueue(flusher);
             togglePointerEvents(flusher);
 
+            checkAddons(flusher);
+
             logToConsole(
               `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"
               }): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`
@@ -139,6 +144,26 @@ export function checkResize(flusher) {
   });
 
   flusher.resizeObserver.observe(flusher.video);
+
+  function checkAddons(flusher) {
+    let counter = 0;
+
+    const intervalId = setInterval(() => {
+      const KickTools = document.querySelector('.vjs-progress-control')?.style?.display == 'flex' ? true : false;
+      if (KickTools) {
+        logToConsole(`KickTools Detected`);
+        flusher.props.isKickTools = true;
+        clearInterval(intervalId);
+      }
+
+      counter++;
+
+      if (counter >= 5) {
+        clearInterval(intervalId);
+      }
+    }, 1000)
+    flusher.props.timeoutIds.push(intervalId);
+  }
 
   function createIntroMessage(flusher) {
     const introContent = document.createElement("div");
