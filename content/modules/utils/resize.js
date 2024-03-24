@@ -103,16 +103,13 @@ export function checkResize(flusher) {
           if (documentWidth < flusher.props.parentWidth / 2 + 10) {
             flusher.props.isFullscreen = true;
             startScrollingInterval(flusher);
-            /* logToConsole('Video Size: Fullscreen Mode'); */
             flusher.props.videoSize = "fullscreen";
           } else {
             flusher.props.isFullscreen = false;
             stopScrollingInterval(flusher);
             if (document.querySelector('.sidebar')) {
-              /* logToConsole('Video Size: Default Mode'); */
               flusher.props.videoSize = "default";
             } else {
-              /* logToConsole('Video Size: Theater Mode'); */
               flusher.props.videoSize = "theater";
             }
           }
@@ -127,13 +124,11 @@ export function checkResize(flusher) {
 
             if (existingPositionIndex !== -1) {
               const position = positionsArray[existingPositionIndex].position;
-              /* console.log(position); */
               if (position.top) {
-                /* console.log('custom position'); */
                 flusher.container.removeAttribute("position");
                 var scaleFactor = window.innerWidth / window.outerWidth;
-                flusher.container.style.top = position.top > height ? height - 20 + "px" : position.top * scaleFactor + "px";
-                flusher.container.style.left = position.left > width ? width - 20 + "px" : position.left * scaleFactor + "px";
+                flusher.container.style.top = position.top > height ? height - 20 + "px" : Math.round(position.top * scaleFactor) + "px";
+                flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
               } else {
                 flusher.container.style.top = "";
                 flusher.container.style.left = "";
@@ -145,10 +140,9 @@ export function checkResize(flusher) {
                   flusher.states.positionState
                 );
               } if (position.width) {
-                /* console.log('custom width'); */
                 flusher.container.removeAttribute("size");
-                flusher.container.style.width = position.width * scaleFactor + "px";
-                flusher.container.style.height = position.height * scaleFactor + "px";
+                flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
+                flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
               } else {
                 flusher.container.style.width = "";
                 flusher.container.style.height = "";
@@ -194,6 +188,10 @@ export function checkResize(flusher) {
             togglePointerEvents(flusher);
 
             checkAddons(flusher);
+
+            /* temp fix toggle btn not clickable in theater */
+            const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
+            if (element) element.classList.remove("z-[500]");
 
             logToConsole(
               `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"

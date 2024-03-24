@@ -203,8 +203,20 @@
 }
 
 .flusher-messages[layout="vertical"][enabled="true"]:hover {
-  outline: 1px solid var(--flusher-green);
-  resize: both;
+  border-radius: 1px;
+  outline: 2px solid var(--flusher-green);
+}
+
+.flusher-messages.flusher-grab:hover::after {
+  background-image: url("data:image/svg+xml,%3Csvg width='64px' height='64px' viewBox='0 0 16 16' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' fill='%23000000'%3E%3Cg id='SVGRepo_bgCarrier' stroke-width='0'%3E%3C/g%3E%3Cg id='SVGRepo_tracerCarrier' stroke-linecap='round' stroke-linejoin='round'%3E%3C/g%3E%3Cg id='SVGRepo_iconCarrier'%3E%3Cpath fill='%23FFFFFF' d='M16 16h-16l16-16z'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
+  background-size: 10px;
+  width: 10px;
+  height: 10px;
+  content: " ";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  cursor: nwse-resize;
 }
 
 .flusher-messages[layout="vertical"][position="BOTTOMLEFT"] {
@@ -241,8 +253,8 @@
 .flusher-messages[font="LARGE"] .icon.size-sm,
 .flusher-messages[font="LARGE"][layout="horizontal"] .badge-tooltip,
 .flusher-messages[font="LARGE"] svg {
-  height: 19.6px !important;
-  width: 19.6px !important;
+  height: 20.6px !important;
+  width: 20.6px !important;
   margin-right: 1px;
 }
 
@@ -250,8 +262,8 @@
 .flusher-messages[font="SMALL"] .base-custom-badge .icon.size-sm,
 .flusher-messages[font="SMALL"][layout="horizontal"] .badge-tooltip,
 .flusher-messages[font="SMALL"] svg {
-  height: 13.8px !important;
-  width: 13.8px !important;
+  height: 14.8px !important;
+  width: 14.8px !important;
   margin-right: -1px;
 }
 
@@ -259,9 +271,12 @@
 .flusher-messages[font="NORMAL"] .base-custom-badge .icon.size-sm,
 .flusher-messages[font="NORMAL"][layout="horizontal"] .badge-tooltip,
 .flusher-messages[font="NORMAL"] svg {
-  height: 17.2px !important;
-  width: 17.2px !important;
-  padding-right: 1px;
+  height: 18.2px !important;
+  width: 18.2px !important;
+}
+
+.flusher-messages .badge-tooltip {
+  margin-right: 2px;
 }
 
 .flusher-messages[layout="vertical"][size="LARGE"] {
@@ -358,8 +373,8 @@
 }
 
 .flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
-    1px 1px 2px black;
+  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
+    1px 1px 1px black;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
@@ -383,7 +398,7 @@
     1px 1px 1px black;
 }
 
-.flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
+.flusher-messages[shadow="true"].flusher-messages[font="SMALL"][layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[shadow="true"].flusher-messages[font="SMALL"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
   text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
     1px 1px 1px black;
@@ -413,6 +428,11 @@
 .flusher-messages[shadow="true"].flusher-messages[font="LARGE"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
   text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
     1px 1px 2px black;
+}
+
+.flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
+.flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
+  font-weight: 700;
 }
 
 .flusher-messages[font="LARGE"] .chat-entry {

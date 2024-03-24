@@ -87,8 +87,9 @@
 }
 
 .flusher-menu-title {
-	padding-right: 1rem;
-	text-wrap: nowrap;
+	margin-right: 1rem;
+	white-space: nowrap !important;
+	display: block;
 }
 
 .flusher-toggle .flusher-toggle-indicator {

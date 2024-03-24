@@ -12,7 +12,7 @@ export class FlusherStates {
     this.flushState = false;
     this.chatEnabled = true;
     this.shadow = true;
-    this.spamState = false;
+    this.spamState = true;
     this.timeState = false;
   }
 }

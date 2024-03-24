@@ -2,7 +2,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
   <div class="flusher-menu-base" style="display: block;">
     <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
       <div class="flex h-8 items-center space-x-2.5">
-        <div class="flusher-menu-title">Chat Flusher</div>
+        <div class="flusher-menu-title">Chat&nbsp;Flusher</div>
       </div><button class="flusher-menu-close variant-text size-xs flusher-icon-button">
         <div style="width: 12px; height: 12px;" class="flusher-icon icon"><svg width="12" height="12"
           viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">

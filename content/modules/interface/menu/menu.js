@@ -79,11 +79,11 @@ export function createMenu(flusher) {
                return item.videoSize === flusher.props.videoSize;
             });
 
-            if (existingPositionIndex !== -1 && positionsArray[existingPositionIndex].position.top) {
+            if (existingPositionIndex !== -1 && positionsArray[existingPositionIndex]?.position?.top !== undefined) {
                delete positionsArray[existingPositionIndex].position.top;
                delete positionsArray[existingPositionIndex].position.left;
             } else {
-               if (positionsArray[existingPositionIndex]?.position?.location || positionsArray[existingPositionIndex]?.position?.size) {
+               if (positionsArray[existingPositionIndex]?.position) {
                   positionsArray[existingPositionIndex].position.location = flusher.states.positionState;
                } else {
                   positionsArray.push({
@@ -128,10 +128,10 @@ export function createMenu(flusher) {
                delete positionsArray[existingPositionIndex].position.width;
                delete positionsArray[existingPositionIndex].position.height;
             } else {
-               if (positionsArray[existingPositionIndex].position.location || positionsArray[existingPositionIndex].position.size) {
+               if (positionsArray[existingPositionIndex]?.position) {
                   positionsArray[existingPositionIndex].position.size = flusher.states.sizeState;
                } else {
-                  positionsArray[existingPositionIndex].push({
+                  positionsArray.push({
                      videoSize: flusher.props.videoSize,
                      position: {
                         size: flusher.states.sizeState
@@ -361,12 +361,6 @@ export function createMenu(flusher) {
          flusher.states.flushState = newFlushState;
 
          (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
-
-         if (flusher.states.flushState) {
-
-         } else {
-
-         }
 
          if (flusher.states.chatEnabled && !flusher.states.flushState) dragElement(flusher);
 

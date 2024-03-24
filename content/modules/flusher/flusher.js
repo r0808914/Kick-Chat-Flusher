@@ -35,10 +35,7 @@ export class Flusher {
 	}
 
 	clear() {
-		if (this.container) {
-			this.container.style.display = 'none';
-			this.resetPosition();
-		}
+		if (this.container) this.container.style.display = 'none';
 
 		const isEnabled = this.states.chatEnabled;
 		this.states.chatEnabled = false;
