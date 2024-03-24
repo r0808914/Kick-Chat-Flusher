@@ -1500,12 +1500,14 @@ function dragElement(flusher) {
   async function setPosition(flusher, event) {
     var scaleFactor = window.innerWidth / window.outerWidth;
     var rect = flusher.container.getBoundingClientRect();
+    var rectVideo = flusher.video.getBoundingClientRect();
     var newPosition = {
-      top: Math.round(rect.top / scaleFactor),
-      left: Math.round(rect.left / scaleFactor),
-      width: Math.round(flusher.container.offsetWidth / scaleFactor),
-      height: Math.round(flusher.container.offsetHeight / scaleFactor)
+      top: Math.round(rect.top - rectVideo.top) / scaleFactor,
+      left: Math.round(rect.left - rectVideo.left) / scaleFactor,
+      width: Math.round(rect.width) / scaleFactor,
+      height: Math.round(rect.height) / scaleFactor
     };
+    console.log(newPosition);
     if (event) {
       flusher.container.style.top = Math.round(newPosition.top * scaleFactor) + "px";
       flusher.container.style.left = Math.round(newPosition.left * scaleFactor) + "px";
