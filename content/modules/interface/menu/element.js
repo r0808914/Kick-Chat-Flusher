@@ -81,7 +81,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
     </div>
     <div class="chat-actions-content">
       <div class="flusher-spam flusher-actions-item">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Spam</div>
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Show Spam</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
@@ -226,7 +226,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
         </div>
       </div>
       <div class="flusher-slide flusher-actions-item" style="display: flex;">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Slide</div>
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Animation</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">

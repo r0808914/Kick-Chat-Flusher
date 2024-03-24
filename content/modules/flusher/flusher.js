@@ -82,13 +82,6 @@ export class Flusher {
 		this.props.isProcessingMessages = false;
 	}
 
-	resetPosition() {
-		this.container.style.height = '';
-		this.container.style.width = '';
-		this.container.style.top = '';
-		this.container.style.left = '';
-	}
-
 	setVerticalWidth() {
 		const elementHeight = this.props.elementHeight;
 		switch (this.states.sizeStates[this.states.sizeState]) {

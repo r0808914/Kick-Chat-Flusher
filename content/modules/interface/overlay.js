@@ -1,6 +1,6 @@
 import { createMenu } from './menu/menu.js';
 import { checkResize } from '../utils/resize.js';
-import { getFont, logToConsole } from '../utils/utils.js';
+import { getFont, logToConsole, toTitleCase } from '../utils/utils.js';
 
 export async function createChat(flusher) {
    if (flusher.video.hasAttribute('flusher')) return;
@@ -45,13 +45,13 @@ export async function createChat(flusher) {
    flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
    flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
    flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
-   flusher.states.positionState = await getExtensionStorageItem('flusher-position', flusher.states.positionState);
    flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
-   flusher.states.sizeState = await getExtensionStorageItem('flusher-size', flusher.states.sizeState);
    flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
    flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
    flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
    flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
+
+   setCustomPosition(flusher);
 
    flusher.toggle = createMenu(flusher);
 
@@ -67,4 +67,39 @@ export async function createChat(flusher) {
          });
       });
    }
+}
+
+export function setCustomPosition(flusher) {
+   chrome.storage.local.get("positionsPerChannel", function (result) {
+      var positionsPerChannel = result.positionsPerChannel || {};
+      var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+      var existingPositionIndex = positionsArray.findIndex(function (item) {
+         return item.videoSize === flusher.props.videoSize;
+      });
+
+      if (existingPositionIndex !== -1) {
+         const location = positionsArray[existingPositionIndex].position?.location;
+         const size = positionsArray[existingPositionIndex].position?.size;
+         flusher.states.positionState = location ?? 4;
+         flusher.states.sizeState = size ?? 1;
+      } else {
+         flusher.states.positionState = 4;
+         flusher.states.sizeState = 1;
+      }
+
+      if (flusher.menu) {
+         const sizeBtn = flusher.menu.querySelector('.flusher-size');
+         if (sizeBtn) {
+            const divInsideSize = sizeBtn.querySelector('div.pr-0');
+            divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
+         }
+
+         const positionBtn = flusher.menu.querySelector('.flusher-position');
+         if (positionBtn) {
+            const divInsidePosition = positionBtn.querySelector('div.pr-0');
+            divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+         }
+      }
+   });
 }

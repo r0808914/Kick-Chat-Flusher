@@ -4,6 +4,7 @@ import {
 } from "../interface/menu/menu.js";
 import { processMessageQueue } from "../queue/queue.js";
 import { logToConsole } from "./utils.js";
+import { setCustomPosition } from "../interface/overlay.js";
 
 import Kick from "../site/kick.js";
 
@@ -22,6 +23,7 @@ export function checkResize(flusher) {
       if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
       flusher.resizeTimer = setTimeout(() => {
         for (let entry of entries) {
+
           const rect = target.getBoundingClientRect();
           let width = rect.width;
           let height = rect.height;
@@ -75,28 +77,18 @@ export function checkResize(flusher) {
 
           flusher.container.setAttribute("shadow", flusher.states.shadow);
 
-          setAttribute(
-            flusher.container,
-            "position",
-            flusher.states.positionStates,
-            flusher.states.positionState
-          );
-          setAttribute(
-            flusher.container,
-            "size",
-            flusher.states.sizeStates,
-            flusher.states.sizeState
-          );
           flusher.container.setAttribute(
             "background",
             flusher.states.backgroundStates[flusher.states.backgroundState]
           );
+
           setAttribute(
             flusher.container,
             "font",
             flusher.states.sizeStates,
             flusher.states.fontState
           );
+
           flusher.container.setAttribute("time", flusher.states.timeState);
 
           if (flusher.props.isAeroKick) {
@@ -105,14 +97,88 @@ export function checkResize(flusher) {
 
           toggleEnableMenu();
 
+          setCustomPosition(flusher);
+
           const documentWidth = document.documentElement.clientWidth;
           if (documentWidth < flusher.props.parentWidth / 2 + 10) {
             flusher.props.isFullscreen = true;
             startScrollingInterval(flusher);
+            /* logToConsole('Video Size: Fullscreen Mode'); */
+            flusher.props.videoSize = "fullscreen";
           } else {
             flusher.props.isFullscreen = false;
             stopScrollingInterval(flusher);
+            if (document.querySelector('.sidebar')) {
+              /* logToConsole('Video Size: Default Mode'); */
+              flusher.props.videoSize = "default";
+            } else {
+              /* logToConsole('Video Size: Theater Mode'); */
+              flusher.props.videoSize = "theater";
+            }
           }
+
+          chrome.storage.local.get("positionsPerChannel", function (result) {
+            var positionsPerChannel = result.positionsPerChannel || {};
+            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+            var existingPositionIndex = positionsArray.findIndex(function (item) {
+              return item.videoSize === flusher.props.videoSize;
+            });
+
+            if (existingPositionIndex !== -1) {
+              const position = positionsArray[existingPositionIndex].position;
+              /* console.log(position); */
+              if (position.top) {
+                /* console.log('custom position'); */
+                flusher.container.removeAttribute("position");
+                var scaleFactor = window.innerWidth / window.outerWidth;
+                flusher.container.style.top = position.top > height ? height - 20 + "px" : position.top * scaleFactor + "px";
+                flusher.container.style.left = position.left > width ? width - 20 + "px" : position.left * scaleFactor + "px";
+              } else {
+                flusher.container.style.top = "";
+                flusher.container.style.left = "";
+                flusher.container.style.alignItems = "";
+                setAttribute(
+                  flusher.container,
+                  "position",
+                  flusher.states.positionStates,
+                  flusher.states.positionState
+                );
+              } if (position.width) {
+                /* console.log('custom width'); */
+                flusher.container.removeAttribute("size");
+                flusher.container.style.width = position.width * scaleFactor + "px";
+                flusher.container.style.height = position.height * scaleFactor + "px";
+              } else {
+                flusher.container.style.width = "";
+                flusher.container.style.height = "";
+                setAttribute(
+                  flusher.container,
+                  "size",
+                  flusher.states.sizeStates,
+                  flusher.states.sizeState
+                );
+              }
+            } else {
+              flusher.container.style.top = "";
+              flusher.container.style.left = "";
+              flusher.container.style.alignItems = "";
+              flusher.container.style.width = "";
+              flusher.container.style.height = "";
+              setAttribute(
+                flusher.container,
+                "position",
+                flusher.states.positionStates,
+                flusher.states.positionState
+              );
+              setAttribute(
+                flusher.container,
+                "size",
+                flusher.states.sizeStates,
+                flusher.states.sizeState
+              );
+            }
+          });
 
           flusher.props.elementHeight = null;
           flusher.container.style.display = "flex";
@@ -136,7 +202,7 @@ export function checkResize(flusher) {
           } else {
             flusher.states.flushState
               ? flusher.clear()
-              : flusher.resetPosition();
+              : null;
           }
         }
       }, 750);

@@ -208,30 +208,26 @@
 }
 
 .flusher-messages[layout="vertical"][position="BOTTOMLEFT"] {
-  align-items: flex-start;
   bottom: 0;
 }
 
 .flusher-messages[layout="vertical"][position="BOTTOMRIGHT"] {
-  align-items: flex-start;
   bottom: 0;
   right: 0;
 }
 
 .flusher-messages[layout="vertical"][position="LEFT"] {
-  align-items: flex-start;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .flusher-messages[layout="vertical"][position="RIGHT"] {
-  align-items: flex-start;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.flusher-messages[layout="vertical"][position="TOPLEFT"] {
+.flusher-messages[layout="vertical"] {
   align-items: flex-start;
 }
 

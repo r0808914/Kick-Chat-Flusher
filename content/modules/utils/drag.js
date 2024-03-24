@@ -42,11 +42,82 @@ export function dragElement(flusher) {
 	}
 
 	function closeDragElement() {
+		var scaleFactor = window.innerWidth / window.outerWidth;
+
+		var newPosition = {
+			top: flusher.container.offsetTop / scaleFactor,
+			left: flusher.container.offsetLeft / scaleFactor,
+		};
+
+		chrome.storage.local.get("positionsPerChannel", function (result) {
+			var positionsPerChannel = result.positionsPerChannel || {};
+
+			var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+			var existingPositionIndex = positionsArray.findIndex(function (item) {
+				return item.videoSize === flusher.props.videoSize;
+			});
+
+			if (existingPositionIndex !== -1) {
+				positionsArray[existingPositionIndex].position.top = newPosition.top;
+				positionsArray[existingPositionIndex].position.left = newPosition.left;
+			} else {
+				positionsArray.push({
+					videoSize: flusher.props.videoSize,
+					position: {
+						top: newPosition.top,
+						left: newPosition.left
+					}
+				});
+			}
+
+			positionsPerChannel[flusher.props.channelName] = positionsArray;
+
+			chrome.storage.local.set({ "positionsPerChannel": positionsPerChannel }, function () {
+				/* console.log("positionsPerChannel:", positionsPerChannel); */
+			});
+		});
+
 		document.onmouseup = null;
 		document.onmousemove = null;
 	}
 
 	function closeResize() {
+		var scaleFactor = window.innerWidth / window.outerWidth;
+
+		var newPosition = {
+			width: flusher.container.offsetWidth / scaleFactor,
+			height: flusher.container.offsetHeight / scaleFactor
+		};
+
+		chrome.storage.local.get("positionsPerChannel", function (result) {
+			var positionsPerChannel = result.positionsPerChannel || {};
+			var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+			var existingPositionIndex = positionsArray.findIndex(function (item) {
+				return item.videoSize === flusher.props.videoSize;
+			});
+
+			if (existingPositionIndex !== -1) {
+				positionsArray[existingPositionIndex].position.width = newPosition.width;
+				positionsArray[existingPositionIndex].position.height = newPosition.height;
+			} else {
+				positionsArray.push({
+					videoSize: flusher.props.videoSize,
+					position: {
+						width: newPosition.width,
+						height: newPosition.height
+					}
+				});
+			}
+
+			positionsPerChannel[flusher.props.channelName] = positionsArray;
+
+			chrome.storage.local.set({ "positionsPerChannel": positionsPerChannel }, function () {
+				/* console.log("positionsPerChannel:", positionsPerChannel); */
+			});
+		});
+
 		isResizing = false;
 		document.onmouseup = null;
 		document.onmousemove = null;

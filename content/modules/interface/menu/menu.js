@@ -1,7 +1,7 @@
 import { menu } from './element.js';
 import { createToggle, svgToggle } from '../toggle/toggle.js';
 import { dragElement } from '../../utils/drag.js';
-import { logToConsole } from '../../utils/utils.js';
+import { toTitleCase, logToConsole } from '../../utils/utils.js';
 
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
@@ -66,10 +66,42 @@ export function createMenu(flusher) {
 
       positionBtn.addEventListener('mousedown', function (event) {
          flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
-         setExtensionStorageItem('flusher-position', flusher.states.positionState);
          divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
          flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
-         flusher.resetPosition();
+         chrome.storage.local.get("positionsPerChannel", function (result) {
+            flusher.container.style.top = "";
+            flusher.container.style.left = "";
+            flusher.container.style.alignItems = "";
+
+            var positionsPerChannel = result.positionsPerChannel || {};
+            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+            var existingPositionIndex = positionsArray.findIndex(function (item) {
+               return item.videoSize === flusher.props.videoSize;
+            });
+
+            if (existingPositionIndex !== -1 && positionsArray[existingPositionIndex].position.top) {
+               delete positionsArray[existingPositionIndex].position.top;
+               delete positionsArray[existingPositionIndex].position.left;
+            } else {
+               if (positionsArray[existingPositionIndex]?.position?.location || positionsArray[existingPositionIndex]?.position?.size) {
+                  positionsArray[existingPositionIndex].position.location = flusher.states.positionState;
+               } else {
+                  positionsArray.push({
+                     videoSize: flusher.props.videoSize,
+                     position: {
+                        location: flusher.states.positionState
+                     }
+                  });
+               }
+            }
+
+            positionsPerChannel[flusher.props.channelName] = positionsArray;
+
+            chrome.storage.local.set({ "positionsPerChannel": positionsPerChannel }, function () {
+               /* console.log("positionsPerChannel:", positionsPerChannel); */
+            });
+         });
+
       });
 
       const sizeBtn = overlayMenu.querySelector('.flusher-size');
@@ -78,10 +110,42 @@ export function createMenu(flusher) {
 
       sizeBtn.addEventListener('mousedown', function (event) {
          flusher.states.sizeState = (flusher.states.sizeState + 1) % flusher.states.sizeStates.length;
-         setExtensionStorageItem('flusher-size', flusher.states.sizeState);
          divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
          flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
          flusher.setVerticalWidth();
+         chrome.storage.local.get("positionsPerChannel", function (result) {
+            flusher.container.style.width = "";
+            flusher.container.style.height = "";
+
+            var positionsPerChannel = result.positionsPerChannel || {};
+            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+            var existingPositionIndex = positionsArray.findIndex(function (item) {
+               return item.videoSize === flusher.props.videoSize;
+            });
+
+            if (existingPositionIndex !== -1 && positionsArray[existingPositionIndex].position.width) {
+               delete positionsArray[existingPositionIndex].position.width;
+               delete positionsArray[existingPositionIndex].position.height;
+            } else {
+               if (positionsArray[existingPositionIndex].position.location || positionsArray[existingPositionIndex].position.size) {
+                  positionsArray[existingPositionIndex].position.size = flusher.states.sizeState;
+               } else {
+                  positionsArray[existingPositionIndex].push({
+                     videoSize: flusher.props.videoSize,
+                     position: {
+                        size: flusher.states.sizeState
+                     }
+                  });
+               }
+            }
+
+            positionsPerChannel[flusher.props.channelName] = positionsArray;
+
+            chrome.storage.local.set({ "positionsPerChannel": positionsPerChannel }, function () {
+               /* console.log("Position removed for videoSize:", flusher.props.videoSize); */
+            });
+         });
       });
 
       const backgroundBtn = messageMenu.querySelector('.flusher-background');
@@ -155,8 +219,26 @@ export function createMenu(flusher) {
 
       const overlayMenuBtn = parent.querySelector('.flusher-overlayMenu');
       overlayMenuBtn.addEventListener('mousedown', function (event) {
-         overlayMenu.style.display = 'block';
-         layoutMenu.style.display = 'none';
+         chrome.storage.local.get("positionsPerChannel", function (result) {
+            var positionsPerChannel = result.positionsPerChannel || {};
+
+            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+            var existingPositionIndex = positionsArray.findIndex(function (item) {
+               return item.videoSize === flusher.props.videoSize;
+            });
+
+            if (existingPositionIndex !== -1) {
+               if (positionsPerChannel[flusher.props.channelName][existingPositionIndex].position.top) {
+                  divInsidePosition.textContent = "Custom";
+               } if (positionsPerChannel[flusher.props.channelName][existingPositionIndex].position.width) {
+                  divInsideSize.textContent = "Custom";
+               }
+            }
+
+            overlayMenu.style.display = 'block';
+            layoutMenu.style.display = 'none';
+         });
       });
 
       const overlayBackBtn = parent.querySelector('.flusher-overlay-back');
@@ -329,14 +411,6 @@ export function createMenu(flusher) {
       if (flusher.states.chatEnabled) flusherToggle.classList.toggle(toggledClass);
 
       return createToggle(flusher);
-   }
-
-   function toTitleCase(str) {
-      if (!str) return 'undefined';
-      if (str === 'OFF' || str === 'ON') return str;
-      return str.toLowerCase().replace(/\b\w/g, function (char) {
-         return char.toUpperCase();
-      });
    }
 
    function setExtensionStorageItem(key, value) {

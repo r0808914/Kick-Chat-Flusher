@@ -24,3 +24,11 @@ export function logToConsole(message) {
 	const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
 	isChrome ? console.log(`%c Kick Chat Flusher %c ${message}`, 'background: #228B22; color: #FFFFFF; padding: 2px 0;', '') : console.log('Kick Chat Flusher - ', message);
 }
+
+export function toTitleCase(str) {
+	if (!str) return 'undefined';
+	if (str === 'OFF' || str === 'ON') return str;
+	return str.toLowerCase().replace(/\b\w/g, function (char) {
+		return char.toUpperCase();
+	});
+}
