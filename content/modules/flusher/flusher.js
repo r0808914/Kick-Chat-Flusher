@@ -57,6 +57,11 @@ export class Flusher {
 
 		this.props.displayedMessages = [];
 
+		this.props.messageObservers.forEach((observer, entryId) => {
+			observer.disconnect();
+			this.props.messageObservers.delete(entryId);
+		});
+
 		if (this.props.lastPositionPerRow) {
 			this.props.lastPositionPerRow.length = 0;
 		} else {

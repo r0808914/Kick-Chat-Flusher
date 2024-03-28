@@ -369,11 +369,7 @@ export class FlusherMessages {
         flusher.props.elementQueue.push(clonedNode);
         processElementQueue(flusher);
 
-        observeNestedChildren(node, id ?? getRandomInt(), clonedNode);
-
-        function getRandomInt() {
-          return Math.floor(Math.random() * (1000000 - 10000));
-        }
+        if (id && !flusher.states.flushState) observeNestedChildren(node, id, clonedNode);
 
         function observeNestedChildren(parentNode, id, clonedNode) {
           const observer = new MutationObserver(async (mutations) => {

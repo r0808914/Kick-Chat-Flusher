@@ -65,6 +65,10 @@ class Flusher {
       }
     }
     this.props.displayedMessages = [];
+    this.props.messageObservers.forEach((observer, entryId) => {
+      observer.disconnect();
+      this.props.messageObservers.delete(entryId);
+    });
     if (this.props.lastPositionPerRow) {
       this.props.lastPositionPerRow.length = 0;
     } else {
@@ -381,10 +385,7 @@ class FlusherMessages {
       function addMessage() {
         flusher.props.elementQueue.push(clonedNode);
         (0,_queue_queue_js__WEBPACK_IMPORTED_MODULE_0__.processElementQueue)(flusher);
-        observeNestedChildren(node, id ?? getRandomInt(), clonedNode);
-        function getRandomInt() {
-          return Math.floor(Math.random() * (1000000 - 10000));
-        }
+        if (id && !flusher.states.flushState) observeNestedChildren(node, id, clonedNode);
         function observeNestedChildren(parentNode, id, clonedNode) {
           const observer = new MutationObserver(async mutations => {
             if (clonedNode) {
