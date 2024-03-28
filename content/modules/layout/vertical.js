@@ -30,6 +30,7 @@ export function appendVertical(message, flusher) {
 		if (message.container) {
 			if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
 			flusher.container['insertBefore'](message.container, lastItem);
+
 		} else {
 			if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
 			flusher.container['insertBefore'](message, lastItem);
@@ -38,12 +39,22 @@ export function appendVertical(message, flusher) {
 
 	while (flusher.container.children.length > flusher.props.maxRows) {
 		const oldest = flusher.container.lastChild;
-		if (!flusher.states.spamState) {
-			const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
-			if (entryId)
-				flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
+		if (entryId) {
+			const observer = flusher.props.messageObservers.get(entryId);
+			if (observer) {
+				observer.disconnect();
+				flusher.props.messageObservers.delete(entryId);
+			}
+		}
+
+		if (!flusher.states.spamState && entryId) {
+			flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
 		}
 
 		oldest.remove();
 	}
 }
+
+
+

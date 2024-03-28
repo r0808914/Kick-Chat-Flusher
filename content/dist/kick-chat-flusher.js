@@ -1,750 +1,118 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-var __webpack_exports__ = {};
+/******/ 	var __webpack_modules__ = ({
 
-;// CONCATENATED MODULE: ./modules/flusher/states.js
-class FlusherStates {
-  constructor() {
-    this.backgroundStates = ['SMALL', 'LARGE', 'OFF'];
-    this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
-    this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
-    this.backgroundState = 2;
-    this.positionState = 4;
-    this.sizeState = 1;
-    this.fontState = 1;
-    this.reply = false;
-    this.slide = true;
-    this.flushState = false;
-    this.chatEnabled = true;
-    this.shadow = true;
-    this.spamState = true;
-    this.timeState = false;
+/***/ "./modules/flusher/flusher.js":
+/*!************************************!*\
+  !*** ./modules/flusher/flusher.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Flusher: () => (/* binding */ Flusher)
+/* harmony export */ });
+/* harmony import */ var _states_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./states.js */ "./modules/flusher/states.js");
+/* harmony import */ var _props_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./props.js */ "./modules/flusher/props.js");
+/* harmony import */ var _messages_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./messages.js */ "./modules/flusher/messages.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
+/* harmony import */ var _utils_resize_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../utils/resize.js */ "./modules/utils/resize.js");
+/* harmony import */ var _utils_badges_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/badges.js */ "./modules/utils/badges.js");
+
+
+
+
+
+
+class Flusher {
+  constructor(video, domain, channelName, aeroKick) {
+    this.video = video;
+    this.states = new _states_js__WEBPACK_IMPORTED_MODULE_0__.FlusherStates();
+    this.props = new _props_js__WEBPACK_IMPORTED_MODULE_1__.FlusherProps();
+    this.badges = new _utils_badges_js__WEBPACK_IMPORTED_MODULE_5__["default"]().badgeTypeToSVG;
+    this.props.domain = domain;
+    this.props.external = domain === 'KICK' ? false : true;
+    this.props.isVod = window.location.href.includes('/video/');
+    this.props.isAeroKick = aeroKick ?? false;
+    this.props.channelName = channelName;
+    this.provider = new _messages_js__WEBPACK_IMPORTED_MODULE_2__.FlusherMessages();
+    (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.visibilityChange)(this);
   }
-}
-;// CONCATENATED MODULE: ./modules/flusher/props.js
-class FlusherProps {
-  constructor() {
-    this.chatroomId = null;
-    this.clickOutsideHandlerFunction = null;
-    this.domain = null;
-    this.displayedMessages = [];
-    this.elementQueue = [];
-    this.external = false;
-    this.isFullscreen = false;
-    this.isProcessingElements = false;
-    this.isProcessingMessages = false;
-    this.isVod = false;
-    this.loading = false;
-    this.messageQueue = [];
-    this.badgeCache = [];
-    this.lastPositionPerRow = [];
-    this.rowQueue = [];
-    this.timeoutIds = [];
-    this.bannedUsers = [];
-    this.video = null;
-    this.lastRow = 0;
-    this.maxRows = 99;
-    this.isKickTools = false;
+  resetConnection() {
+    /* logToConsole('Reset Connection'); */
+
+    if (!this.props.flusher) return;
+    clearChat(this.props.flusher);
+    isVod = false;
+    if (this.props.flusher && this.props.resizeObserver) {
+      this.props.resizeObserver.disconnect();
+    }
   }
-}
-;// CONCATENATED MODULE: ./modules/layout/horizontal.js
-function selectRow(message, flusher) {
-  let selectedRow = 0;
-  const positions = flusher.props.lastPositionPerRow.length ?? 0;
-  if (positions > 0) {
-    for (let i = 0; i < positions; i++) {
-      const item = flusher.props.lastPositionPerRow[i];
-      if (item === undefined || item.run === true) {
-        selectedRow = i;
+  clear() {
+    if (this.container) this.container.style.display = 'none';
+    const isEnabled = this.states.chatEnabled;
+    this.states.chatEnabled = false;
+    this.props.elementQueue.length = 0;
+    this.props.messageQueue.length = 0;
+    this.props.lastRow = 0;
+    for (const id of this.props.timeoutIds) {
+      clearTimeout(id);
+    }
+    (0,_utils_resize_js__WEBPACK_IMPORTED_MODULE_4__.stopScrollingInterval)(this);
+    if (this.container !== null) {
+      while (this.container.firstChild) {
+        this.container.removeChild(this.container.firstChild);
+      }
+    }
+    this.props.displayedMessages = [];
+    if (this.props.lastPositionPerRow) {
+      this.props.lastPositionPerRow.length = 0;
+    } else {
+      this.props.lastPositionPerRow = [];
+    }
+    if (this.props.rowQueue) {
+      this.props.rowQueue.length = 0;
+    } else {
+      this.props.rowQueue = [];
+    }
+    this.props.timeoutIds.length = 0;
+    if (this.container !== null) this.container.style.display = 'flex';
+    this.states.chatEnabled = isEnabled;
+    this.props.isProcessingElements = false;
+    this.props.isProcessingMessages = false;
+  }
+  setVerticalWidth() {
+    const elementHeight = this.props.elementHeight;
+    switch (this.states.sizeStates[this.states.sizeState]) {
+      case 'LARGE':
+        this.container.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
         break;
-      }
-      if (flusher.props.rowQueue[i].length < 2) {
-        message.row = i;
-        message = prepareAnimation(message, flusher);
-        if (message !== null) flusher.props.rowQueue[i].push(message);
-        return;
-      }
-      selectedRow = i + 1;
+      case 'NORMAL':
+        this.container.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
+        break;
+      case 'SMALL':
+        this.container.style.setProperty('--flusher-vertical-width', `${elementHeight * 9}px`);
+        break;
+      default:
+        break;
     }
   }
-  message.row = selectedRow;
-  flusher.props.rowQueue[selectedRow] = flusher.props.rowQueue[selectedRow] ?? [];
-  message = prepareAnimation(message, flusher);
-  if (message !== null) startAnimation(message, flusher);
 }
-function startAnimation(messageData, flusher) {
-  const message = messageData.container;
-  const space = 4;
-  const rowIndex = messageData.row;
-  const lastItem = flusher.props.lastPositionPerRow?.[rowIndex];
-  !flusher.props.lastPositionPerRow ? flusher.props.lastPositionPerRow = [] : null;
-  flusher.props.lastPositionPerRow[rowIndex] = {
-    container: message,
-    run: false
-  };
-  let overlap = 0;
-  let messageWidth;
-  const lastContainer = lastItem !== undefined ? lastItem.container : undefined;
-  if (lastContainer !== undefined) {
-    requestAnimationFrame(() => {
-      flusher.container.appendChild(message);
-      messageWidth = message.offsetWidth;
-      message.style.marginRight = `-${messageWidth}px`;
-      const rect1 = message.getBoundingClientRect();
-      const rect2 = lastContainer.getBoundingClientRect();
-      overlap = rect2.right - rect1.left;
 
-      /* queue running */
-      if (lastItem.run === false) {
-        message.style.marginRight = `-${messageWidth + overlap + space}px`;
-        message.classList.add('flusher-animation');
-      }
+/***/ }),
 
-      /* queue ended */else {
-        if (overlap > -8) {
-          /* append last queue */
-          message.style.marginRight = `-${messageWidth + overlap + space}px`;
-          message.classList.add('flusher-animation');
-        } else {
-          /* new queue */
-          message.style.marginRight = `-${messageWidth + space}px`;
-          message.classList.add('flusher-animation');
-          overlap = 0;
-        }
-      }
-      requestNext(messageWidth, overlap, messageData, flusher);
-    });
-  }
+/***/ "./modules/flusher/messages.js":
+/*!*************************************!*\
+  !*** ./modules/flusher/messages.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-  /* new row */else {
-    flusher.container.appendChild(message);
-    messageWidth = message.offsetWidth;
-    message.style.marginRight = `-${messageWidth + space}px`;
-    message.classList.add('flusher-animation');
-    overlap = 0;
-    requestNext(messageWidth, overlap, messageData, flusher);
-  }
-  async function requestNext(messageWidth, overlap, messageData, flusher) {
-    let timeNeeded = Math.ceil((messageWidth + space + overlap) / flusher.props.parentWidth * 16000);
-    const timeoutId = setTimeout(() => {
-      checkQueue(messageData, flusher);
-      const index = flusher.props.timeoutIds.indexOf(timeoutId);
-      if (index !== -1) {
-        flusher.props.timeoutIds.splice(index, 1);
-      }
-    }, timeNeeded);
-    flusher.props.timeoutIds.push(timeoutId);
-  }
-  function checkQueue(messageData, flusher) {
-    const index = messageData.row;
-    if (!flusher?.props?.rowQueue[index]) return;
-    const queueItem = flusher.props.rowQueue[index].shift();
-    if (queueItem) {
-      checkRow(queueItem, index, flusher);
-    } else {
-      flusher.props.lastRow = flusher.props.lastRow - 1;
-      flusher.props.lastPositionPerRow[index] = {
-        container: messageData.container,
-        run: true
-      };
-    }
-  }
-  function checkRow(messageData, rowIndex, flusher) {
-    /* To be Fixed */
-
-    /* if ((rowIndex + 1) > flusher.props.lastRow) {
-    	for (let i = 0; i < rowIndex; i++) {
-    		if (flusher.props.lastPositionPerRow[i] === undefined || flusher.props.lastPositionPerRow[i].run === true) {
-    			if (messageData.message !== null) {
-    				flusher.props.lastPositionPerRow[rowIndex] = undefined;
-    				messageData.container.style.setProperty('--row', i);
-    				messageData.container.classList.add('flusher-green');
-    					startAnimation(messageData, flusher);
-    			}
-    			return;
-    		}
-    		if (flusher.props.rowQueue[i].length < 1) {
-    			if (messageData.container !== null) {
-    				flusher.props.lastPositionPerRow[i] = undefined;
-    				messageData.container.style.setProperty('--row', i);
-    				flusher.props.rowQueue[i].push(messageData);
-    			}
-    			return;
-    		}
-    	}
-    } */
-
-    startAnimation(messageData, flusher);
-  }
-}
-function prepareAnimation(data, flusher) {
-  if (!data.container) data.container = data;
-  flusher.props.external ? data.container.classList.add('flusher-message') : data.container.classList.add('flusher-kick');
-  data.container.style.setProperty('--row', data.row);
-  data.container.addEventListener("animationend", function () {
-    try {
-      const oldest = flusher.container.firstChild;
-      if (!flusher.states.spamState) {
-        const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
-        if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
-      }
-      oldest.remove();
-    } catch {}
-  });
-  return data;
-}
-;// CONCATENATED MODULE: ./modules/layout/vertical.js
-function appendVertical(message, flusher) {
-  if (!message) return;
-  const lastItem = flusher.container.firstChild;
-  if (flusher.props.external) {
-    if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
-    const timestamp = new Date(message.created_at);
-    message.container.dataset.timestamp = timestamp;
-    if (lastItem) {
-      const lastTimestamp = new Date(lastItem.dataset.timestamp ?? 0);
-      if (timestamp < lastTimestamp) {
-        flusher.container.append(message.container);
-      } else {
-        let current = lastItem;
-        while (current) {
-          const currentTimestamp = new Date(current.dataset.timestamp);
-          if (timestamp > currentTimestamp) {
-            flusher.container.insertBefore(message.container, current);
-            break;
-          }
-          current = current.previousSibling;
-        }
-        if (!current) flusher.container.insertBefore(message.container, lastItem);
-      }
-    } else {
-      flusher.container.append(message.container);
-    }
-  } else {
-    if (message.container) {
-      if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
-      flusher.container['insertBefore'](message.container, lastItem);
-    } else {
-      if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
-      flusher.container['insertBefore'](message, lastItem);
-    }
-  }
-  while (flusher.container.children.length > flusher.props.maxRows) {
-    const oldest = flusher.container.lastChild;
-    if (!flusher.states.spamState) {
-      const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
-      if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
-    }
-    oldest.remove();
-  }
-}
-;// CONCATENATED MODULE: ./modules/utils/utils.js
-function visibilityChange(flusher) {
-  /* logToConsole(`Add visibilityChange`); */
-
-  document.addEventListener('visibilitychange', function handleVisibilityChange() {
-    if (!flusher || !flusher.states.flushState) return;
-    if (document.hidden) {
-      flusher.props.chatEnabledVisible = flusher.states.chatEnabled;
-      flusher.states.chatEnabled = false;
-      flusher.clear();
-    } else {
-      flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
-    }
-  });
-}
-function getFont() {
-  const fontLink = document.createElement('link');
-  fontLink.rel = 'stylesheet';
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap';
-  return fontLink;
-}
-function logToConsole(message) {
-  const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
-  isChrome ? console.log(`%c Kick Chat Flusher %c ${message}`, 'background: #228B22; color: #FFFFFF; padding: 2px 0;', '') : console.log('Kick Chat Flusher - ', message);
-}
-function toTitleCase(str) {
-  if (!str) return 'undefined';
-  if (str === 'OFF' || str === 'ON') return str;
-  return str.toLowerCase().replace(/\b\w/g, function (char) {
-    return char.toUpperCase();
-  });
-}
-;// CONCATENATED MODULE: ./modules/queue/queue.js
-
-
-
-function getMessageKey(key, value, messageId, flusher) {
-  const keyValue = key + "-" + value;
-  const dupe = flusher.props.displayedMessages.find(obj => {
-    return obj.key === keyValue;
-  });
-  const ignore = !flusher.states.spamState && dupe && flusher.lastRow > 1 ? true : false;
-  if (!ignore) flusher.props.displayedMessages.push({
-    id: messageId,
-    key: keyValue
-  });
-  return {
-    key: keyValue,
-    ignore: ignore
-  };
-}
-async function processMessageQueue(flusher) {
-  try {
-    if (flusher.props.isProcessingMessages) return;
-    flusher.props.isProcessingMessages = true;
-    let queueItem = flusher.props.messageQueue.shift();
-    if (!queueItem) {
-      flusher.props.isProcessingMessages = false;
-      return;
-    }
-    queueItem.chatroom_id = flusher.external ? queueItem?.chatroom_id : 0;
-    const lastRow = flusher.props.lastRow;
-    const maxRows = flusher.props.maxRows;
-    if (lastRow === null || lastRow >= maxRows) {
-      flusher.props.isProcessingMessages = false;
-      return;
-    }
-    const eventType = queueItem.event ?? queueItem.eventName;
-    if (eventType === "App\\Events\\ChatMessageEvent" && flusher.props.external) {
-      createMessage(JSON.parse(queueItem.data), flusher);
-    } else if (queueItem.type === "message" && flusher.props.external) {
-      createMessage(queueItem, flusher);
-    } else if (eventType === "App\\Events\\UserBannedEvent") {
-      createUserBanMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
-      createGiftedMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\FollowersUpdated") {
-      createFollowersMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\StreamHostEvent") {
-      createHostMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\SubscriptionEvent") {
-      createSubMessage(JSON.parse(queueItem.data), flusher);
-    } else {
-      flusher.props.isProcessingMessages = false;
-      processMessageQueue(flusher);
-    }
-  } catch (error) {
-    flusher.props.isProcessingMessages = false;
-    processMessageQueue(flusher);
-    console.error(error);
-  }
-}
-function processElementQueue(flusher) {
-  try {
-    if (flusher.props.isProcessingElements) return;
-    flusher.props.isProcessingElements = true;
-    const queueItem = flusher.props.elementQueue.shift();
-    if (!queueItem) {
-      flusher.props.isProcessingElements = false;
-      return;
-    }
-    const flushState = flusher.states.flushState;
-    if (!flusher.states.chatEnabled) {
-      flusher.props.isProcessingElements = false;
-      return;
-    }
-    flushState ? selectRow(queueItem, flusher) : appendVertical(queueItem, flusher);
-    if (flusher.props.isVod) {
-      const queueLength = flusher.props.elementQueue.length;
-      let wait = Math.trunc(3500 / queueLength);
-      if (queueLength < 3 && flusher.props.isVod && flusher.props.flushState) wait = 500;
-      setTimeout(function () {
-        flusher.props.isProcessingElements = false;
-        processElementQueue(flusher);
-      }, wait);
-    } else {
-      flusher.props.isProcessingElements = false;
-      processElementQueue(flusher);
-    }
-  } catch (error) {
-    flusher.props.isProcessingElements = false;
-    processElementQueue(flusher);
-    console.error(error);
-  }
-}
-function appendMessage(queueItem, flusher) {
-  flusher.props.elementQueue.push(queueItem);
-  processElementQueue(flusher);
-  flusher.props.isProcessingMessages = false;
-  processMessageQueue(flusher);
-}
-async function createMessage(message, flusher) {
-  const sender = message.sender;
-  const username = sender.username;
-  const content = message.content;
-  const reduced = !flusher.props.spamState ? reduceRepeatedSentences(content) : content;
-  if (!flusher.states.spamState) {
-    const messageKeyData = getMessageKey(sender.id, reduced, message.id, flusher);
-    if (messageKeyData.ignore === true) {
-      flusher.props.isProcessingMessages = false;
-      processMessageQueue(flusher);
-      return;
-    }
-    message.key = messageKeyData.key;
-  }
-  const messageDiv = document.createElement("div");
-  messageDiv.classList.add("flusher-message");
-  const badgeSpan = document.createElement("span");
-  badgeSpan.classList.add("flusher-badges");
-  const badgeElements = await getBadges(message, flusher);
-  badgeElements.forEach(badgeElement => {
-    badgeSpan.appendChild(badgeElement.cloneNode(true));
-  });
-  const usernameSpan = document.createElement("span");
-  usernameSpan.style.color = sender.identity.color;
-  usernameSpan.classList.add("flusher-username");
-  usernameSpan.textContent = username;
-  const boldSpan = document.createElement("span");
-  boldSpan.classList.add("font-bold", "text-white");
-  boldSpan.textContent = ": ";
-  const contentSpan = document.createElement("span");
-  contentSpan.classList.add("flusher-content");
-  const emoteRegex = /\[emote:(\d+):([\w-]+)\]/g;
-  let lastIndex = 0;
-  let match;
-  while ((match = emoteRegex.exec(reduced)) !== null) {
-    const textBeforeEmote = reduced.slice(lastIndex, match.index);
-    if (textBeforeEmote.trim() !== "") {
-      const textBeforeNode = document.createElement("span");
-      textBeforeNode.textContent = textBeforeEmote;
-      textBeforeNode.classList.add("flusher-content-text");
-      contentSpan.appendChild(textBeforeNode);
-    }
-    const img = document.createElement("img");
-    const [, id, name] = match;
-    img.src = `https://files.kick.com/emotes/${id}/fullsize`;
-    img.alt = name;
-    img.classList.add("flusher-emote");
-    contentSpan.appendChild(img);
-    lastIndex = emoteRegex.lastIndex;
-  }
-  const textAfterLastEmote = reduced.slice(lastIndex);
-  if (textAfterLastEmote.trim() !== "") {
-    const textAfterNode = document.createElement("span");
-    textAfterNode.textContent = textAfterLastEmote;
-    textAfterNode.classList.add("flusher-content-text");
-    contentSpan.appendChild(textAfterNode);
-  } else {
-    const lastChild = contentSpan.lastChild;
-    if (lastChild.tagName === "IMG") {
-      lastChild.className = "last-flusher-emote";
-    }
-  }
-  badgeSpan.firstChild ? messageDiv.append(badgeSpan) : null;
-  messageDiv.append(usernameSpan, boldSpan, contentSpan);
-  messageDiv.setAttribute("data-chat-entry", message.id);
-  message.container = messageDiv;
-  appendMessage(message, flusher);
-  function reduceRepeatedSentences(input) {
-    const regexSentence = /(\b.+?\b)\1+/g;
-    const sentence = input.replace(regexSentence, "$1");
-    const regexChar = /(.)(\1{10,})/g;
-    return sentence.replace(regexChar, "$1$1$1$1$1$1$1$1$1$1");
-  }
-}
-async function getBadges(data, flusher) {
-  const badges = data.sender.identity.badges || [];
-  let badgeArray = [];
-  if (badges.length === 0) return badgeArray;
-  for (const badge of badges) {
-    const cachedBadge = getBadgeImage(badge, flusher);
-    if (!cachedBadge) continue;
-    if (cachedBadge?.src) {
-      const badgeElement = document.createElement("img");
-      badgeElement.src = cachedBadge.src;
-      badgeElement.alt = badge.type;
-      badgeElement.classList.add("flusher-badge");
-      badgeArray.push(badgeElement);
-    } else {
-      cachedBadge.classList.add("flusher-badge");
-      badgeArray.push(cachedBadge);
-    }
-  }
-  function getBadgeImage(badge, flusher) {
-    let badgeImage;
-    if (badge.type === "subscriber") {
-      const months = badge.count;
-      const correspondingBadge = findClosestBadge(months);
-      badgeImage = correspondingBadge ? correspondingBadge : flusher.badges["subscriber"]?.cloneNode(true);
-    } else {
-      badgeImage = flusher.badges[badge.type]?.cloneNode(true) || null;
-    }
-    return badgeImage;
-  }
-  function findClosestBadge(months) {
-    return flusher.props.badgeCache.reduce((closest, currentBadge) => {
-      if (currentBadge.months <= months && (!closest || currentBadge.months > closest.months)) {
-        return currentBadge;
-      }
-      return closest || flusher.badges["subscriber"]?.cloneNode(true);
-    }, null)?.badge_image || flusher.props.badgeCache[flusher.props.badgeCache.length - 1]?.badge_image || flusher.badges["subscriber"]?.cloneNode(true);
-  }
-
-  /* Enable when iframe chatroom available */
-
-  /* badges.forEach(badge => {
-    let badgeText = badge.text;
-    if (badge.count) {
-      badgeText = `${badge.type}-${badge.count}`;
-    }
-    const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
-    if (cachedBadge) {
-      badgeArray.push(cachedBadge.html);
-      badgeCount++;
-      return;
-    }
-  }); */
-
-  /* let attempts = 0;
-  while (badgeCount !== badges.length && attempts < 10) {
-    const newBadges = checkForBadges(data, flusher);
-    badgeArray = newBadges;
-     badgeCount = badgeArray.length;
-    attempts++;
-     await new Promise(resolve => setTimeout(resolve, 750));
-  } */
-
-  return badgeArray;
-  function checkForBadges(data, flusher) {
-    const badges = data.sender.identity.badges || [];
-    const badgeElements = [];
-    flusher.props.isProcessingMessages = false;
-    let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
-    if (firstChatIdentity !== null) {
-      let identity = firstChatIdentity.closest(".chat-message-identity");
-      identity.querySelectorAll("div.badge-tooltip").forEach(function (baseBadge, index) {
-        let badge = badges[index];
-        if (badge === undefined) return;
-        let badgeText = badge.text;
-        if (badge.count) {
-          badgeText = `${badge.type}-${badge.count}`;
-        }
-        const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
-        if (cachedBadge) {
-          props.badgeElements.push(cachedBadge.html);
-          return;
-        }
-        const imgElement = baseBadge.querySelector(`img`);
-        if (imgElement) {
-          const imgUrl = imgElement.src;
-          const newImg = document.createElement("img");
-          newImg.src = imgUrl;
-          newImg.classList.add("flusher-badge");
-          flusher.props.badgeCache.push({
-            type: badgeText,
-            html: newImg
-          });
-          badgeElements.push(newImg);
-          return;
-        }
-        const svgElement = baseBadge.querySelector("svg");
-        if (svgElement) {
-          const svgCopy = svgElement.cloneNode(true);
-          svgCopy.classList.add("flusher-badge");
-          flusher.props.badgeCache.push({
-            type: badgeText,
-            html: svgCopy
-          });
-          badgeElements.push(svgCopy);
-          return;
-        }
-        console.warn("badge not found: " + badgeText);
-      });
-    }
-    return badgeElements;
-  }
-}
-function createUserBanMessage(data, flusher) {
-  /* logToConsole("createUserBanMessage") */;
-  const bannedUser = data.user.username;
-  const bannedByUser = data.banned_by.username;
-  const banMessageContent = document.createElement("div");
-  banMessageContent.classList.add("flusher-message", "flusher-red");
-  const banMessageSpan = document.createElement("span");
-  let logText;
-  if (data.expires_at) {
-    const expiresAt = new Date(data.expires_at);
-    const timeDifference = expiresAt - new Date();
-    let timeDiffText;
-    if (timeDifference > 0) {
-      timeDiffText = humanizeDuration(timeDifference + 5000);
-      const userId = data.user.id;
-      addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
-      logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
-      const expiresText = document.createTextNode(logText);
-      banMessageSpan.appendChild(expiresText);
-    } else {
-      logText = `${bannedUser} permanently banned by ${bannedByUser}`;
-      const expiresText = document.createTextNode(logText);
-      banMessageSpan.appendChild(expiresText);
-    }
-  } else {
-    logText = `${bannedUser} permanently banned by ${bannedByUser}`;
-    const expiresText = document.createTextNode(logText);
-    banMessageSpan.appendChild(expiresText);
-  }
-  banMessageContent.appendChild(banMessageSpan);
-  data.created_at = Date.now();
-  data.container = banMessageContent;
-  logToConsole(logText);
-  appendMessage(data, flusher);
-  function addBannedUser(bannedUser, bannedByUser, userId, expiresAt) {
-    const existingUserIndex = flusher.props.bannedUsers.findIndex(user => user.username === bannedUser);
-    if (existingUserIndex !== -1) {
-      flusher.props.bannedUsers[existingUserIndex] = {
-        id: userId,
-        username: bannedUser,
-        bannedBy: bannedByUser,
-        expiresAt: expiresAt
-      };
-    } else {
-      flusher.props.bannedUsers.push({
-        id: userId,
-        username: bannedUser,
-        bannedBy: bannedByUser,
-        expiresAt: expiresAt
-      });
-      const now = new Date().getTime();
-      const expirationTime = new Date(expiresAt).getTime();
-      const timeUntilExpiration = expirationTime - now;
-      flusher.props.timeoutIds.push(setTimeout(() => removeBannedUser(bannedUser), timeUntilExpiration));
-    }
-  }
-  function removeBannedUser(username) {
-    const index = flusher.props.bannedUsers.findIndex(user => user.username === username);
-    if (index !== -1) {
-      const currentUser = flusher.props.bannedUsers[index];
-      const currentTime = new Date().getTime();
-      if (currentTime + 5000 >= new Date(currentUser.expiresAt).getTime()) {
-        flusher.props.bannedUsers.splice(index, 1);
-        const unbanMessageContent = document.createElement("div");
-        unbanMessageContent.classList.add("flusher-message", "flusher-green");
-        const unbanMessageSpan = document.createElement("span");
-        let logText;
-        logText = `${username}'s ban expired`;
-        const unbanText = document.createTextNode(logText);
-        unbanMessageSpan.appendChild(unbanText);
-        unbanMessageContent.appendChild(unbanMessageSpan);
-        data.created_at = Date.now();
-        data.container = unbanMessageContent;
-        logToConsole(logText);
-        appendMessage(data, flusher);
-      }
-    }
-  }
-  function humanizeDuration(milliseconds) {
-    const seconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    const weeks = Math.floor(days / 7);
-    const months = Math.floor(days / 30);
-    const years = Math.floor(days / 365);
-    if (years > 0) {
-      return years === 1 ? "1 year" : `${years} years`;
-    } else if (months > 0) {
-      return months === 1 ? "1 month" : `${months} months`;
-    } else if (weeks > 0) {
-      return weeks === 1 ? "1 week" : `${weeks} weeks`;
-    } else if (days > 0) {
-      return days === 1 ? "1 day" : `${days} days`;
-    } else if (hours > 0) {
-      return hours === 1 ? "1 hour" : `${hours} hours`;
-    } else if (minutes > 0) {
-      return minutes === 1 ? "1 minute" : `${minutes} minutes`;
-    } else {
-      return seconds === 1 ? "1 second" : `${seconds} seconds`;
-    }
-  }
-}
-function createSubMessage(data, flusher) {
-  /* logToConsole(`createSubMessage`); */
-
-  if (!flusher.states.flushState && !flusher.props.external) return;
-  const username = data.username;
-  const months = data.months;
-  const subscriptionMessageContent = document.createElement("div");
-  subscriptionMessageContent.classList.add("flusher-message", "flusher-green");
-  const emojiSpan = document.createElement("span");
-  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
-  const subscriptionMessageSpan = document.createElement("span");
-  subscriptionMessageSpan.style.color = "#00FF00";
-  subscriptionMessageSpan.textContent = `${months > 1 ? months + " months" : "1 month"} subscription by ${username}`;
-  const subSpan = document.createElement("span");
-  subSpan.style.color = "#00FF00";
-  subSpan.append(emojiSpan, subscriptionMessageSpan);
-  subscriptionMessageContent.append(subSpan);
-  data.created_at = Date.now();
-  data.container = subscriptionMessageContent;
-  appendMessage(data, flusher);
-}
-function createHostMessage(data, flusher) {
-  /* logToConsole(`createHostMessage`); */
-
-  const hostUsername = data.host_username;
-  const viewersCount = data.number_viewers;
-  const hostMessageContent = document.createElement("div");
-  hostMessageContent.classList.add("flusher-message", "flusher-green");
-  const emojiSpan = document.createElement("span");
-  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
-  const viewersCountSpan = document.createElement("span");
-  viewersCountSpan.textContent = `${viewersCount > 1 ? viewersCount + " viewers" : "1 viewer"} hosted by ` + hostUsername;
-  const hostMessageSpan = document.createElement("span");
-  hostMessageSpan.style.color = "#00FF00";
-  hostMessageSpan.append(emojiSpan, viewersCountSpan);
-  hostMessageContent.appendChild(hostMessageSpan);
-  data.created_at = Date.now();
-  data.container = hostMessageContent;
-  appendMessage(data, flusher);
-}
-function createGiftedMessage(data, flusher) {
-  if (!flusher.states.flushState && !flusher.props.external) {
-    flusher.props.isProcessingMessages = false;
-    processMessageQueue(flusher);
-    return;
-  }
-
-  /* logToConsole(`createGiftedMessage`); */
-
-  const gifterUsername = data.gifter_username;
-  const giftedUsernames = data.gifted_usernames;
-  const giftedContent = document.createElement("div");
-  giftedContent.classList.add("flusher-message", "flusher-green");
-  const emojiSpan = document.createElement("span");
-  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
-  const gifterUsernameSpan = document.createElement("span");
-  gifterUsernameSpan.textContent = `${giftedUsernames.length > 1 ? giftedUsernames.length + " Subscriptions" : "1 Subscription"} gifted by ` + gifterUsername;
-  const giftedSpan = document.createElement("span");
-  giftedSpan.style.color = "#00FF00";
-  giftedSpan.append(emojiSpan, gifterUsernameSpan);
-  giftedContent.appendChild(giftedSpan);
-  data.created_at = Date.now();
-  data.container = giftedContent;
-  appendMessage(data, flusher);
-}
-function createFollowersMessage(data, flusher) {
-  /* logToConsole(`createFollowersMessage`); */
-
-  const followersCount = data.followersCount;
-  const followersDiff = followersCount - (flusher.props.lastFollowersCount ?? followersCount);
-  if (followersDiff === 0) {
-    flusher.props.lastFollowersCount = followersCount ?? null;
-    flusher.props.isProcessingMessages = false;
-    processMessageQueue(flusher);
-    return;
-  }
-  const messageContent = document.createElement("div");
-  messageContent.classList.add("flusher-message");
-  const followersMessageSpan = document.createElement("span");
-  followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"}`;
-  messageContent.append(followersMessageSpan);
-  data.created_at = Date.now();
-  data.container = messageContent;
-  appendMessage(data, flusher);
-  flusher.props.lastFollowersCount = followersCount;
-}
-;// CONCATENATED MODULE: ./modules/flusher/messages.js
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FlusherMessages: () => (/* binding */ FlusherMessages)
+/* harmony export */ });
+/* harmony import */ var _queue_queue_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../queue/queue.js */ "./modules/queue/queue.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
 
 
 class FlusherMessages {
@@ -772,7 +140,7 @@ class FlusherMessages {
       this.setupWebSocket(flusher, subscriptionMessage, id);
       return;
     }
-    logToConsole(`WebSocket Connection Opened: ${flusher.props.channelName} (${id})`);
+    (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_1__.logToConsole)(`WebSocket Connection Opened: ${flusher.props.channelName} (${id})`);
     this.socket.send(JSON.stringify(subscriptionMessage));
     this.channels.add(id);
     if (flusher.props.external) this.getHistory(flusher);
@@ -790,7 +158,7 @@ class FlusherMessages {
         data.data.messages.forEach(message => {
           flusher.props.messageQueue.push(message);
         });
-        processMessageQueue(flusher);
+        (0,_queue_queue_js__WEBPACK_IMPORTED_MODULE_0__.processMessageQueue)(flusher);
       } else {
         /* logToConsole("No Messages Found In The Response."); */
       }
@@ -833,7 +201,7 @@ class FlusherMessages {
       this.subscribeChannel(flusher);
     });
     this.socket.addEventListener("close", event => {
-      logToConsole(`WebSocket Connection Closed: ${flusher.props.channelName} (${flusher.props.chatroomId})`);
+      (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_1__.logToConsole)(`WebSocket Connection Closed: ${flusher.props.channelName} (${flusher.props.chatroomId})`);
       this.channels.clear();
     });
     this.socket.addEventListener("error", event => {
@@ -843,7 +211,7 @@ class FlusherMessages {
   onMessage(data, flusher) {
     if (!flusher.states.chatEnabled || data === null || flusher.props.loading) return;
     flusher.props.messageQueue.push(data);
-    processMessageQueue(flusher);
+    (0,_queue_queue_js__WEBPACK_IMPORTED_MODULE_0__.processMessageQueue)(flusher);
   }
   disposeChannel() {
     if (this.socket) {
@@ -857,23 +225,18 @@ class FlusherMessages {
     const self = this;
     self.flusher = flusher;
     const AeroKick = document.body.classList.contains("aerokick-customization");
-    if (AeroKick) logToConsole(`AeroKick Detected`);
+    if (AeroKick) (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_1__.logToConsole)(`AeroKick Detected`);
     const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector("#chatroom-replay") : document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : ".overflow-y-scroll.py-3"), AeroKick);
     const b = typeof browser !== "undefined" ? browser : chrome;
     const defaultAvatar = b.runtime.getURL("lib/kick/user-profile-pic.png");
     if (!flusher.states.flushState) setTimeout(() => {
-      /* logToConsole(`Parse Existing`); */
-      nativeChat.childNodes.forEach(addedNode => {
-        checkDupe(addedNode, AeroKick);
-      });
+      checkDupe(nativeChat.childNodes, AeroKick, false);
     }, 500);
     this.nativeChatObserver = new MutationObserver(mutations => {
       const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
       nodesList.forEach(mutation => {
         if (mutation.type === "childList") {
-          mutation.addedNodes.forEach(addedNode => {
-            checkDupe(addedNode, AeroKick);
-          });
+          checkDupe(mutation.addedNodes, AeroKick);
         }
       });
     });
@@ -882,60 +245,62 @@ class FlusherMessages {
       subtree: false
     };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
-    function checkDupe(addedNode, AeroKick) {
-      if (!addedNode || addedNode.nodeName !== "DIV") return;
-      if (AeroKick && !flusher.props.isVod) {
-        const button = addedNode.querySelector("button");
-        if (!button) {
-          console.log("Kick Chat Flusher - Button does not exist in the added node:", addedNode);
-          return;
+    async function checkDupe(addedNodes, AeroKick) {
+      addedNodes.forEach(addedNode => {
+        if (!addedNode || addedNode.nodeName !== "DIV") return;
+        if (AeroKick && !flusher.props.isVod) {
+          const button = addedNode.querySelector("button");
+          if (!button) {
+            console.log("Kick Chat Flusher - Button does not exist in the added node:", addedNode);
+            return;
+          }
         }
-      }
-      const id = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-id") : addedNode.getAttribute("data-chat-entry");
-      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "")) return;
-      if (id || id === "") {
-        const userId = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-username") : addedNode.querySelector("[data-chat-entry-user-id]")?.getAttribute("data-chat-entry-user-id");
-        if (self.flusher.props.isKickTools) {
-          if (addedNode.style.opacity ?? 1 < 1) {
-            const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
-            if (isUserBanned) {
-              console.log(userId + ' allowed');
-            } else {
-              return;
+        const id = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-id") : addedNode.getAttribute("data-chat-entry");
+        if (id === "history_breaker" || flusher.states.flushState && (!id || id === "")) return;
+        if (id || id === "") {
+          const userId = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-username") : addedNode.querySelector("[data-chat-entry-user-id]")?.getAttribute("data-chat-entry-user-id");
+          if (self.flusher.props.isKickTools) {
+            if (addedNode.style.opacity ?? 1 < 1) {
+              const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
+              if (isUserBanned) {
+                console.log(userId + ' allowed');
+              } else {
+                return;
+              }
             }
           }
-        }
-        if (!flusher.states.spamState || flusher.states.flushState) {
-          let uniqueString = "";
-          uniqueString += userId + "-";
-          const divTextContent = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("span.bk-inline").textContent : addedNode.querySelector(".chat-entry-content")?.textContent;
-          uniqueString += divTextContent + "-";
-          if (AeroKick && flusher.props.isAeroKick) {
-            const emoteElements = addedNode.querySelectorAll("img");
-            emoteElements.forEach(emoteElement => {
-              const emoteValue = emoteElement.getAttribute("alt");
-              uniqueString += emoteValue;
+          if (!flusher.states.spamState || flusher.states.flushState) {
+            let uniqueString = "";
+            uniqueString += userId + "-";
+            const divTextContent = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("span.bk-inline").textContent : addedNode.querySelector(".chat-entry-content")?.textContent;
+            uniqueString += divTextContent + "-";
+            if (AeroKick && flusher.props.isAeroKick) {
+              const emoteElements = addedNode.querySelectorAll("img");
+              emoteElements.forEach(emoteElement => {
+                const emoteValue = emoteElement.getAttribute("alt");
+                uniqueString += emoteValue;
+              });
+            } else {
+              const emoteElements = addedNode.querySelectorAll("[data-emote-name]");
+              emoteElements.forEach(emoteElement => {
+                const emoteValue = emoteElement.getAttribute("data-emote-name");
+                uniqueString += emoteValue;
+              });
+            }
+            const exist = flusher.props.displayedMessages.find(obj => {
+              return obj.key === uniqueString;
             });
-          } else {
-            const emoteElements = addedNode.querySelectorAll("[data-emote-name]");
-            emoteElements.forEach(emoteElement => {
-              const emoteValue = emoteElement.getAttribute("data-emote-name");
-              uniqueString += emoteValue;
+            if (exist && (!flusher.states.spamState || flusher.states.flushState)) return;
+            flusher.props.displayedMessages.push({
+              id: id,
+              key: uniqueString
             });
           }
-          const exist = flusher.props.displayedMessages.find(obj => {
-            return obj.key === uniqueString;
-          });
-          if (exist) return;
-          flusher.props.displayedMessages.push({
-            id: id,
-            key: uniqueString
-          });
         }
-      }
-      setTimeout(() => addMessage(addedNode, id, defaultAvatar), 150);
+        setTimeout(() => prepareMessage(addedNode, id, defaultAvatar, false), 150);
+      });
     }
-    function addMessage(node, id, defaultAvatar) {
+    async function prepareMessage(node, id, defaultAvatar, update) {
       const clonedNode = node.cloneNode(true);
       if (self.flusher.props.isAeroKick) {
         clonedNode.style.fontSize = null;
@@ -1008,8 +373,32 @@ class FlusherMessages {
         }
       }
       clonedNode.classList.remove("mt-0.5");
-      flusher.props.elementQueue.push(clonedNode);
-      processElementQueue(flusher);
+      if (!update) {
+        addMessage();
+      } else {
+        return clonedNode;
+      }
+      function addMessage() {
+        flusher.props.elementQueue.push(clonedNode);
+        (0,_queue_queue_js__WEBPACK_IMPORTED_MODULE_0__.processElementQueue)(flusher);
+        observeNestedChildren(node, id ?? getRandomInt(), clonedNode);
+        function getRandomInt() {
+          return Math.floor(Math.random() * (1000000 - 10000));
+        }
+        function observeNestedChildren(parentNode, id, clonedNode) {
+          const observer = new MutationObserver(async mutations => {
+            if (clonedNode) {
+              clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));
+            }
+          });
+          const observerConfig = {
+            childList: true,
+            subtree: true
+          };
+          observer.observe(parentNode, observerConfig);
+          flusher.props.messageObservers.set(id, observer);
+        }
+      }
     }
     function waitForChat(parent) {
       /* logToConsole(`Looking For Native Chat`); */
@@ -1088,7 +477,89 @@ class FlusherMessages {
     }
   }
 }
-;// CONCATENATED MODULE: ./modules/interface/menu/element.js
+
+/***/ }),
+
+/***/ "./modules/flusher/props.js":
+/*!**********************************!*\
+  !*** ./modules/flusher/props.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FlusherProps: () => (/* binding */ FlusherProps)
+/* harmony export */ });
+class FlusherProps {
+  constructor() {
+    this.chatroomId = null;
+    this.clickOutsideHandlerFunction = null;
+    this.domain = null;
+    this.displayedMessages = [];
+    this.elementQueue = [];
+    this.external = false;
+    this.isFullscreen = false;
+    this.isProcessingElements = false;
+    this.isProcessingMessages = false;
+    this.isVod = false;
+    this.loading = false;
+    this.messageQueue = [];
+    this.badgeCache = [];
+    this.lastPositionPerRow = [];
+    this.rowQueue = [];
+    this.timeoutIds = [];
+    this.bannedUsers = [];
+    this.video = null;
+    this.lastRow = 0;
+    this.maxRows = 99;
+    this.isKickTools = false;
+    this.messageObservers = new Map();
+  }
+}
+
+/***/ }),
+
+/***/ "./modules/flusher/states.js":
+/*!***********************************!*\
+  !*** ./modules/flusher/states.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FlusherStates: () => (/* binding */ FlusherStates)
+/* harmony export */ });
+class FlusherStates {
+  constructor() {
+    this.backgroundStates = ['SMALL', 'LARGE', 'OFF'];
+    this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
+    this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
+    this.backgroundState = 2;
+    this.positionState = 4;
+    this.sizeState = 1;
+    this.fontState = 1;
+    this.reply = false;
+    this.slide = true;
+    this.flushState = false;
+    this.chatEnabled = true;
+    this.shadow = true;
+    this.spamState = true;
+    this.timeState = false;
+  }
+}
+
+/***/ }),
+
+/***/ "./modules/interface/menu/element.js":
+/*!*******************************************!*\
+  !*** ./modules/interface/menu/element.js ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   menu: () => (/* binding */ menu)
+/* harmony export */ });
 const menuHtml = `<div class="flusher-menu" style="display: none;">
   <div class="flusher-menu-base" style="display: block;">
     <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
@@ -1396,163 +867,27 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
 const parser = new DOMParser();
 const doc = parser.parseFromString(menuHtml, 'text/html');
 const menu = doc.body.firstChild;
-;// CONCATENATED MODULE: ./modules/interface/toggle/element.js
-const toggleHtml = `<button class="flusher-toggle vjs-control vjs-button"><span class="vjs-icon-placeholder" aria-hidden="true"></span><svg
-viewBox="0 0 16 16" color="white" class="mx-auto toggle-icon" style="width: 25px;">
-<path
-  d="M12.8191 7.99813C12.8191 7.64949 12.7816 7.30834 12.7104 6.97844L13.8913 6.29616L12.3918 3.69822L11.2071 4.38051C10.7048 3.9269 10.105 3.57076 9.44517 3.35708V2H6.44611V3.36082C5.78632 3.57451 5.19025 3.9269 4.68416 4.38426L3.49953 3.70197L2 6.29616L3.18088 6.97844C3.10965 7.30834 3.07217 7.64949 3.07217 7.99813C3.07217 8.34677 3.10965 8.68791 3.18088 9.01781L2 9.70009L3.49953 12.298L4.68416 11.6157C5.1865 12.0694 5.78632 12.4255 6.44611 12.6392V14H9.44517V12.6392C10.105 12.4255 10.701 12.0731 11.2071 11.6157L12.3918 12.298L13.8913 9.70009L12.7104 9.01781C12.7816 8.68791 12.8191 8.34677 12.8191 7.99813ZM9.82006 9.87254H6.07123V6.12371H9.82006V9.87254Z"
-  fill="currentColor"></path>
-</svg><span class="vjs-control-text" aria-live="polite">Chat Flusher</span>
-</button>`;
-const element_parser = new DOMParser();
-const element_doc = element_parser.parseFromString(toggleHtml, 'text/html');
-const toggle = element_doc.body.firstChild;
-;// CONCATENATED MODULE: ./modules/interface/toggle/toggle.js
 
+/***/ }),
 
-let clickOutsideHandlerFunction = null;
-function createToggle(flusher) {
-  const parent = !flusher.props.isAeroKick && !flusher.props.external ? flusher.video.closest('#video-holder') : flusher.video.parentNode;
-  const domToggle = parent.querySelector('.flusher-toggle-btn');
-  if (domToggle !== null) return;
-  const popupMenu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
-  const baseMenu = popupMenu.querySelector('.flusher-menu-base');
-  const existingButton = flusher.props.external ? parent : flusher.props.isAeroKick ? flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4') : document.querySelector('.vjs-fullscreen-control');
-  const toggleBtn = flusher.props.external || flusher.props.isAeroKick ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
-  if (flusher.props.isAeroKick) toggleBtn.style.marginRight = "1rem";
-  flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, flusher.props.isAeroKick ? existingButton : existingButton.nextSibling);
-  svgToggle(flusher);
-  toggleBtn.addEventListener('mousedown', function (event) {
-    event.stopPropagation();
-    popupMenu.style.display === "block" ? hideMenu(flusher) : showMenu();
-  });
-  function showMenu() {
-    baseMenu.style.display = 'block';
-    popupMenu.style.display = 'block';
-    svgToggle(flusher);
-    flusher.clickOutsideHandlerFunction = event => clickOutsideHandler(event, flusher);
-    document.addEventListener('mousedown', flusher.clickOutsideHandlerFunction);
-  }
-  return toggleBtn;
-}
-function svgToggle(flusher) {
-  const parent = flusher.props.external ? flusher.video.closest('.item-box') : document;
-  const toggle = parent.querySelector('.toggle-icon');
-  if (toggle === null) return;
-  const menu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
-  const visible = menu.style.display === "block" ? true : false;
-  if (flusher.states.chatEnabled || visible) {
-    toggle.classList.add('svg-toggle');
-  } else {
-    toggle.classList.remove('svg-toggle');
-  }
-}
-;// CONCATENATED MODULE: ./modules/utils/drag.js
-function dragElement(flusher) {
-  var pos1 = 0,
-    pos2 = 0,
-    pos3 = 0,
-    pos4 = 0;
-  flusher.container.onmousedown = function (e) {
-    e = e || window.event;
-    e.preventDefault();
-    setPosition(flusher, true);
-    if (isInResizeHandle(e)) {
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      document.onmouseup = closeResize;
-      document.onmousemove = resizeElement;
-    } else {
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      document.onmouseup = closeDragElement;
-      document.onmousemove = dragElement;
-    }
-  };
-  function dragElement(e) {
-    e = e || window.event;
-    e.preventDefault();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    flusher.container.style.top = flusher.container.offsetTop - pos2 + "px";
-    flusher.container.style.left = flusher.container.offsetLeft - pos1 + "px";
-  }
-  function resizeElement(e) {
-    e = e || window.event;
-    e.preventDefault();
-    flusher.container.style.width = flusher.container.offsetWidth - (pos3 - e.clientX) + "px";
-    flusher.container.style.height = flusher.container.offsetHeight - (pos4 - e.clientY) + "px";
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-  }
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-    setPosition(flusher, false);
-  }
-  function closeResize() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-    setPosition(flusher, false);
-  }
-  async function setPosition(flusher, event) {
-    var scaleFactor = window.innerWidth / window.outerWidth;
-    var rect = flusher.container.getBoundingClientRect();
-    var rectVideo = flusher.video.getBoundingClientRect();
-    var newPosition = {
-      top: Math.round(rect.top - rectVideo.top) / scaleFactor,
-      left: Math.round(rect.left - rectVideo.left) / scaleFactor,
-      width: Math.round(rect.width) / scaleFactor,
-      height: Math.round(rect.height) / scaleFactor
-    };
-    console.log(newPosition);
-    if (event) {
-      flusher.container.style.top = Math.round(newPosition.top * scaleFactor) + "px";
-      flusher.container.style.left = Math.round(newPosition.left * scaleFactor) + "px";
-      flusher.container.removeAttribute("position");
-      flusher.container.style.width = Math.round(newPosition.width * scaleFactor) + "px";
-      flusher.container.style.height = Math.round(newPosition.height * scaleFactor) + "px";
-      flusher.container.removeAttribute("size");
-    }
-    chrome.storage.local.get("positionsPerChannel", function (result) {
-      var positionsPerChannel = result.positionsPerChannel || {};
-      var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
-      var existingPositionIndex = positionsArray.findIndex(function (item) {
-        return item.videoSize === flusher.props.videoSize;
-      });
-      if (existingPositionIndex !== -1) {
-        positionsArray[existingPositionIndex].position.top = newPosition.top;
-        positionsArray[existingPositionIndex].position.left = newPosition.left;
-        positionsArray[existingPositionIndex].position.width = newPosition.width;
-        positionsArray[existingPositionIndex].position.height = newPosition.height;
-      } else {
-        positionsArray.push({
-          videoSize: flusher.props.videoSize,
-          position: {
-            top: newPosition.top,
-            left: newPosition.left,
-            width: newPosition.width,
-            height: newPosition.height
-          }
-        });
-      }
-      positionsPerChannel[flusher.props.channelName] = positionsArray;
-      chrome.storage.local.set({
-        "positionsPerChannel": positionsPerChannel
-      }, function () {
-        /* console.log("positionsPerChannel:", positionsPerChannel); */
-      });
-    });
-  }
-  function isInResizeHandle(e) {
-    var rect = flusher.container.getBoundingClientRect();
-    var handleSize = 25;
-    return e.clientX >= rect.right - handleSize && e.clientY >= rect.bottom - handleSize;
-  }
-}
-;// CONCATENATED MODULE: ./modules/interface/menu/menu.js
+/***/ "./modules/interface/menu/menu.js":
+/*!****************************************!*\
+  !*** ./modules/interface/menu/menu.js ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   clickOutsideHandler: () => (/* binding */ clickOutsideHandler),
+/* harmony export */   createMenu: () => (/* binding */ createMenu),
+/* harmony export */   hideMenu: () => (/* binding */ hideMenu),
+/* harmony export */   toggleEnableMenu: () => (/* binding */ toggleEnableMenu),
+/* harmony export */   togglePointerEvents: () => (/* binding */ togglePointerEvents)
+/* harmony export */ });
+/* harmony import */ var _element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./element.js */ "./modules/interface/menu/element.js");
+/* harmony import */ var _toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../toggle/toggle.js */ "./modules/interface/toggle/toggle.js");
+/* harmony import */ var _utils_drag_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../utils/drag.js */ "./modules/utils/drag.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../utils/utils.js */ "./modules/utils/utils.js");
 
 
 
@@ -1579,7 +914,7 @@ function createMenu(flusher) {
     menuLink.rel = 'stylesheet';
     menuLink.href = b.runtime.getURL('lib/flusher/menu.css');
     shadowRoot.appendChild(menuLink);
-    flusher.menu = menu.cloneNode(true);
+    flusher.menu = _element_js__WEBPACK_IMPORTED_MODULE_0__.menu.cloneNode(true);
     flusher.menu.setAttribute('domain', flusher.props.domain);
     shadowRoot.appendChild(flusher.menu);
     parent.append(shadowBox);
@@ -1605,10 +940,10 @@ function createMenu(flusher) {
     });
     const positionBtn = overlayMenu.querySelector('.flusher-position');
     const divInsidePosition = positionBtn.querySelector('div:empty');
-    divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+    divInsidePosition.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.positionStates[flusher.states.positionState]);
     positionBtn.addEventListener('mousedown', function (event) {
       flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
-      divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+      divInsidePosition.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.positionStates[flusher.states.positionState]);
       flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
       chrome.storage.local.get("positionsPerChannel", function (result) {
         flusher.container.style.top = "";
@@ -1644,10 +979,10 @@ function createMenu(flusher) {
     });
     const sizeBtn = overlayMenu.querySelector('.flusher-size');
     const divInsideSize = sizeBtn.querySelector('div:empty');
-    divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
+    divInsideSize.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.sizeStates[flusher.states.sizeState]);
     sizeBtn.addEventListener('mousedown', function (event) {
       flusher.states.sizeState = (flusher.states.sizeState + 1) % flusher.states.sizeStates.length;
-      divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
+      divInsideSize.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.sizeStates[flusher.states.sizeState]);
       flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
       flusher.setVerticalWidth();
       chrome.storage.local.get("positionsPerChannel", function (result) {
@@ -1683,11 +1018,11 @@ function createMenu(flusher) {
     });
     const backgroundBtn = messageMenu.querySelector('.flusher-background');
     const divInsideBackground = backgroundBtn.querySelector('div:empty');
-    divInsideBackground.textContent = toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]);
+    divInsideBackground.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.backgroundStates[flusher.states.backgroundState]);
     backgroundBtn.addEventListener('mousedown', function (event) {
       flusher.states.backgroundState = (flusher.states.backgroundState + 1) % flusher.states.backgroundStates.length;
       setExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-      divInsideBackground.textContent = toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]);
+      divInsideBackground.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.backgroundStates[flusher.states.backgroundState]);
       flusher.container.setAttribute('background', flusher.states.backgroundStates[flusher.states.backgroundState]);
     });
     const baseMenu = parent.querySelector('.flusher-menu-base');
@@ -1777,11 +1112,11 @@ function createMenu(flusher) {
     if (flusher.states.spamState) spamBtn.classList.toggle(toggledClass);
     const fontBtn = settingsMenu.querySelector('.flusher-font');
     const divInsideFont = fontBtn.querySelector('div:empty');
-    divInsideFont.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.fontState]);
+    divInsideFont.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.sizeStates[flusher.states.fontState]);
     fontBtn.addEventListener('mousedown', function (event) {
       flusher.states.fontState = (flusher.states.fontState + 1) % flusher.states.sizeStates.length;
       setExtensionStorageItem('flusher-font', flusher.states.fontState);
-      divInsideFont.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.fontState]);
+      divInsideFont.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_3__.toTitleCase)(flusher.states.sizeStates[flusher.states.fontState]);
       flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
       if (flusher.states.flushState) flusher.clear();
     });
@@ -1849,7 +1184,7 @@ function createMenu(flusher) {
       newFlushState ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
       flusher.states.flushState = newFlushState;
       flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
-      if (flusher.states.chatEnabled && !flusher.states.flushState) dragElement(flusher);
+      if (flusher.states.chatEnabled && !flusher.states.flushState) (0,_utils_drag_js__WEBPACK_IMPORTED_MODULE_2__.dragElement)(flusher);
       togglePointerEvents(flusher);
       flusher.clear();
       flusher.container.setAttribute('layout', newFlushState ? 'horizontal' : 'vertical');
@@ -1864,9 +1199,9 @@ function createMenu(flusher) {
       const newChatEnabled = toggleElement.classList.contains(toggledClass);
       flusher.states.chatEnabled = newChatEnabled;
       newChatEnabled ? flusher.provider.bindRequests(flusher) : flusher.provider.unbindRequests(flusher);
-      if (newChatEnabled && flusher.container.attributes['layout']?.nodeValue === 'vertical') dragElement(flusher);
+      if (newChatEnabled && flusher.container.attributes['layout']?.nodeValue === 'vertical') (0,_utils_drag_js__WEBPACK_IMPORTED_MODULE_2__.dragElement)(flusher);
       flusher.clear();
-      svgToggle(flusher);
+      (0,_toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__.svgToggle)(flusher);
       toggleEnableMenu();
       togglePointerEvents(flusher);
       flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
@@ -1877,7 +1212,7 @@ function createMenu(flusher) {
       setExtensionStorageItem('flusher-enable', newChatEnabled);
     });
     if (flusher.states.chatEnabled) flusherToggle.classList.toggle(toggledClass);
-    return createToggle(flusher);
+    return (0,_toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__.createToggle)(flusher);
   }
   function setExtensionStorageItem(key, value) {
     const data = {
@@ -1910,7 +1245,7 @@ function hideMenu(flusher) {
   layoutMenu.style.display = 'none';
   overlayMenu.style.display = 'none';
   messageMenu.style.display = 'none';
-  svgToggle(flusher);
+  (0,_toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__.svgToggle)(flusher);
   document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);
 }
 function clickOutsideHandler(event, flusher) {
@@ -1931,10 +1266,26 @@ function togglePointerEvents(flusher) {
     flusher.container.classList.remove('flusher-no-grab');
     flusher.container.classList.add('flusher-grab');
     flusher.props.lastRow = 2;
-    dragElement(flusher);
+    (0,_utils_drag_js__WEBPACK_IMPORTED_MODULE_2__.dragElement)(flusher);
   }
 }
-;// CONCATENATED MODULE: ./modules/interface/overlay.js
+
+/***/ }),
+
+/***/ "./modules/interface/overlay.js":
+/*!**************************************!*\
+  !*** ./modules/interface/overlay.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createChat: () => (/* binding */ createChat),
+/* harmony export */   setCustomPosition: () => (/* binding */ setCustomPosition)
+/* harmony export */ });
+/* harmony import */ var _menu_menu_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./menu/menu.js */ "./modules/interface/menu/menu.js");
+/* harmony import */ var _utils_resize_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/resize.js */ "./modules/utils/resize.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
 
 
 
@@ -1960,7 +1311,7 @@ async function createChat(flusher) {
     overlayStyle.id = 'flusher-css-overlay';
     overlayStyle.rel = 'stylesheet';
     document.head.appendChild(overlayStyle);
-    const font = getFont();
+    const font = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.getFont)();
     document.head.appendChild(font);
   }
   const menuStylesDom = document.getElementById('flusher-css');
@@ -1982,10 +1333,10 @@ async function createChat(flusher) {
   flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
   flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
   setCustomPosition(flusher);
-  flusher.toggle = createMenu(flusher);
+  flusher.toggle = (0,_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__.createMenu)(flusher);
   flusher.video.parentNode.append(chatFlusher);
   flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
-  checkResize(flusher);
+  (0,_utils_resize_js__WEBPACK_IMPORTED_MODULE_1__.checkResize)(flusher);
   function getExtensionStorageItem(key, defaultValue) {
     return new Promise(resolve => {
       chrome.storage.local.get([key], result => {
@@ -2015,218 +1366,1000 @@ function setCustomPosition(flusher) {
       const sizeBtn = flusher.menu.querySelector('.flusher-size');
       if (sizeBtn) {
         const divInsideSize = sizeBtn.querySelector('div.pr-0');
-        divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
+        divInsideSize.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.toTitleCase)(flusher.states.sizeStates[flusher.states.sizeState]);
       }
       const positionBtn = flusher.menu.querySelector('.flusher-position');
       if (positionBtn) {
         const divInsidePosition = positionBtn.querySelector('div.pr-0');
-        divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+        divInsidePosition.textContent = (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.toTitleCase)(flusher.states.positionStates[flusher.states.positionState]);
       }
     }
   });
 }
-;// CONCATENATED MODULE: ./modules/utils/resize.js
+
+/***/ }),
+
+/***/ "./modules/interface/toggle/element.js":
+/*!*********************************************!*\
+  !*** ./modules/interface/toggle/element.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   toggle: () => (/* binding */ toggle)
+/* harmony export */ });
+const toggleHtml = `<button class="flusher-toggle vjs-control vjs-button"><span class="vjs-icon-placeholder" aria-hidden="true"></span><svg
+viewBox="0 0 16 16" color="white" class="mx-auto toggle-icon" style="width: 25px;">
+<path
+  d="M12.8191 7.99813C12.8191 7.64949 12.7816 7.30834 12.7104 6.97844L13.8913 6.29616L12.3918 3.69822L11.2071 4.38051C10.7048 3.9269 10.105 3.57076 9.44517 3.35708V2H6.44611V3.36082C5.78632 3.57451 5.19025 3.9269 4.68416 4.38426L3.49953 3.70197L2 6.29616L3.18088 6.97844C3.10965 7.30834 3.07217 7.64949 3.07217 7.99813C3.07217 8.34677 3.10965 8.68791 3.18088 9.01781L2 9.70009L3.49953 12.298L4.68416 11.6157C5.1865 12.0694 5.78632 12.4255 6.44611 12.6392V14H9.44517V12.6392C10.105 12.4255 10.701 12.0731 11.2071 11.6157L12.3918 12.298L13.8913 9.70009L12.7104 9.01781C12.7816 8.68791 12.8191 8.34677 12.8191 7.99813ZM9.82006 9.87254H6.07123V6.12371H9.82006V9.87254Z"
+  fill="currentColor"></path>
+</svg><span class="vjs-control-text" aria-live="polite">Chat Flusher</span>
+</button>`;
+const parser = new DOMParser();
+const doc = parser.parseFromString(toggleHtml, 'text/html');
+const toggle = doc.body.firstChild;
+
+/***/ }),
+
+/***/ "./modules/interface/toggle/toggle.js":
+/*!********************************************!*\
+  !*** ./modules/interface/toggle/toggle.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   clickOutsideHandlerFunction: () => (/* binding */ clickOutsideHandlerFunction),
+/* harmony export */   createToggle: () => (/* binding */ createToggle),
+/* harmony export */   svgToggle: () => (/* binding */ svgToggle)
+/* harmony export */ });
+/* harmony import */ var _element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./element.js */ "./modules/interface/toggle/element.js");
+/* harmony import */ var _menu_menu_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../menu/menu.js */ "./modules/interface/menu/menu.js");
 
 
+let clickOutsideHandlerFunction = null;
+function createToggle(flusher) {
+  const parent = !flusher.props.isAeroKick && !flusher.props.external ? flusher.video.closest('#video-holder') : flusher.video.parentNode;
+  const domToggle = parent.querySelector('.flusher-toggle-btn');
+  if (domToggle !== null) return;
+  const popupMenu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
+  const baseMenu = popupMenu.querySelector('.flusher-menu-base');
+  const existingButton = flusher.props.external ? parent : flusher.props.isAeroKick ? flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4') : document.querySelector('.vjs-fullscreen-control');
+  const toggleBtn = flusher.props.external || flusher.props.isAeroKick ? _element_js__WEBPACK_IMPORTED_MODULE_0__.toggle.querySelector('svg').cloneNode(true) : _element_js__WEBPACK_IMPORTED_MODULE_0__.toggle.cloneNode(true);
+  if (flusher.props.isAeroKick) toggleBtn.style.marginRight = "1rem";
+  flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, flusher.props.isAeroKick ? existingButton : existingButton.nextSibling);
+  svgToggle(flusher);
+  toggleBtn.addEventListener('mousedown', function (event) {
+    event.stopPropagation();
+    popupMenu.style.display === "block" ? (0,_menu_menu_js__WEBPACK_IMPORTED_MODULE_1__.hideMenu)(flusher) : showMenu();
+  });
+  function showMenu() {
+    baseMenu.style.display = 'block';
+    popupMenu.style.display = 'block';
+    svgToggle(flusher);
+    flusher.clickOutsideHandlerFunction = event => (0,_menu_menu_js__WEBPACK_IMPORTED_MODULE_1__.clickOutsideHandler)(event, flusher);
+    document.addEventListener('mousedown', flusher.clickOutsideHandlerFunction);
+  }
+  return toggleBtn;
+}
+function svgToggle(flusher) {
+  const parent = flusher.props.external ? flusher.video.closest('.item-box') : document;
+  const toggle = parent.querySelector('.toggle-icon');
+  if (toggle === null) return;
+  const menu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
+  const visible = menu.style.display === "block" ? true : false;
+  if (flusher.states.chatEnabled || visible) {
+    toggle.classList.add('svg-toggle');
+  } else {
+    toggle.classList.remove('svg-toggle');
+  }
+}
 
+/***/ }),
 
+/***/ "./modules/layout/horizontal.js":
+/*!**************************************!*\
+  !*** ./modules/layout/horizontal.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-function checkResize(flusher) {
-  /* logToConsole("Check Resize"); */
-  const target = flusher.props.external ? flusher.video : flusher.video.querySelector("video") ?? flusher.video;
-  flusher.resizeTimer = null;
-  if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
-  flusher.resizeObserver = new ResizeObserver(entries => {
-    if (flusher.container !== null) flusher.container.style.display = "none";
-    for (let entry of entries) {
-      if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
-      flusher.resizeTimer = setTimeout(() => {
-        for (let entry of entries) {
-          const rect = target.getBoundingClientRect();
-          let width = rect.width;
-          let height = rect.height;
-          window.currentUrl = window.location.href;
-          if ((width === null || width === 0) && (!height || height === 0)) {
-            if (flusher !== null) {
-              /* logToConsole("Remove Chat"); */
-              const init = !flusher.props.external;
-              flusher.resizeObserver.disconnect();
-              flusher.resizeObserver = null;
-              for (const id of flusher.props.timeoutIds) {
-                clearTimeout(id);
-              }
-              flusher.provider.unbindRequests(flusher);
-              flusher = null;
-              if (init) kick.init();
-            }
-            return;
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   selectRow: () => (/* binding */ selectRow)
+/* harmony export */ });
+function selectRow(message, flusher) {
+  let selectedRow = 0;
+  const positions = flusher.props.lastPositionPerRow.length ?? 0;
+  if (positions > 0) {
+    for (let i = 0; i < positions; i++) {
+      const item = flusher.props.lastPositionPerRow[i];
+      if (item === undefined || item.run === true) {
+        selectedRow = i;
+        break;
+      }
+      if (flusher.props.rowQueue[i].length < 2) {
+        message.row = i;
+        message = prepareAnimation(message, flusher);
+        if (message !== null) flusher.props.rowQueue[i].push(message);
+        return;
+      }
+      selectedRow = i + 1;
+    }
+  }
+  message.row = selectedRow;
+  flusher.props.rowQueue[selectedRow] = flusher.props.rowQueue[selectedRow] ?? [];
+  message = prepareAnimation(message, flusher);
+  if (message !== null) startAnimation(message, flusher);
+}
+function startAnimation(messageData, flusher) {
+  const message = messageData.container;
+  const space = 4;
+  const rowIndex = messageData.row;
+  const lastItem = flusher.props.lastPositionPerRow?.[rowIndex];
+  !flusher.props.lastPositionPerRow ? flusher.props.lastPositionPerRow = [] : null;
+  flusher.props.lastPositionPerRow[rowIndex] = {
+    container: message,
+    run: false
+  };
+  let overlap = 0;
+  let messageWidth;
+  const lastContainer = lastItem !== undefined ? lastItem.container : undefined;
+  if (lastContainer !== undefined) {
+    requestAnimationFrame(() => {
+      flusher.container.appendChild(message);
+      messageWidth = message.offsetWidth;
+      message.style.marginRight = `-${messageWidth}px`;
+      const rect1 = message.getBoundingClientRect();
+      const rect2 = lastContainer.getBoundingClientRect();
+      overlap = rect2.right - rect1.left;
+
+      /* queue running */
+      if (lastItem.run === false) {
+        message.style.marginRight = `-${messageWidth + overlap + space}px`;
+        message.classList.add('flusher-animation');
+      }
+
+      /* queue ended */else {
+        if (overlap > -8) {
+          /* append last queue */
+          message.style.marginRight = `-${messageWidth + overlap + space}px`;
+          message.classList.add('flusher-animation');
+        } else {
+          /* new queue */
+          message.style.marginRight = `-${messageWidth + space}px`;
+          message.classList.add('flusher-animation');
+          overlap = 0;
+        }
+      }
+      requestNext(messageWidth, overlap, messageData, flusher);
+    });
+  }
+
+  /* new row */else {
+    flusher.container.appendChild(message);
+    messageWidth = message.offsetWidth;
+    message.style.marginRight = `-${messageWidth + space}px`;
+    message.classList.add('flusher-animation');
+    overlap = 0;
+    requestNext(messageWidth, overlap, messageData, flusher);
+  }
+  async function requestNext(messageWidth, overlap, messageData, flusher) {
+    let timeNeeded = Math.ceil((messageWidth + space + overlap) / flusher.props.parentWidth * 16000);
+    const timeoutId = setTimeout(() => {
+      checkQueue(messageData, flusher);
+      const index = flusher.props.timeoutIds.indexOf(timeoutId);
+      if (index !== -1) {
+        flusher.props.timeoutIds.splice(index, 1);
+      }
+    }, timeNeeded);
+    flusher.props.timeoutIds.push(timeoutId);
+  }
+  function checkQueue(messageData, flusher) {
+    const index = messageData.row;
+    if (!flusher?.props?.rowQueue[index]) return;
+    const queueItem = flusher.props.rowQueue[index].shift();
+    if (queueItem) {
+      checkRow(queueItem, index, flusher);
+    } else {
+      flusher.props.lastRow = flusher.props.lastRow - 1;
+      flusher.props.lastPositionPerRow[index] = {
+        container: messageData.container,
+        run: true
+      };
+    }
+  }
+  function checkRow(messageData, rowIndex, flusher) {
+    /* To be Fixed */
+
+    /* if ((rowIndex + 1) > flusher.props.lastRow) {
+    	for (let i = 0; i < rowIndex; i++) {
+    		if (flusher.props.lastPositionPerRow[i] === undefined || flusher.props.lastPositionPerRow[i].run === true) {
+    			if (messageData.message !== null) {
+    				flusher.props.lastPositionPerRow[rowIndex] = undefined;
+    				messageData.container.style.setProperty('--row', i);
+    				messageData.container.classList.add('flusher-green');
+    					startAnimation(messageData, flusher);
+    			}
+    			return;
+    		}
+    		if (flusher.props.rowQueue[i].length < 1) {
+    			if (messageData.container !== null) {
+    				flusher.props.lastPositionPerRow[i] = undefined;
+    				messageData.container.style.setProperty('--row', i);
+    				flusher.props.rowQueue[i].push(messageData);
+    			}
+    			return;
+    		}
+    	}
+    } */
+
+    startAnimation(messageData, flusher);
+  }
+}
+function prepareAnimation(data, flusher) {
+  if (!data.container) data.container = data;
+  flusher.props.external ? data.container.classList.add('flusher-message') : data.container.classList.add('flusher-kick');
+  data.container.style.setProperty('--row', data.row);
+  data.container.addEventListener("animationend", function () {
+    try {
+      const oldest = flusher.container.firstChild;
+      if (!flusher.states.spamState) {
+        const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
+        if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+      }
+      oldest.remove();
+    } catch {}
+  });
+  return data;
+}
+
+/***/ }),
+
+/***/ "./modules/layout/vertical.js":
+/*!************************************!*\
+  !*** ./modules/layout/vertical.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   appendVertical: () => (/* binding */ appendVertical)
+/* harmony export */ });
+function appendVertical(message, flusher) {
+  if (!message) return;
+  const lastItem = flusher.container.firstChild;
+  if (flusher.props.external) {
+    if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
+    const timestamp = new Date(message.created_at);
+    message.container.dataset.timestamp = timestamp;
+    if (lastItem) {
+      const lastTimestamp = new Date(lastItem.dataset.timestamp ?? 0);
+      if (timestamp < lastTimestamp) {
+        flusher.container.append(message.container);
+      } else {
+        let current = lastItem;
+        while (current) {
+          const currentTimestamp = new Date(current.dataset.timestamp);
+          if (timestamp > currentTimestamp) {
+            flusher.container.insertBefore(message.container, current);
+            break;
           }
+          current = current.previousSibling;
+        }
+        if (!current) flusher.container.insertBefore(message.container, lastItem);
+      }
+    } else {
+      flusher.container.append(message.container);
+    }
+  } else {
+    if (message.container) {
+      if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
+      flusher.container['insertBefore'](message.container, lastItem);
+    } else {
+      if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
+      flusher.container['insertBefore'](message, lastItem);
+    }
+  }
+  while (flusher.container.children.length > flusher.props.maxRows) {
+    const oldest = flusher.container.lastChild;
+    const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
+    if (entryId) {
+      const observer = flusher.props.messageObservers.get(entryId);
+      if (observer) {
+        observer.disconnect();
+        flusher.props.messageObservers.delete(entryId);
+      }
+    }
+    if (!flusher.states.spamState && entryId) {
+      flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+    }
+    oldest.remove();
+  }
+}
 
-          /* logToConsole(
-            `Width ${Math.round(width)} height ${Math.round(height)}`
-          ); */
+/***/ }),
 
-          const oldWidth = flusher.props.parentWidth;
-          flusher.props.parentWidth = Math.trunc(width) * 2;
-          flusher.props.parentHeight = Math.trunc(height);
-          flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
-          flusher.toggle.setAttribute("domain", flusher.props.domain);
-          const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
-          flusher.container.setAttribute("layout", newFlushState);
-          flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
-          flusher.container.setAttribute("shadow", flusher.states.shadow);
-          flusher.container.setAttribute("background", flusher.states.backgroundStates[flusher.states.backgroundState]);
-          setAttribute(flusher.container, "font", flusher.states.sizeStates, flusher.states.fontState);
-          flusher.container.setAttribute("time", flusher.states.timeState);
-          if (flusher.props.isAeroKick) {
-            flusher.container.setAttribute("aerokick", "");
-          }
-          toggleEnableMenu();
-          setCustomPosition(flusher);
-          const documentWidth = document.documentElement.clientWidth;
-          if (documentWidth < flusher.props.parentWidth / 2 + 10) {
-            flusher.props.isFullscreen = true;
-            startScrollingInterval(flusher);
-            flusher.props.videoSize = "fullscreen";
-          } else {
-            flusher.props.isFullscreen = false;
-            stopScrollingInterval(flusher);
-            if (document.querySelector('.sidebar')) {
-              flusher.props.videoSize = "default";
-            } else {
-              flusher.props.videoSize = "theater";
-            }
-          }
-          chrome.storage.local.get("positionsPerChannel", function (result) {
-            var positionsPerChannel = result.positionsPerChannel || {};
-            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
-            var existingPositionIndex = positionsArray.findIndex(function (item) {
-              return item.videoSize === flusher.props.videoSize;
-            });
-            if (existingPositionIndex !== -1) {
-              const position = positionsArray[existingPositionIndex].position;
-              if (position.top) {
-                flusher.container.removeAttribute("position");
-                var scaleFactor = window.innerWidth / window.outerWidth;
-                flusher.container.style.top = position.top > height ? height - 20 + "px" : Math.round(position.top * scaleFactor) + "px";
-                flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
-              } else {
-                flusher.container.style.top = "";
-                flusher.container.style.left = "";
-                flusher.container.style.alignItems = "";
-                setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
-              }
-              if (position.width) {
-                flusher.container.removeAttribute("size");
-                flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
-                flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
-              } else {
-                flusher.container.style.width = "";
-                flusher.container.style.height = "";
-                setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
-              }
-            } else {
-              flusher.container.style.top = "";
-              flusher.container.style.left = "";
-              flusher.container.style.alignItems = "";
-              flusher.container.style.width = "";
-              flusher.container.style.height = "";
-              setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
-              setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
-            }
+/***/ "./modules/queue/queue.js":
+/*!********************************!*\
+  !*** ./modules/queue/queue.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createUserBanMessage: () => (/* binding */ createUserBanMessage),
+/* harmony export */   getMessageKey: () => (/* binding */ getMessageKey),
+/* harmony export */   processElementQueue: () => (/* binding */ processElementQueue),
+/* harmony export */   processMessageQueue: () => (/* binding */ processMessageQueue)
+/* harmony export */ });
+/* harmony import */ var _layout_horizontal_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../layout/horizontal.js */ "./modules/layout/horizontal.js");
+/* harmony import */ var _layout_vertical_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../layout/vertical.js */ "./modules/layout/vertical.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
+
+
+
+function getMessageKey(key, value, messageId, flusher) {
+  const keyValue = key + "-" + value;
+  const dupe = flusher.props.displayedMessages.find(obj => {
+    return obj.key === keyValue;
+  });
+  const ignore = !flusher.states.spamState && dupe && flusher.lastRow > 1 ? true : false;
+  if (!ignore) flusher.props.displayedMessages.push({
+    id: messageId,
+    key: keyValue
+  });
+  return {
+    key: keyValue,
+    ignore: ignore
+  };
+}
+async function processMessageQueue(flusher) {
+  try {
+    if (flusher.props.isProcessingMessages) return;
+    flusher.props.isProcessingMessages = true;
+    let queueItem = flusher.props.messageQueue.shift();
+    if (!queueItem) {
+      flusher.props.isProcessingMessages = false;
+      return;
+    }
+    queueItem.chatroom_id = flusher.external ? queueItem?.chatroom_id : 0;
+    const lastRow = flusher.props.lastRow;
+    const maxRows = flusher.props.maxRows;
+    if (lastRow === null || lastRow >= maxRows) {
+      flusher.props.isProcessingMessages = false;
+      return;
+    }
+    const eventType = queueItem.event ?? queueItem.eventName;
+    if (eventType === "App\\Events\\ChatMessageEvent" && flusher.props.external) {
+      createMessage(JSON.parse(queueItem.data), flusher);
+    } else if (queueItem.type === "message" && flusher.props.external) {
+      createMessage(queueItem, flusher);
+    } else if (eventType === "App\\Events\\UserBannedEvent") {
+      createUserBanMessage(JSON.parse(queueItem.data), flusher);
+    } else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
+      createGiftedMessage(JSON.parse(queueItem.data), flusher);
+    } else if (eventType === "App\\Events\\FollowersUpdated") {
+      createFollowersMessage(JSON.parse(queueItem.data), flusher);
+    } else if (eventType === "App\\Events\\StreamHostEvent") {
+      createHostMessage(JSON.parse(queueItem.data), flusher);
+    } else if (eventType === "App\\Events\\SubscriptionEvent") {
+      createSubMessage(JSON.parse(queueItem.data), flusher);
+    } else {
+      flusher.props.isProcessingMessages = false;
+      processMessageQueue(flusher);
+    }
+  } catch (error) {
+    flusher.props.isProcessingMessages = false;
+    processMessageQueue(flusher);
+    console.error(error);
+  }
+}
+function processElementQueue(flusher) {
+  try {
+    if (flusher.props.isProcessingElements) return;
+    flusher.props.isProcessingElements = true;
+    const queueItem = flusher.props.elementQueue.shift();
+    if (!queueItem) {
+      flusher.props.isProcessingElements = false;
+      return;
+    }
+    const flushState = flusher.states.flushState;
+    if (!flusher.states.chatEnabled) {
+      flusher.props.isProcessingElements = false;
+      return;
+    }
+    flushState ? (0,_layout_horizontal_js__WEBPACK_IMPORTED_MODULE_0__.selectRow)(queueItem, flusher) : (0,_layout_vertical_js__WEBPACK_IMPORTED_MODULE_1__.appendVertical)(queueItem, flusher);
+    if (flusher.props.isVod) {
+      const queueLength = flusher.props.elementQueue.length;
+      let wait = Math.trunc(3500 / queueLength);
+      if (queueLength < 3 && flusher.props.isVod && flusher.props.flushState) wait = 500;
+      setTimeout(function () {
+        flusher.props.isProcessingElements = false;
+        processElementQueue(flusher);
+      }, wait);
+    } else {
+      flusher.props.isProcessingElements = false;
+      processElementQueue(flusher);
+    }
+  } catch (error) {
+    flusher.props.isProcessingElements = false;
+    processElementQueue(flusher);
+    console.error(error);
+  }
+}
+function appendMessage(queueItem, flusher) {
+  flusher.props.elementQueue.push(queueItem);
+  processElementQueue(flusher);
+  flusher.props.isProcessingMessages = false;
+  processMessageQueue(flusher);
+}
+async function createMessage(message, flusher) {
+  const sender = message.sender;
+  const username = sender.username;
+  const content = message.content;
+  const reduced = !flusher.props.spamState ? reduceRepeatedSentences(content) : content;
+  if (!flusher.states.spamState) {
+    const messageKeyData = getMessageKey(sender.id, reduced, message.id, flusher);
+    if (messageKeyData.ignore === true) {
+      flusher.props.isProcessingMessages = false;
+      processMessageQueue(flusher);
+      return;
+    }
+    message.key = messageKeyData.key;
+  }
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add("flusher-message");
+  const badgeSpan = document.createElement("span");
+  badgeSpan.classList.add("flusher-badges");
+  const badgeElements = await getBadges(message, flusher);
+  badgeElements.forEach(badgeElement => {
+    badgeSpan.appendChild(badgeElement.cloneNode(true));
+  });
+  const usernameSpan = document.createElement("span");
+  usernameSpan.style.color = sender.identity.color;
+  usernameSpan.classList.add("flusher-username");
+  usernameSpan.textContent = username;
+  const boldSpan = document.createElement("span");
+  boldSpan.classList.add("font-bold", "text-white");
+  boldSpan.textContent = ": ";
+  const contentSpan = document.createElement("span");
+  contentSpan.classList.add("flusher-content");
+  const emoteRegex = /\[emote:(\d+):([\w-]+)\]/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = emoteRegex.exec(reduced)) !== null) {
+    const textBeforeEmote = reduced.slice(lastIndex, match.index);
+    if (textBeforeEmote.trim() !== "") {
+      const textBeforeNode = document.createElement("span");
+      textBeforeNode.textContent = textBeforeEmote;
+      textBeforeNode.classList.add("flusher-content-text");
+      contentSpan.appendChild(textBeforeNode);
+    }
+    const img = document.createElement("img");
+    const [, id, name] = match;
+    img.src = `https://files.kick.com/emotes/${id}/fullsize`;
+    img.alt = name;
+    img.classList.add("flusher-emote");
+    contentSpan.appendChild(img);
+    lastIndex = emoteRegex.lastIndex;
+  }
+  const textAfterLastEmote = reduced.slice(lastIndex);
+  if (textAfterLastEmote.trim() !== "") {
+    const textAfterNode = document.createElement("span");
+    textAfterNode.textContent = textAfterLastEmote;
+    textAfterNode.classList.add("flusher-content-text");
+    contentSpan.appendChild(textAfterNode);
+  } else {
+    const lastChild = contentSpan.lastChild;
+    if (lastChild.tagName === "IMG") {
+      lastChild.className = "last-flusher-emote";
+    }
+  }
+  badgeSpan.firstChild ? messageDiv.append(badgeSpan) : null;
+  messageDiv.append(usernameSpan, boldSpan, contentSpan);
+  messageDiv.setAttribute("data-chat-entry", message.id);
+  message.container = messageDiv;
+  appendMessage(message, flusher);
+  function reduceRepeatedSentences(input) {
+    const regexSentence = /(\b.+?\b)\1+/g;
+    const sentence = input.replace(regexSentence, "$1");
+    const regexChar = /(.)(\1{10,})/g;
+    return sentence.replace(regexChar, "$1$1$1$1$1$1$1$1$1$1");
+  }
+}
+async function getBadges(data, flusher) {
+  const badges = data.sender.identity.badges || [];
+  let badgeArray = [];
+  if (badges.length === 0) return badgeArray;
+  for (const badge of badges) {
+    const cachedBadge = getBadgeImage(badge, flusher);
+    if (!cachedBadge) continue;
+    if (cachedBadge?.src) {
+      const badgeElement = document.createElement("img");
+      badgeElement.src = cachedBadge.src;
+      badgeElement.alt = badge.type;
+      badgeElement.classList.add("flusher-badge");
+      badgeArray.push(badgeElement);
+    } else {
+      cachedBadge.classList.add("flusher-badge");
+      badgeArray.push(cachedBadge);
+    }
+  }
+  function getBadgeImage(badge, flusher) {
+    let badgeImage;
+    if (badge.type === "subscriber") {
+      const months = badge.count;
+      const correspondingBadge = findClosestBadge(months);
+      badgeImage = correspondingBadge ? correspondingBadge : flusher.badges["subscriber"]?.cloneNode(true);
+    } else {
+      badgeImage = flusher.badges[badge.type]?.cloneNode(true) || null;
+    }
+    return badgeImage;
+  }
+  function findClosestBadge(months) {
+    return flusher.props.badgeCache.reduce((closest, currentBadge) => {
+      if (currentBadge.months <= months && (!closest || currentBadge.months > closest.months)) {
+        return currentBadge;
+      }
+      return closest || flusher.badges["subscriber"]?.cloneNode(true);
+    }, null)?.badge_image || flusher.props.badgeCache[flusher.props.badgeCache.length - 1]?.badge_image || flusher.badges["subscriber"]?.cloneNode(true);
+  }
+
+  /* Enable when iframe chatroom available */
+
+  /* badges.forEach(badge => {
+    let badgeText = badge.text;
+    if (badge.count) {
+      badgeText = `${badge.type}-${badge.count}`;
+    }
+    const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+    if (cachedBadge) {
+      badgeArray.push(cachedBadge.html);
+      badgeCount++;
+      return;
+    }
+  }); */
+
+  /* let attempts = 0;
+  while (badgeCount !== badges.length && attempts < 10) {
+    const newBadges = checkForBadges(data, flusher);
+    badgeArray = newBadges;
+     badgeCount = badgeArray.length;
+    attempts++;
+     await new Promise(resolve => setTimeout(resolve, 750));
+  } */
+
+  return badgeArray;
+  function checkForBadges(data, flusher) {
+    const badges = data.sender.identity.badges || [];
+    const badgeElements = [];
+    flusher.props.isProcessingMessages = false;
+    let firstChatIdentity = document.querySelector(`.chat-entry-username[data-chat-entry-user-id="${data.sender.id}"]`);
+    if (firstChatIdentity !== null) {
+      let identity = firstChatIdentity.closest(".chat-message-identity");
+      identity.querySelectorAll("div.badge-tooltip").forEach(function (baseBadge, index) {
+        let badge = badges[index];
+        if (badge === undefined) return;
+        let badgeText = badge.text;
+        if (badge.count) {
+          badgeText = `${badge.type}-${badge.count}`;
+        }
+        const cachedBadge = flusher.props.badgeCache.find(badgeCache => badgeCache.type === badgeText);
+        if (cachedBadge) {
+          props.badgeElements.push(cachedBadge.html);
+          return;
+        }
+        const imgElement = baseBadge.querySelector(`img`);
+        if (imgElement) {
+          const imgUrl = imgElement.src;
+          const newImg = document.createElement("img");
+          newImg.src = imgUrl;
+          newImg.classList.add("flusher-badge");
+          flusher.props.badgeCache.push({
+            type: badgeText,
+            html: newImg
           });
-          flusher.props.elementHeight = null;
-          flusher.container.style.display = "flex";
-          createIntroMessage(flusher);
-          if (oldWidth == null || oldWidth == 0) {
-            if (flusher.container === null) return;
-            if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
-            flusher.props.loading = false;
-            processMessageQueue(flusher);
-            togglePointerEvents(flusher);
-            checkAddons(flusher);
+          badgeElements.push(newImg);
+          return;
+        }
+        const svgElement = baseBadge.querySelector("svg");
+        if (svgElement) {
+          const svgCopy = svgElement.cloneNode(true);
+          svgCopy.classList.add("flusher-badge");
+          flusher.props.badgeCache.push({
+            type: badgeText,
+            html: svgCopy
+          });
+          badgeElements.push(svgCopy);
+          return;
+        }
+        console.warn("badge not found: " + badgeText);
+      });
+    }
+    return badgeElements;
+  }
+}
+function createUserBanMessage(data, flusher) {
+  /* logToConsole("createUserBanMessage") */;
+  const bannedUser = data.user.username;
+  const bannedByUser = data.banned_by.username;
+  const banMessageContent = document.createElement("div");
+  banMessageContent.classList.add("flusher-message", "flusher-red");
+  const banMessageSpan = document.createElement("span");
+  let logText;
+  if (data.expires_at) {
+    const expiresAt = new Date(data.expires_at);
+    const timeDifference = expiresAt - new Date();
+    let timeDiffText;
+    if (timeDifference > 0) {
+      timeDiffText = humanizeDuration(timeDifference + 5000);
+      const userId = data.user.id;
+      addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
+      logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+      const expiresText = document.createTextNode(logText);
+      banMessageSpan.appendChild(expiresText);
+    } else {
+      logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+      const expiresText = document.createTextNode(logText);
+      banMessageSpan.appendChild(expiresText);
+    }
+  } else {
+    logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+    const expiresText = document.createTextNode(logText);
+    banMessageSpan.appendChild(expiresText);
+  }
+  banMessageContent.appendChild(banMessageSpan);
+  data.created_at = Date.now();
+  data.container = banMessageContent;
+  (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(logText);
+  appendMessage(data, flusher);
+  function addBannedUser(bannedUser, bannedByUser, userId, expiresAt) {
+    const existingUserIndex = flusher.props.bannedUsers.findIndex(user => user.username === bannedUser);
+    if (existingUserIndex !== -1) {
+      flusher.props.bannedUsers[existingUserIndex] = {
+        id: userId,
+        username: bannedUser,
+        bannedBy: bannedByUser,
+        expiresAt: expiresAt
+      };
+    } else {
+      flusher.props.bannedUsers.push({
+        id: userId,
+        username: bannedUser,
+        bannedBy: bannedByUser,
+        expiresAt: expiresAt
+      });
+      const now = new Date().getTime();
+      const expirationTime = new Date(expiresAt).getTime();
+      const timeUntilExpiration = expirationTime - now;
+      flusher.props.timeoutIds.push(setTimeout(() => removeBannedUser(bannedUser), timeUntilExpiration));
+    }
+  }
+  function removeBannedUser(username) {
+    const index = flusher.props.bannedUsers.findIndex(user => user.username === username);
+    if (index !== -1) {
+      const currentUser = flusher.props.bannedUsers[index];
+      const currentTime = new Date().getTime();
+      if (currentTime + 5000 >= new Date(currentUser.expiresAt).getTime()) {
+        flusher.props.bannedUsers.splice(index, 1);
+        const unbanMessageContent = document.createElement("div");
+        unbanMessageContent.classList.add("flusher-message", "flusher-green");
+        const unbanMessageSpan = document.createElement("span");
+        let logText;
+        logText = `${username}'s ban expired`;
+        const unbanText = document.createTextNode(logText);
+        unbanMessageSpan.appendChild(unbanText);
+        unbanMessageContent.appendChild(unbanMessageSpan);
+        data.created_at = Date.now();
+        data.container = unbanMessageContent;
+        (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(logText);
+        appendMessage(data, flusher);
+      }
+    }
+  }
+  function humanizeDuration(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+    if (years > 0) {
+      return years === 1 ? "1 year" : `${years} years`;
+    } else if (months > 0) {
+      return months === 1 ? "1 month" : `${months} months`;
+    } else if (weeks > 0) {
+      return weeks === 1 ? "1 week" : `${weeks} weeks`;
+    } else if (days > 0) {
+      return days === 1 ? "1 day" : `${days} days`;
+    } else if (hours > 0) {
+      return hours === 1 ? "1 hour" : `${hours} hours`;
+    } else if (minutes > 0) {
+      return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+    } else {
+      return seconds === 1 ? "1 second" : `${seconds} seconds`;
+    }
+  }
+}
+function createSubMessage(data, flusher) {
+  /* logToConsole(`createSubMessage`); */
 
-            /* temp fix toggle btn not clickable in theater */
-            const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
-            if (element) element.classList.remove("z-[500]");
-            logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
-          } else {
-            flusher.states.flushState ? flusher.clear() : null;
+  if (!flusher.states.flushState && !flusher.props.external) return;
+  const username = data.username;
+  const months = data.months;
+  const subscriptionMessageContent = document.createElement("div");
+  subscriptionMessageContent.classList.add("flusher-message", "flusher-green");
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
+  const subscriptionMessageSpan = document.createElement("span");
+  subscriptionMessageSpan.style.color = "#00FF00";
+  subscriptionMessageSpan.textContent = `${months > 1 ? months + " months" : "1 month"} subscription by ${username}`;
+  const subSpan = document.createElement("span");
+  subSpan.style.color = "#00FF00";
+  subSpan.append(emojiSpan, subscriptionMessageSpan);
+  subscriptionMessageContent.append(subSpan);
+  data.created_at = Date.now();
+  data.container = subscriptionMessageContent;
+  appendMessage(data, flusher);
+}
+function createHostMessage(data, flusher) {
+  /* logToConsole(`createHostMessage`); */
+
+  const hostUsername = data.host_username;
+  const viewersCount = data.number_viewers;
+  const hostMessageContent = document.createElement("div");
+  hostMessageContent.classList.add("flusher-message", "flusher-green");
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
+  const viewersCountSpan = document.createElement("span");
+  viewersCountSpan.textContent = `${viewersCount > 1 ? viewersCount + " viewers" : "1 viewer"} hosted by ` + hostUsername;
+  const hostMessageSpan = document.createElement("span");
+  hostMessageSpan.style.color = "#00FF00";
+  hostMessageSpan.append(emojiSpan, viewersCountSpan);
+  hostMessageContent.appendChild(hostMessageSpan);
+  data.created_at = Date.now();
+  data.container = hostMessageContent;
+  appendMessage(data, flusher);
+}
+function createGiftedMessage(data, flusher) {
+  if (!flusher.states.flushState && !flusher.props.external) {
+    flusher.props.isProcessingMessages = false;
+    processMessageQueue(flusher);
+    return;
+  }
+
+  /* logToConsole(`createGiftedMessage`); */
+
+  const gifterUsername = data.gifter_username;
+  const giftedUsernames = data.gifted_usernames;
+  const giftedContent = document.createElement("div");
+  giftedContent.classList.add("flusher-message", "flusher-green");
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
+  const gifterUsernameSpan = document.createElement("span");
+  gifterUsernameSpan.textContent = `${giftedUsernames.length > 1 ? giftedUsernames.length + " Subscriptions" : "1 Subscription"} gifted by ` + gifterUsername;
+  const giftedSpan = document.createElement("span");
+  giftedSpan.style.color = "#00FF00";
+  giftedSpan.append(emojiSpan, gifterUsernameSpan);
+  giftedContent.appendChild(giftedSpan);
+  data.created_at = Date.now();
+  data.container = giftedContent;
+  appendMessage(data, flusher);
+}
+function createFollowersMessage(data, flusher) {
+  /* logToConsole(`createFollowersMessage`); */
+
+  const followersCount = data.followersCount;
+  const followersDiff = followersCount - (flusher.props.lastFollowersCount ?? followersCount);
+  if (followersDiff === 0) {
+    flusher.props.lastFollowersCount = followersCount ?? null;
+    flusher.props.isProcessingMessages = false;
+    processMessageQueue(flusher);
+    return;
+  }
+  const messageContent = document.createElement("div");
+  messageContent.classList.add("flusher-message");
+  const followersMessageSpan = document.createElement("span");
+  followersMessageSpan.textContent = `${followersDiff > 1 ? followersDiff + " new followers" : "1 new follower"}`;
+  messageContent.append(followersMessageSpan);
+  data.created_at = Date.now();
+  data.container = messageContent;
+  appendMessage(data, flusher);
+  flusher.props.lastFollowersCount = followersCount;
+}
+
+/***/ }),
+
+/***/ "./modules/site/ip2.js":
+/*!*****************************!*\
+  !*** ./modules/site/ip2.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../flusher/flusher.js */ "./modules/flusher/flusher.js");
+/* harmony import */ var _interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../interface/overlay.js */ "./modules/interface/overlay.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
+
+
+
+class Ip2 {
+  static async init() {
+    (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Initialize`);
+    const targetNode = await waitForCondition(() => document.getElementById('streamViewerContainer'));
+    (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Container found`);
+    const callback = async function (mutationsList, observer) {
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+          if (mutation.addedNodes.length > 0) {
+            for (const node of mutation.addedNodes) {
+              if (targetNode.contains(node) && node.parentElement === targetNode) {
+                if (node.id && !node.id.includes('-chat-') && node.id.includes('-video-')) {
+                  const hasFlusherAttribute = node.hasAttribute('flusher');
+                  if (hasFlusherAttribute) return;
+                  const iframe = await waitForCondition(() => node.querySelector('iframe'));
+                  (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`New video found`);
+                  node.setAttribute('flusher', '');
+                  createChannel(iframe);
+                }
+              }
+            }
           }
         }
-      }, 750);
-    }
-  });
-  flusher.resizeObserver.observe(flusher.video);
-  function checkAddons(flusher) {
-    let counter = 0;
-    const intervalId = setInterval(() => {
-      const KickTools = document.querySelector('.vjs-progress-control')?.style?.display == 'flex' ? true : false;
-      if (KickTools) {
-        logToConsole(`KickTools Detected`);
-        flusher.props.isKickTools = true;
-        clearInterval(intervalId);
       }
-      counter++;
-      if (counter >= 5) {
-        clearInterval(intervalId);
-      }
-    }, 1000);
-    flusher.props.timeoutIds.push(intervalId);
-  }
-  function createIntroMessage(flusher) {
-    const introContent = document.createElement("div");
-    introContent.classList.add("flusher-message");
-    const emojiSpan = document.createElement("span");
-    emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
-    const introSpan = document.createElement("span");
-    introSpan.textContent = `thanks for testing (version..)`;
-    const introMessageSpan = document.createElement("span");
-    introMessageSpan.append(emojiSpan, introSpan);
-    introContent.appendChild(introMessageSpan);
-    introContent.style.setProperty("--row", 0);
-    introContent.classList.add("flusher-message");
-    const parent = flusher.props.external ? flusher.container : document.body;
-    parent.append(introContent);
-    flusher.props.elementHeight = introContent.clientHeight;
-    flusher.props.maxRows = Math.ceil(flusher.props.parentHeight / flusher.props.elementHeight);
-    parent.removeChild(introContent);
-    flusher.setVerticalWidth();
-  }
-}
-function startScrollingInterval(flusher) {
-  if (flusher.props.scrollIntervalId) return;
-  scrollChat(flusher);
-  flusher.props.scrollIntervalId = setInterval(function () {
-    scrollChat(flusher);
-  }, 10000);
-}
-function setAttribute(element, attribute, states, stateKey) {
-  const state = states[stateKey];
-  const value = state.replace(/\s/g, "");
-  element.setAttribute(attribute, value);
-}
-function stopScrollingInterval(flusher) {
-  if (!flusher.props.scrollIntervalId) return;
-  clearInterval(flusher.props.scrollIntervalId);
-  flusher.props.scrollIntervalId = null;
-}
-function scrollChat(flusher) {
-  const chatBtn = document.querySelector("#chatroom .justify-center.absolute");
-  const chatContainer = document.querySelector("#chatroom [data-chat-entry]");
-  if (flusher.props.isFullscreen && !flusher.props.isVod) {
-    if (chatBtn !== null) {
-      chatBtn.click();
-    }
-    if (chatContainer !== null) {
-      const chatContainerParent = chatContainer.closest(".overflow-y-scroll");
-      if (chatContainerParent !== null) {
-        chatContainerParent.scrollTop = chatContainerParent.scrollHeight;
+    };
+    const observer = new MutationObserver(callback);
+    const config = {
+      childList: true,
+      subtree: false
+    };
+    observer.observe(targetNode, config);
+    function createChannel(iframe) {
+      const src = iframe.getAttribute('src');
+      if (src && src.includes('kick.com')) {
+        const channelName = new URL(src).pathname.slice(1);
+        (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Fetch Channel Data`);
+        const flusher = new _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__.Flusher(iframe, "IP2", channelName);
+        (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__.createChat)(flusher);
       }
     }
+    function waitForCondition(conditionCallback) {
+      return new Promise((resolve, reject) => {
+        const checkCondition = () => {
+          const result = conditionCallback();
+          if (result) {
+            resolve(result);
+            return;
+          }
+          setTimeout(checkCondition, 500);
+        };
+        checkCondition();
+      });
+    }
+
+    /* try { 
+    	const chatFrame = document.createElement('iframe');
+    	chatFrame.src = 'https://kick.com/USERNAME/chatroom';
+    	document.body.append(chatFrame);
+    	const elementText = chatFrame.$eval('body', (element) => {
+    		return element.textContent;
+    	});
+    	logToConsole('Element Text inside iframe:', elementText);
+    } catch (error) {
+    	console.error('Error:', error);
+    } */
   }
 }
-;// CONCATENATED MODULE: ./modules/utils/badges.js
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Ip2);
+
+/***/ }),
+
+/***/ "./modules/site/kick.js":
+/*!******************************!*\
+  !*** ./modules/site/kick.js ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../flusher/flusher.js */ "./modules/flusher/flusher.js");
+/* harmony import */ var _interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../interface/overlay.js */ "./modules/interface/overlay.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
+
+
+
+class Kick {
+  static init() {
+    /* logToConsole(`Initialize`); */
+
+    let stopObserver = false;
+    const observeVideo = () => {
+      const videoObserver = new MutationObserver(() => {
+        let video = document.getElementsByTagName('video');
+        video = video[video.length - 1];
+        if (video) {
+          /* logToConsole(`KICK video found`); */
+          videoObserver.disconnect();
+          setTimeout(() => {
+            let video = document.getElementsByTagName('video');
+            video = video[video.length - 1];
+            let channelName = document.querySelector(".stream-username");
+            if (channelName && video) {
+              channelName = channelName.innerText.trim();
+              const AeroKick = video.classList.contains('bk-aspect-video');
+              if (AeroKick) (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`AeroKick Detected`);
+              const flusher = new _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__.Flusher(video, "KICK", channelName, AeroKick);
+              try {
+                (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__.createChat)(flusher);
+                return;
+              } catch (error) {
+                (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Failed to create chat`);
+              }
+            }
+
+            /* logToConsole(`KICK start video observer`); */
+
+            const observer = new MutationObserver(mutations => {
+              mutations.forEach(mutation => {
+                if (!stopObserver && mutation.addedNodes) {
+                  if (document.querySelector(".stream-username")) {
+                    let video = document.getElementsByTagName('video');
+                    video = video[video.length - 1];
+                    if (video) {
+                      /* logToConsole(`KICK stop video observer`); */
+                      stopObserver = true;
+                      const channelName = document.querySelector(".stream-username").innerText.trim();
+                      const AeroKick = video.classList.contains('bk-aspect-video');
+                      if (AeroKick) (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`AeroKick Detected`);
+                      const flusher = new _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__.Flusher(video, "KICK", channelName, AeroKick);
+                      try {
+                        (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__.createChat)(flusher);
+                      } catch (error) {
+                        stopObserver = false;
+                        (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Failed to create chat`);
+                      }
+                      if (stopObserver) observer.disconnect();
+                    }
+                  }
+                }
+              });
+            });
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true
+            });
+          }, 1000);
+        }
+      });
+      videoObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    };
+    observeVideo();
+  }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Kick);
+
+/***/ }),
+
+/***/ "./modules/utils/badges.js":
+/*!*********************************!*\
+  !*** ./modules/utils/badges.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
 class Badges {
   broadcasterSVG = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" x="0px" y="0px" viewBox="0 0 16 16" space="preserve" width="16" height="16">
    <g id="Badge_Chat_host"><linearGradient id="badge-host-gradient-1" gradientUnits="userSpaceOnUse" x1="4" y1="180.5864" x2="4" y2="200.6666" gradientTransform="matrix(1 0 0 1 0 -182)"><stop offset="0" style="stop-color:#FF1CD2;"></stop><stop offset="0.99" style="stop-color:#B20DFF;"></stop></linearGradient><rect x="3.2" y="9.6" style="fill:url(#badge-host-gradient-1);" width="1.6" height="1.6"></rect><linearGradient id="badge-host-gradient-2" gradientUnits="userSpaceOnUse" x1="8" y1="180.5864" x2="8" y2="200.6666" gradientTransform="matrix(1 0 0 1 0 -182)"><stop offset="0" style="stop-color:#FF1CD2;"></stop><stop offset="0.99" style="stop-color:#B20DFF;"></stop></linearGradient><polygon style="fill:url(#badge-host-gradient-2);" points="6.4,9.6 9.6,9.6 9.6,8 11.2,8 
@@ -2361,239 +2494,463 @@ V5.2h1V4.1h1v-1h3.4V12.9z" style="fill-rule: evenodd; clip-rule: evenodd; fill: 
     vip: this.parseSVGStringToElement(this.vipSVG)
   };
 }
-/* harmony default export */ const badges = (Badges);
-;// CONCATENATED MODULE: ./modules/flusher/flusher.js
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Badges);
 
+/***/ }),
 
+/***/ "./modules/utils/drag.js":
+/*!*******************************!*\
+  !*** ./modules/utils/drag.js ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-
-
-
-class Flusher {
-  constructor(video, domain, channelName, aeroKick) {
-    this.video = video;
-    this.states = new FlusherStates();
-    this.props = new FlusherProps();
-    this.badges = new badges().badgeTypeToSVG;
-    this.props.domain = domain;
-    this.props.external = domain === 'KICK' ? false : true;
-    this.props.isVod = window.location.href.includes('/video/');
-    this.props.isAeroKick = aeroKick ?? false;
-    this.props.channelName = channelName;
-    this.provider = new FlusherMessages();
-    visibilityChange(this);
-  }
-  resetConnection() {
-    /* logToConsole('Reset Connection'); */
-
-    if (!this.props.flusher) return;
-    clearChat(this.props.flusher);
-    isVod = false;
-    if (this.props.flusher && this.props.resizeObserver) {
-      this.props.resizeObserver.disconnect();
-    }
-  }
-  clear() {
-    if (this.container) this.container.style.display = 'none';
-    const isEnabled = this.states.chatEnabled;
-    this.states.chatEnabled = false;
-    this.props.elementQueue.length = 0;
-    this.props.messageQueue.length = 0;
-    this.props.lastRow = 0;
-    for (const id of this.props.timeoutIds) {
-      clearTimeout(id);
-    }
-    stopScrollingInterval(this);
-    if (this.container !== null) {
-      while (this.container.firstChild) {
-        this.container.removeChild(this.container.firstChild);
-      }
-    }
-    this.props.displayedMessages = [];
-    if (this.props.lastPositionPerRow) {
-      this.props.lastPositionPerRow.length = 0;
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   dragElement: () => (/* binding */ dragElement)
+/* harmony export */ });
+function dragElement(flusher) {
+  var pos1 = 0,
+    pos2 = 0,
+    pos3 = 0,
+    pos4 = 0;
+  flusher.container.onmousedown = function (e) {
+    e = e || window.event;
+    e.preventDefault();
+    setPosition(flusher, true);
+    if (isInResizeHandle(e)) {
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeResize;
+      document.onmousemove = resizeElement;
     } else {
-      this.props.lastPositionPerRow = [];
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      document.onmousemove = dragElement;
     }
-    if (this.props.rowQueue) {
-      this.props.rowQueue.length = 0;
-    } else {
-      this.props.rowQueue = [];
-    }
-    this.props.timeoutIds.length = 0;
-    if (this.container !== null) this.container.style.display = 'flex';
-    this.states.chatEnabled = isEnabled;
-    this.props.isProcessingElements = false;
-    this.props.isProcessingMessages = false;
+  };
+  function dragElement(e) {
+    e = e || window.event;
+    e.preventDefault();
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    flusher.container.style.top = flusher.container.offsetTop - pos2 + "px";
+    flusher.container.style.left = flusher.container.offsetLeft - pos1 + "px";
   }
-  setVerticalWidth() {
-    const elementHeight = this.props.elementHeight;
-    switch (this.states.sizeStates[this.states.sizeState]) {
-      case 'LARGE':
-        this.container.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
-        break;
-      case 'NORMAL':
-        this.container.style.setProperty('--flusher-vertical-width', `${elementHeight * 14}px`);
-        break;
-      case 'SMALL':
-        this.container.style.setProperty('--flusher-vertical-width', `${elementHeight * 9}px`);
-        break;
-      default:
-        break;
-    }
+  function resizeElement(e) {
+    e = e || window.event;
+    e.preventDefault();
+    flusher.container.style.width = flusher.container.offsetWidth - (pos3 - e.clientX) + "px";
+    flusher.container.style.height = flusher.container.offsetHeight - (pos4 - e.clientY) + "px";
+    pos3 = e.clientX;
+    pos4 = e.clientY;
   }
-}
-;// CONCATENATED MODULE: ./modules/site/kick.js
-
-
-
-class Kick {
-  static init() {
-    /* logToConsole(`Initialize`); */
-
-    let stopObserver = false;
-    const observeVideo = () => {
-      const videoObserver = new MutationObserver(() => {
-        let video = document.getElementsByTagName('video');
-        video = video[video.length - 1];
-        if (video) {
-          /* logToConsole(`KICK video found`); */
-          videoObserver.disconnect();
-          setTimeout(() => {
-            let video = document.getElementsByTagName('video');
-            video = video[video.length - 1];
-            let channelName = document.querySelector(".stream-username");
-            if (channelName && video) {
-              channelName = channelName.innerText.trim();
-              const AeroKick = video.classList.contains('bk-aspect-video');
-              if (AeroKick) logToConsole(`AeroKick Detected`);
-              const flusher = new Flusher(video, "KICK", channelName, AeroKick);
-              try {
-                createChat(flusher);
-                return;
-              } catch (error) {
-                logToConsole(`Failed to create chat`);
-              }
-            }
-
-            /* logToConsole(`KICK start video observer`); */
-
-            const observer = new MutationObserver(mutations => {
-              mutations.forEach(mutation => {
-                if (!stopObserver && mutation.addedNodes) {
-                  if (document.querySelector(".stream-username")) {
-                    let video = document.getElementsByTagName('video');
-                    video = video[video.length - 1];
-                    if (video) {
-                      /* logToConsole(`KICK stop video observer`); */
-                      stopObserver = true;
-                      const channelName = document.querySelector(".stream-username").innerText.trim();
-                      const AeroKick = video.classList.contains('bk-aspect-video');
-                      if (AeroKick) logToConsole(`AeroKick Detected`);
-                      const flusher = new Flusher(video, "KICK", channelName, AeroKick);
-                      try {
-                        createChat(flusher);
-                      } catch (error) {
-                        stopObserver = false;
-                        logToConsole(`Failed to create chat`);
-                      }
-                      if (stopObserver) observer.disconnect();
-                    }
-                  }
-                }
-              });
-            });
-            observer.observe(document.body, {
-              childList: true,
-              subtree: true
-            });
-          }, 1000);
-        }
-      });
-      videoObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+  function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+    setPosition(flusher, false);
+  }
+  function closeResize() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+    setPosition(flusher, false);
+  }
+  async function setPosition(flusher, event) {
+    var scaleFactor = window.innerWidth / window.outerWidth;
+    var rect = flusher.container.getBoundingClientRect();
+    var rectVideo = flusher.video.getBoundingClientRect();
+    var newPosition = {
+      top: Math.round(rect.top - rectVideo.top) / scaleFactor,
+      left: Math.round(rect.left - rectVideo.left) / scaleFactor,
+      width: Math.round(rect.width) / scaleFactor,
+      height: Math.round(rect.height) / scaleFactor
     };
-    observeVideo();
-  }
-}
-/* harmony default export */ const kick = (Kick);
-;// CONCATENATED MODULE: ./modules/site/ip2.js
-
-
-
-class Ip2 {
-  static async init() {
-    logToConsole(`Initialize`);
-    const targetNode = await waitForCondition(() => document.getElementById('streamViewerContainer'));
-    logToConsole(`Container found`);
-    const callback = async function (mutationsList, observer) {
-      for (const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-          if (mutation.addedNodes.length > 0) {
-            for (const node of mutation.addedNodes) {
-              if (targetNode.contains(node) && node.parentElement === targetNode) {
-                if (node.id && !node.id.includes('-chat-') && node.id.includes('-video-')) {
-                  const hasFlusherAttribute = node.hasAttribute('flusher');
-                  if (hasFlusherAttribute) return;
-                  const iframe = await waitForCondition(() => node.querySelector('iframe'));
-                  logToConsole(`New video found`);
-                  node.setAttribute('flusher', '');
-                  createChannel(iframe);
-                }
-              }
-            }
+    console.log(newPosition);
+    if (event) {
+      flusher.container.style.top = Math.round(newPosition.top * scaleFactor) + "px";
+      flusher.container.style.left = Math.round(newPosition.left * scaleFactor) + "px";
+      flusher.container.removeAttribute("position");
+      flusher.container.style.width = Math.round(newPosition.width * scaleFactor) + "px";
+      flusher.container.style.height = Math.round(newPosition.height * scaleFactor) + "px";
+      flusher.container.removeAttribute("size");
+    }
+    chrome.storage.local.get("positionsPerChannel", function (result) {
+      var positionsPerChannel = result.positionsPerChannel || {};
+      var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+      var existingPositionIndex = positionsArray.findIndex(function (item) {
+        return item.videoSize === flusher.props.videoSize;
+      });
+      if (existingPositionIndex !== -1) {
+        positionsArray[existingPositionIndex].position.top = newPosition.top;
+        positionsArray[existingPositionIndex].position.left = newPosition.left;
+        positionsArray[existingPositionIndex].position.width = newPosition.width;
+        positionsArray[existingPositionIndex].position.height = newPosition.height;
+      } else {
+        positionsArray.push({
+          videoSize: flusher.props.videoSize,
+          position: {
+            top: newPosition.top,
+            left: newPosition.left,
+            width: newPosition.width,
+            height: newPosition.height
           }
-        }
+        });
       }
-    };
-    const observer = new MutationObserver(callback);
-    const config = {
-      childList: true,
-      subtree: false
-    };
-    observer.observe(targetNode, config);
-    function createChannel(iframe) {
-      const src = iframe.getAttribute('src');
-      if (src && src.includes('kick.com')) {
-        const channelName = new URL(src).pathname.slice(1);
-        logToConsole(`Fetch Channel Data`);
-        const flusher = new Flusher(iframe, "IP2", channelName);
-        createChat(flusher);
-      }
-    }
-    function waitForCondition(conditionCallback) {
-      return new Promise((resolve, reject) => {
-        const checkCondition = () => {
-          const result = conditionCallback();
-          if (result) {
-            resolve(result);
+      positionsPerChannel[flusher.props.channelName] = positionsArray;
+      chrome.storage.local.set({
+        "positionsPerChannel": positionsPerChannel
+      }, function () {
+        /* console.log("positionsPerChannel:", positionsPerChannel); */
+      });
+    });
+  }
+  function isInResizeHandle(e) {
+    var rect = flusher.container.getBoundingClientRect();
+    var handleSize = 25;
+    return e.clientX >= rect.right - handleSize && e.clientY >= rect.bottom - handleSize;
+  }
+}
+
+/***/ }),
+
+/***/ "./modules/utils/resize.js":
+/*!*********************************!*\
+  !*** ./modules/utils/resize.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   checkResize: () => (/* binding */ checkResize),
+/* harmony export */   stopScrollingInterval: () => (/* binding */ stopScrollingInterval)
+/* harmony export */ });
+/* harmony import */ var _interface_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../interface/menu/menu.js */ "./modules/interface/menu/menu.js");
+/* harmony import */ var _queue_queue_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../queue/queue.js */ "./modules/queue/queue.js");
+/* harmony import */ var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils.js */ "./modules/utils/utils.js");
+/* harmony import */ var _interface_overlay_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../interface/overlay.js */ "./modules/interface/overlay.js");
+/* harmony import */ var _site_kick_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../site/kick.js */ "./modules/site/kick.js");
+
+
+
+
+
+function checkResize(flusher) {
+  /* logToConsole("Check Resize"); */
+  const target = flusher.props.external ? flusher.video : flusher.video.querySelector("video") ?? flusher.video;
+  flusher.resizeTimer = null;
+  if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
+  flusher.resizeObserver = new ResizeObserver(entries => {
+    if (flusher.container !== null) flusher.container.style.display = "none";
+    for (let entry of entries) {
+      if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
+      flusher.resizeTimer = setTimeout(() => {
+        for (let entry of entries) {
+          const rect = target.getBoundingClientRect();
+          let width = rect.width;
+          let height = rect.height;
+          window.currentUrl = window.location.href;
+          if ((width === null || width === 0) && (!height || height === 0)) {
+            if (flusher !== null) {
+              /* logToConsole("Remove Chat"); */
+              const init = !flusher.props.external;
+              flusher.resizeObserver.disconnect();
+              flusher.resizeObserver = null;
+              for (const id of flusher.props.timeoutIds) {
+                clearTimeout(id);
+              }
+              flusher.provider.unbindRequests(flusher);
+              flusher = null;
+              if (init) _site_kick_js__WEBPACK_IMPORTED_MODULE_4__["default"].init();
+            }
             return;
           }
-          setTimeout(checkCondition, 500);
-        };
-        checkCondition();
-      });
-    }
 
-    /* try { 
-    	const chatFrame = document.createElement('iframe');
-    	chatFrame.src = 'https://kick.com/USERNAME/chatroom';
-    	document.body.append(chatFrame);
-    	const elementText = chatFrame.$eval('body', (element) => {
-    		return element.textContent;
-    	});
-    	logToConsole('Element Text inside iframe:', elementText);
-    } catch (error) {
-    	console.error('Error:', error);
-    } */
+          /* logToConsole(
+            `Width ${Math.round(width)} height ${Math.round(height)}`
+          ); */
+
+          const oldWidth = flusher.props.parentWidth;
+          flusher.props.parentWidth = Math.trunc(width) * 2;
+          flusher.props.parentHeight = Math.trunc(height);
+          flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
+          flusher.toggle.setAttribute("domain", flusher.props.domain);
+          const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
+          flusher.container.setAttribute("layout", newFlushState);
+          flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
+          flusher.container.setAttribute("shadow", flusher.states.shadow);
+          flusher.container.setAttribute("background", flusher.states.backgroundStates[flusher.states.backgroundState]);
+          setAttribute(flusher.container, "font", flusher.states.sizeStates, flusher.states.fontState);
+          flusher.container.setAttribute("time", flusher.states.timeState);
+          if (flusher.props.isAeroKick) {
+            flusher.container.setAttribute("aerokick", "");
+          }
+          (0,_interface_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__.toggleEnableMenu)();
+          (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_3__.setCustomPosition)(flusher);
+          const documentWidth = document.documentElement.clientWidth;
+          if (documentWidth < flusher.props.parentWidth / 2 + 10) {
+            flusher.props.isFullscreen = true;
+            startScrollingInterval(flusher);
+            flusher.props.videoSize = "fullscreen";
+          } else {
+            flusher.props.isFullscreen = false;
+            stopScrollingInterval(flusher);
+            if (document.querySelector('.sidebar')) {
+              flusher.props.videoSize = "default";
+            } else {
+              flusher.props.videoSize = "theater";
+            }
+          }
+          chrome.storage.local.get("positionsPerChannel", function (result) {
+            var positionsPerChannel = result.positionsPerChannel || {};
+            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+            var existingPositionIndex = positionsArray.findIndex(function (item) {
+              return item.videoSize === flusher.props.videoSize;
+            });
+            if (existingPositionIndex !== -1) {
+              const position = positionsArray[existingPositionIndex].position;
+              if (position.top) {
+                flusher.container.removeAttribute("position");
+                var scaleFactor = window.innerWidth / window.outerWidth;
+                flusher.container.style.top = position.top > height ? height - 20 + "px" : Math.round(position.top * scaleFactor) + "px";
+                flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
+              } else {
+                flusher.container.style.top = "";
+                flusher.container.style.left = "";
+                flusher.container.style.alignItems = "";
+                setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
+              }
+              if (position.width) {
+                flusher.container.removeAttribute("size");
+                flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
+                flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
+              } else {
+                flusher.container.style.width = "";
+                flusher.container.style.height = "";
+                setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
+              }
+            } else {
+              flusher.container.style.top = "";
+              flusher.container.style.left = "";
+              flusher.container.style.alignItems = "";
+              flusher.container.style.width = "";
+              flusher.container.style.height = "";
+              setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
+              setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
+            }
+          });
+          flusher.props.elementHeight = null;
+          flusher.container.style.display = "flex";
+          createIntroMessage(flusher);
+          if (oldWidth == null || oldWidth == 0) {
+            if (flusher.container === null) return;
+            if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
+            flusher.props.loading = false;
+            (0,_queue_queue_js__WEBPACK_IMPORTED_MODULE_1__.processMessageQueue)(flusher);
+            (0,_interface_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__.togglePointerEvents)(flusher);
+            checkAddons(flusher);
+
+            /* temp fix toggle btn not clickable in theater */
+            const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
+            if (element) element.classList.remove("z-[500]");
+            (0,_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
+          } else {
+            flusher.states.flushState ? flusher.clear() : null;
+          }
+        }
+      }, 750);
+    }
+  });
+  flusher.resizeObserver.observe(flusher.video);
+  function checkAddons(flusher) {
+    let counter = 0;
+    const intervalId = setInterval(() => {
+      const KickTools = document.querySelector('.vjs-progress-control')?.style?.display == 'flex' ? true : false;
+      if (KickTools) {
+        (0,_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`KickTools Detected`);
+        flusher.props.isKickTools = true;
+        clearInterval(intervalId);
+      }
+      counter++;
+      if (counter >= 5) {
+        clearInterval(intervalId);
+      }
+    }, 1000);
+    flusher.props.timeoutIds.push(intervalId);
+  }
+  function createIntroMessage(flusher) {
+    const introContent = document.createElement("div");
+    introContent.classList.add("flusher-message");
+    const emojiSpan = document.createElement("span");
+    emojiSpan.textContent = String.fromCodePoint(0x1f389) + " ";
+    const introSpan = document.createElement("span");
+    introSpan.textContent = `thanks for testing (version..)`;
+    const introMessageSpan = document.createElement("span");
+    introMessageSpan.append(emojiSpan, introSpan);
+    introContent.appendChild(introMessageSpan);
+    introContent.style.setProperty("--row", 0);
+    introContent.classList.add("flusher-message");
+    const parent = flusher.props.external ? flusher.container : document.body;
+    parent.append(introContent);
+    flusher.props.elementHeight = introContent.clientHeight;
+    flusher.props.maxRows = Math.ceil(flusher.props.parentHeight / flusher.props.elementHeight);
+    parent.removeChild(introContent);
+    flusher.setVerticalWidth();
   }
 }
-/* harmony default export */ const ip2 = (Ip2);
-;// CONCATENATED MODULE: ./modules/content.js
+function startScrollingInterval(flusher) {
+  if (flusher.props.scrollIntervalId) return;
+  scrollChat(flusher);
+  flusher.props.scrollIntervalId = setInterval(function () {
+    scrollChat(flusher);
+  }, 10000);
+}
+function setAttribute(element, attribute, states, stateKey) {
+  const state = states[stateKey];
+  const value = state.replace(/\s/g, "");
+  element.setAttribute(attribute, value);
+}
+function stopScrollingInterval(flusher) {
+  if (!flusher.props.scrollIntervalId) return;
+  clearInterval(flusher.props.scrollIntervalId);
+  flusher.props.scrollIntervalId = null;
+}
+function scrollChat(flusher) {
+  const chatBtn = document.querySelector("#chatroom .justify-center.absolute");
+  const chatContainer = document.querySelector("#chatroom [data-chat-entry]");
+  if (flusher.props.isFullscreen && !flusher.props.isVod) {
+    if (chatBtn !== null) {
+      chatBtn.click();
+    }
+    if (chatContainer !== null) {
+      const chatContainerParent = chatContainer.closest(".overflow-y-scroll");
+      if (chatContainerParent !== null) {
+        chatContainerParent.scrollTop = chatContainerParent.scrollHeight;
+      }
+    }
+  }
+}
+
+/***/ }),
+
+/***/ "./modules/utils/utils.js":
+/*!********************************!*\
+  !*** ./modules/utils/utils.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getFont: () => (/* binding */ getFont),
+/* harmony export */   logToConsole: () => (/* binding */ logToConsole),
+/* harmony export */   toTitleCase: () => (/* binding */ toTitleCase),
+/* harmony export */   visibilityChange: () => (/* binding */ visibilityChange)
+/* harmony export */ });
+function visibilityChange(flusher) {
+  /* logToConsole(`Add visibilityChange`); */
+
+  document.addEventListener('visibilitychange', function handleVisibilityChange() {
+    if (!flusher || !flusher.states.flushState) return;
+    if (document.hidden) {
+      flusher.props.chatEnabledVisible = flusher.states.chatEnabled;
+      flusher.states.chatEnabled = false;
+      flusher.clear();
+    } else {
+      flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
+    }
+  });
+}
+function getFont() {
+  const fontLink = document.createElement('link');
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap';
+  return fontLink;
+}
+function logToConsole(message) {
+  const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
+  isChrome ? console.log(`%c Kick Chat Flusher %c ${message}`, 'background: #228B22; color: #FFFFFF; padding: 2px 0;', '') : console.log('Kick Chat Flusher - ', message);
+}
+function toTitleCase(str) {
+  if (!str) return 'undefined';
+  if (str === 'OFF' || str === 'ON') return str;
+  return str.toLowerCase().replace(/\b\w/g, function (char) {
+    return char.toUpperCase();
+  });
+}
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+(() => {
+/*!****************************!*\
+  !*** ./modules/content.js ***!
+  \****************************/
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _site_kick_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./site/kick.js */ "./modules/site/kick.js");
+/* harmony import */ var _site_ip2_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./site/ip2.js */ "./modules/site/ip2.js");
 
 
-window.location.hostname.includes('kick.com') ? setTimeout(kick.init(), 2000) : ip2.init();
+window.location.hostname.includes('kick.com') ? setTimeout(_site_kick_js__WEBPACK_IMPORTED_MODULE_0__["default"].init(), 2000) : _site_ip2_js__WEBPACK_IMPORTED_MODULE_1__["default"].init();
+})();
+
 /******/ })()
 ;
+//# sourceMappingURL=kick-chat-flusher.js.map

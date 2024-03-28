@@ -21,5 +21,6 @@ export class FlusherProps {
     this.lastRow = 0;
     this.maxRows = 99;
     this.isKickTools = false;
+    this.messageObservers = new Map();
   }
 }

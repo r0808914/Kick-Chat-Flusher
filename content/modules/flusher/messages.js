@@ -152,19 +152,14 @@ export class FlusherMessages {
 
     if (!flusher.states.flushState)
       setTimeout(() => {
-        /* logToConsole(`Parse Existing`); */
-        nativeChat.childNodes.forEach((addedNode) => {
-          checkDupe(addedNode, AeroKick);
-        });
+        checkDupe(nativeChat.childNodes, AeroKick, false);
       }, 500);
 
     this.nativeChatObserver = new MutationObserver((mutations) => {
       const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
       nodesList.forEach((mutation) => {
         if (mutation.type === "childList") {
-          mutation.addedNodes.forEach((addedNode) => {
-            checkDupe(addedNode, AeroKick);
-          });
+          checkDupe(mutation.addedNodes, AeroKick);
         }
       });
     });
@@ -172,89 +167,91 @@ export class FlusherMessages {
     const observerConfig = { childList: true, subtree: false };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
 
-    function checkDupe(addedNode, AeroKick) {
-      if (!addedNode || addedNode.nodeName !== "DIV") return;
+    async function checkDupe(addedNodes, AeroKick) {
 
-      if (AeroKick && !flusher.props.isVod) {
-        const button = addedNode.querySelector("button");
-        if (!button) {
-          console.log(
-            "Kick Chat Flusher - Button does not exist in the added node:",
-            addedNode
-          );
-          return;
+      addedNodes.forEach((addedNode) => {
+        if (!addedNode || addedNode.nodeName !== "DIV") return;
+
+        if (AeroKick && !flusher.props.isVod) {
+          const button = addedNode.querySelector("button");
+          if (!button) {
+            console.log(
+              "Kick Chat Flusher - Button does not exist in the added node:",
+              addedNode
+            );
+            return;
+          }
         }
-      }
 
-      const id =
-        AeroKick && flusher.props.isAeroKick
-          ? addedNode.querySelector("button").getAttribute("data-radial-id")
-          : addedNode.getAttribute("data-chat-entry");
-      if (
-        id === "history_breaker" ||
-        (flusher.states.flushState && (!id || id === ""))
-      )
-        return;
-
-      if (id || id === "") {
-
-        const userId =
+        const id =
           AeroKick && flusher.props.isAeroKick
-            ? addedNode
-              .querySelector("button")
-              .getAttribute("data-radial-username")
-            : addedNode
-              .querySelector("[data-chat-entry-user-id]")
-              ?.getAttribute("data-chat-entry-user-id");
+            ? addedNode.querySelector("button").getAttribute("data-radial-id")
+            : addedNode.getAttribute("data-chat-entry");
+        if (
+          id === "history_breaker" ||
+          (flusher.states.flushState && (!id || id === ""))
+        )
+          return;
 
-        if (self.flusher.props.isKickTools) {
-          if (addedNode.style.opacity ?? 1 < 1) {
-            const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
-            if (isUserBanned) { console.log(userId + ' allowed'); } else {
-              return;
+        if (id || id === "") {
+
+          const userId =
+            AeroKick && flusher.props.isAeroKick
+              ? addedNode
+                .querySelector("button")
+                .getAttribute("data-radial-username")
+              : addedNode
+                .querySelector("[data-chat-entry-user-id]")
+                ?.getAttribute("data-chat-entry-user-id");
+
+          if (self.flusher.props.isKickTools) {
+            if (addedNode.style.opacity ?? 1 < 1) {
+              const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
+              if (isUserBanned) { console.log(userId + ' allowed'); } else {
+                return;
+              }
             }
           }
-        }
 
-        if (!flusher.states.spamState || flusher.states.flushState) {
-          let uniqueString = "";
-          uniqueString += userId + "-";
+          if (!flusher.states.spamState || flusher.states.flushState) {
+            let uniqueString = "";
+            uniqueString += userId + "-";
 
-          const divTextContent =
-            AeroKick && flusher.props.isAeroKick
-              ? addedNode.querySelector("span.bk-inline").textContent
-              : addedNode.querySelector(".chat-entry-content")?.textContent;
-          uniqueString += divTextContent + "-";
+            const divTextContent =
+              AeroKick && flusher.props.isAeroKick
+                ? addedNode.querySelector("span.bk-inline").textContent
+                : addedNode.querySelector(".chat-entry-content")?.textContent;
+            uniqueString += divTextContent + "-";
 
-          if (AeroKick && flusher.props.isAeroKick) {
-            const emoteElements = addedNode.querySelectorAll("img");
-            emoteElements.forEach((emoteElement) => {
-              const emoteValue = emoteElement.getAttribute("alt");
-              uniqueString += emoteValue;
+            if (AeroKick && flusher.props.isAeroKick) {
+              const emoteElements = addedNode.querySelectorAll("img");
+              emoteElements.forEach((emoteElement) => {
+                const emoteValue = emoteElement.getAttribute("alt");
+                uniqueString += emoteValue;
+              });
+            } else {
+              const emoteElements =
+                addedNode.querySelectorAll("[data-emote-name]");
+              emoteElements.forEach((emoteElement) => {
+                const emoteValue = emoteElement.getAttribute("data-emote-name");
+                uniqueString += emoteValue;
+              });
+            }
+
+            const exist = flusher.props.displayedMessages.find((obj) => {
+              return obj.key === uniqueString;
             });
-          } else {
-            const emoteElements =
-              addedNode.querySelectorAll("[data-emote-name]");
-            emoteElements.forEach((emoteElement) => {
-              const emoteValue = emoteElement.getAttribute("data-emote-name");
-              uniqueString += emoteValue;
-            });
+
+            if (exist && (!flusher.states.spamState || flusher.states.flushState)) return;
+
+            flusher.props.displayedMessages.push({ id: id, key: uniqueString });
           }
-
-          const exist = flusher.props.displayedMessages.find((obj) => {
-            return obj.key === uniqueString;
-          });
-
-          if (exist) return;
-
-          flusher.props.displayedMessages.push({ id: id, key: uniqueString });
         }
-      }
-
-      setTimeout(() => addMessage(addedNode, id, defaultAvatar), 150);
+        setTimeout(() => prepareMessage(addedNode, id, defaultAvatar, false), 150);
+      });
     }
 
-    function addMessage(node, id, defaultAvatar) {
+    async function prepareMessage(node, id, defaultAvatar, update) {
       const clonedNode = node.cloneNode(true);
 
       if (self.flusher.props.isAeroKick) {
@@ -364,8 +361,33 @@ export class FlusherMessages {
 
       clonedNode.classList.remove("mt-0.5");
 
-      flusher.props.elementQueue.push(clonedNode);
-      processElementQueue(flusher);
+      if (!update) {
+        addMessage();
+      } else { return clonedNode; }
+
+      function addMessage() {
+        flusher.props.elementQueue.push(clonedNode);
+        processElementQueue(flusher);
+
+        observeNestedChildren(node, id ?? getRandomInt(), clonedNode);
+
+        function getRandomInt() {
+          return Math.floor(Math.random() * (1000000 - 10000));
+        }
+
+        function observeNestedChildren(parentNode, id, clonedNode) {
+          const observer = new MutationObserver(async (mutations) => {
+            if (clonedNode) {
+              clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));
+            }
+          });
+
+          const observerConfig = { childList: true, subtree: true };
+          observer.observe(parentNode, observerConfig);
+
+          flusher.props.messageObservers.set(id, observer);
+        }
+      }
     }
 
     function waitForChat(parent) {

@@ -472,6 +472,13 @@
   -webkit-box-sizing: border-box;
 }
 
+.flusher-blue {
+  border: 1px solid blue;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .flusher-red,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .flusher-green {
   text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
