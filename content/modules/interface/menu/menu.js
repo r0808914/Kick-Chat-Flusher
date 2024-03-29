@@ -2,6 +2,7 @@ import { menu } from './element.js';
 import { createToggle, svgToggle } from '../toggle/toggle.js';
 import { dragElement } from '../../utils/drag.js';
 import { toTitleCase, logToConsole } from '../../utils/utils.js';
+import { checkPosition } from '../../utils/resize.js';
 
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
@@ -41,6 +42,7 @@ export function createMenu(flusher) {
       let overlayMenu = parent.querySelector('.flusher-menu-overlay');
       let keybindMenu = parent.querySelector('.flusher-menu-keybind');
       let aboutMenu = parent.querySelector('.flusher-menu-about');
+      let eventMenu = parent.querySelector('.flusher-menu-event');
 
       const closeBtn = parent.querySelector('.flusher-menu-close');
       closeBtn.addEventListener('mousedown', function (event) {
@@ -195,6 +197,23 @@ export function createMenu(flusher) {
 
       const keybindCloseBtn = parent.querySelector('.flusher-keybind-close');
       keybindCloseBtn.addEventListener('mousedown', function (event) {
+         hideMenu(flusher);
+      });
+
+      const eventBtn = parent.querySelector('.flusher-event');
+      eventBtn.addEventListener('mousedown', function (event) {
+         eventMenu.style.display = 'block';
+         settingsMenu.style.display = 'none';
+      });
+
+      const eventBackBtn = parent.querySelector('.flusher-event-back');
+      eventBackBtn.addEventListener('mousedown', function (event) {
+         eventMenu.style.display = 'none';
+         settingsMenu.style.display = 'block';
+      });
+
+      const eventCloseBtn = parent.querySelector('.flusher-event-close');
+      eventCloseBtn.addEventListener('mousedown', function (event) {
          hideMenu(flusher);
       });
 
@@ -459,6 +478,34 @@ export function createMenu(flusher) {
       if (flusher.states.timeState) timeToggle.classList.toggle(toggledClass);
       (!flusher.props.isVod || flusher.states.flushState) ? timeToggleContainer.style.display = 'none' : timeToggleContainer.style.display = 'flex';
 
+      const banToggleContainer = parent.querySelector('.flusher-event-ban');
+      const banToggle = banToggleContainer.querySelector('.flusher-toggle');
+      banToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newBanState = toggleElement.classList.contains(toggledClass);
+         flusher.states.bans = newBanState;
+
+         setExtensionStorageItem('flusher-event-bans', newBanState);
+      });
+
+      if (flusher.states.bans) banToggle.classList.toggle(toggledClass);
+
+      const deletedToggleContainer = parent.querySelector('.flusher-event-delete');
+      const deletedToggle = deletedToggleContainer.querySelector('.flusher-toggle');
+      deletedToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newDeletedState = toggleElement.classList.contains(toggledClass);
+         flusher.states.deleted = newDeletedState;
+
+         setExtensionStorageItem('flusher-event-deleted', newDeletedState);
+      });
+
+      if (flusher.states.deleted) deletedToggle.classList.toggle(toggledClass);
+
       const flusherToggleContainer = parent.querySelector('.flusher-flush');
       const flushToggle = flusherToggleContainer.querySelector('.flusher-toggle');
       flushToggle.addEventListener('mousedown', function (event) {
@@ -471,11 +518,17 @@ export function createMenu(flusher) {
 
          (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
 
+         flusher.container.style.display = 'none';
          if (flusher.states.chatEnabled && !flusher.states.flushState) dragElement(flusher);
 
          togglePointerEvents(flusher);
-         flusher.clear();
+
+         checkPosition(flusher, null, null);
+
          flusher.container.setAttribute('layout', newFlushState ? 'horizontal' : 'vertical');
+
+         flusher.clear();
+         flusher.container.style.display = 'flex';
 
          setExtensionStorageItem('flusher-flush', newFlushState);
       });
@@ -498,7 +551,7 @@ export function createMenu(flusher) {
          flusher.clear();
 
          svgToggle(flusher);
-         toggleEnableMenu();
+         /* toggleEnableMenu(); */
          togglePointerEvents(flusher);
 
          (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
@@ -526,6 +579,7 @@ export function createMenu(flusher) {
 
    function captureKeybind() {
       return new Promise(resolve => {
+         flusher.props.isCaptureKeybind = true;
          const keysPressed = {
             alt: false,
             ctrl: false,
@@ -539,6 +593,7 @@ export function createMenu(flusher) {
             } else {
                keysPressed.key = event.key;
                if (flusher.props.keydownSetListener) window.removeEventListener('keydown', flusher.props.keydownSetListener);
+               flusher.props.isCaptureKeybind = false;
                resolve(keysPressed);
             }
          };
@@ -555,7 +610,7 @@ export function createMenu(flusher) {
    }
 }
 
-export function toggleEnableMenu() {
+/* export function toggleEnableMenu() {
    var elementsToToggle = ['flusher-flush', 'flusher-settings', 'flusher-layoutMenu'];
    elementsToToggle.forEach(function (id) {
       var element = document.getElementById(id);
@@ -564,7 +619,7 @@ export function toggleEnableMenu() {
          flusher.states.chatEnabled ? flusher.video.style.display = 'flex' : flusher.video.style.display = 'none';
       }
    });
-}
+} */
 
 export function hideMenu(flusher) {
    const baseMenu = flusher.menu.querySelector('.flusher-menu-base');
@@ -573,7 +628,8 @@ export function hideMenu(flusher) {
    const overlayMenu = flusher.menu.querySelector('.flusher-menu-overlay');
    const messageMenu = flusher.menu.querySelector('.flusher-menu-message');
    const keybindMenu = flusher.menu.querySelector('.flusher-menu-keybind');
-   const anoutMenu = flusher.menu.querySelector('.flusher-menu-about');
+   const aboutMenu = flusher.menu.querySelector('.flusher-menu-about');
+   const eventMenu = flusher.menu.querySelector('.flusher-menu-event');
 
    flusher.menu.style.display = 'none';
    settingsMenu.style.display = 'none';
@@ -582,7 +638,8 @@ export function hideMenu(flusher) {
    overlayMenu.style.display = 'none';
    messageMenu.style.display = 'none';
    keybindMenu.style.display = 'none';
-   anoutMenu.style.display = 'none';
+   aboutMenu.style.display = 'none';
+   eventMenu.style.display = 'none';
 
    svgToggle(flusher);
    document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);

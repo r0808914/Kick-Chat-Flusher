@@ -268,6 +268,7 @@ class Flusher {
       }
     }
     if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
+    this.props.isCaptureKeybind = false;
     this.props.displayedMessages = [];
     this.props.messageObservers.forEach((observer, entryId) => {
       observer.disconnect();
@@ -584,7 +585,7 @@ class FlusherMessages {
         function observeNestedChildren(parentNode, id, clonedNode) {
           const observer = new MutationObserver(async () => {
             if (clonedNode) {
-              if (parentNode.querySelector('.chat-entry-content-deleted')) {
+              if (flusher.states.deleted && parentNode.querySelector('.chat-entry-content-deleted')) {
                 clonedNode.classList.add('flusher-red');
               } else {
                 clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));
@@ -701,6 +702,7 @@ class FlusherProps {
     this.messageObservers = new Map();
     this.keydownListener = null;
     this.keydownSetListener = null;
+    this.isCaptureKeybind = false;
   }
 }
 
@@ -720,25 +722,27 @@ __webpack_require__.r(__webpack_exports__);
 class FlusherStates {
   constructor() {
     this.backgroundStates = ['SMALL', 'LARGE', 'OFF'];
-    this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
-    this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
     this.backgroundState = 2;
+    this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
     this.positionState = 4;
+    this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
     this.sizeState = 1;
-    this.fontState = 1;
-    this.reply = false;
-    this.slide = true;
     this.flushState = false;
     this.chatEnabled = true;
     this.shadow = true;
-    this.spamState = true;
+    this.slide = true;
+    this.reply = false;
     this.timeState = false;
+    this.spamState = true;
+    this.fontState = 1;
     this.keybinds = {
       "overlay": "ALT + C",
-      "flush": "ALT + F",
+      "flush": "ALT + G",
       "menu": "ALT + M",
       "spam": "ALT + S"
     };
+    this.bans = true;
+    this.deleted = true;
   }
 }
 
@@ -881,16 +885,26 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-about flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
-      <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">About</div>
-      <div class="flex h-10 w-fit items-center justify-end">
-        <div style="width: 16px; height: 16px;" class="flusher-icon">
-          <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
-            <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
-          </svg>
+      <div class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Events</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
         </div>
       </div>
-    </div>
+      <div class="flusher-about flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">About</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="flusher-menu-keybind" style="display: none;">
@@ -961,34 +975,34 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       </button>
     </div>
     <div class="chat-actions-content">
-    <div class="flusher-store flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-    <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Web Store </div>
-    <div class="flex h-10 w-fit items-center justify-end">
-      <div style="width: 16px; height: 16px;" class="flusher-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
-          <path d="M5.52869 11.5287L10.9999 6.06125V9.5H12.4999V3.5H6.49994V5H9.93869L4.47119 10.4712L5.52869 11.5287Z" fill="currentColor"></path>
-        </svg>
+      <div class="flusher-store flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Web Store </div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
+              <path d="M5.52869 11.5287L10.9999 6.06125V9.5H12.4999V3.5H6.49994V5H9.93869L4.47119 10.4712L5.52869 11.5287Z" fill="currentColor"></path>
+            </svg>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <div class="flusher-home flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
-    <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Report Bugs </div>
-    <div class="flex h-10 w-fit items-center justify-end">
-      <div style="width: 16px; height: 16px;" class="flusher-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
-          <path d="M5.52869 11.5287L10.9999 6.06125V9.5H12.4999V3.5H6.49994V5H9.93869L4.47119 10.4712L5.52869 11.5287Z" fill="currentColor"></path>
-        </svg>
+      <div class="flusher-home flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Report Bugs </div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
+              <path d="M5.52869 11.5287L10.9999 6.06125V9.5H12.4999V3.5H6.49994V5H9.93869L4.47119 10.4712L5.52869 11.5287Z" fill="currentColor"></path>
+            </svg>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <div class="flusher-actions-item active:bg-secondary-lightest/60">
-  <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
-  <div class="flex h-10 w-fit items-center justify-end">
-    <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">0.9.7</div>
-  </div>
-</div>
+      <div class="flusher-actions-item active:bg-secondary-lightest/60">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">0.9.7</div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="flusher-menu-layout" style="display: none;">
@@ -1029,6 +1043,49 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
             <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
               <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
             </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Events</div>
+      </div>
+      <button class="flusher-event-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-delete flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Deleted</div>
+        <div class="flex h-10 w-fit pl-2 items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-ban flusher-actions-item">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Bans</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1157,13 +1214,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   clickOutsideHandler: () => (/* binding */ clickOutsideHandler),
 /* harmony export */   createMenu: () => (/* binding */ createMenu),
 /* harmony export */   hideMenu: () => (/* binding */ hideMenu),
-/* harmony export */   toggleEnableMenu: () => (/* binding */ toggleEnableMenu),
 /* harmony export */   togglePointerEvents: () => (/* binding */ togglePointerEvents)
 /* harmony export */ });
 /* harmony import */ var _element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./element.js */ "./modules/interface/menu/element.js");
 /* harmony import */ var _toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../toggle/toggle.js */ "./modules/interface/toggle/toggle.js");
 /* harmony import */ var _utils_drag_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../utils/drag.js */ "./modules/utils/drag.js");
 /* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../utils/utils.js */ "./modules/utils/utils.js");
+/* harmony import */ var _utils_resize_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../utils/resize.js */ "./modules/utils/resize.js");
+
 
 
 
@@ -1201,6 +1259,7 @@ function createMenu(flusher) {
     let overlayMenu = parent.querySelector('.flusher-menu-overlay');
     let keybindMenu = parent.querySelector('.flusher-menu-keybind');
     let aboutMenu = parent.querySelector('.flusher-menu-about');
+    let eventMenu = parent.querySelector('.flusher-menu-event');
     const closeBtn = parent.querySelector('.flusher-menu-close');
     closeBtn.addEventListener('mousedown', function (event) {
       hideMenu(flusher);
@@ -1331,6 +1390,20 @@ function createMenu(flusher) {
     });
     const keybindCloseBtn = parent.querySelector('.flusher-keybind-close');
     keybindCloseBtn.addEventListener('mousedown', function (event) {
+      hideMenu(flusher);
+    });
+    const eventBtn = parent.querySelector('.flusher-event');
+    eventBtn.addEventListener('mousedown', function (event) {
+      eventMenu.style.display = 'block';
+      settingsMenu.style.display = 'none';
+    });
+    const eventBackBtn = parent.querySelector('.flusher-event-back');
+    eventBackBtn.addEventListener('mousedown', function (event) {
+      eventMenu.style.display = 'none';
+      settingsMenu.style.display = 'block';
+    });
+    const eventCloseBtn = parent.querySelector('.flusher-event-close');
+    eventCloseBtn.addEventListener('mousedown', function (event) {
       hideMenu(flusher);
     });
     const layoutCloseBtn = parent.querySelector('.flusher-layout-close');
@@ -1532,6 +1605,26 @@ function createMenu(flusher) {
     });
     if (flusher.states.timeState) timeToggle.classList.toggle(toggledClass);
     !flusher.props.isVod || flusher.states.flushState ? timeToggleContainer.style.display = 'none' : timeToggleContainer.style.display = 'flex';
+    const banToggleContainer = parent.querySelector('.flusher-event-ban');
+    const banToggle = banToggleContainer.querySelector('.flusher-toggle');
+    banToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newBanState = toggleElement.classList.contains(toggledClass);
+      flusher.states.bans = newBanState;
+      setExtensionStorageItem('flusher-event-bans', newBanState);
+    });
+    if (flusher.states.bans) banToggle.classList.toggle(toggledClass);
+    const deletedToggleContainer = parent.querySelector('.flusher-event-delete');
+    const deletedToggle = deletedToggleContainer.querySelector('.flusher-toggle');
+    deletedToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newDeletedState = toggleElement.classList.contains(toggledClass);
+      flusher.states.deleted = newDeletedState;
+      setExtensionStorageItem('flusher-event-deleted', newDeletedState);
+    });
+    if (flusher.states.deleted) deletedToggle.classList.toggle(toggledClass);
     const flusherToggleContainer = parent.querySelector('.flusher-flush');
     const flushToggle = flusherToggleContainer.querySelector('.flusher-toggle');
     flushToggle.addEventListener('mousedown', function (event) {
@@ -1541,10 +1634,13 @@ function createMenu(flusher) {
       newFlushState ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
       flusher.states.flushState = newFlushState;
       flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
+      flusher.container.style.display = 'none';
       if (flusher.states.chatEnabled && !flusher.states.flushState) (0,_utils_drag_js__WEBPACK_IMPORTED_MODULE_2__.dragElement)(flusher);
       togglePointerEvents(flusher);
-      flusher.clear();
+      (0,_utils_resize_js__WEBPACK_IMPORTED_MODULE_4__.checkPosition)(flusher, null, null);
       flusher.container.setAttribute('layout', newFlushState ? 'horizontal' : 'vertical');
+      flusher.clear();
+      flusher.container.style.display = 'flex';
       setExtensionStorageItem('flusher-flush', newFlushState);
     });
     !flusher.states.chatEnabled ? flusherToggleContainer.style.display = 'none' : flusherToggleContainer.style.display = 'flex';
@@ -1559,7 +1655,7 @@ function createMenu(flusher) {
       if (newChatEnabled && flusher.container.attributes['layout']?.nodeValue === 'vertical') (0,_utils_drag_js__WEBPACK_IMPORTED_MODULE_2__.dragElement)(flusher);
       flusher.clear();
       (0,_toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__.svgToggle)(flusher);
-      toggleEnableMenu();
+      /* toggleEnableMenu(); */
       togglePointerEvents(flusher);
       flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
       flusher.states.flushState || !flusher.states.chatEnabled ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
@@ -1580,6 +1676,7 @@ function createMenu(flusher) {
   }
   function captureKeybind() {
     return new Promise(resolve => {
+      flusher.props.isCaptureKeybind = true;
       const keysPressed = {
         alt: false,
         ctrl: false,
@@ -1592,6 +1689,7 @@ function createMenu(flusher) {
         } else {
           keysPressed.key = event.key;
           if (flusher.props.keydownSetListener) window.removeEventListener('keydown', flusher.props.keydownSetListener);
+          flusher.props.isCaptureKeybind = false;
           resolve(keysPressed);
         }
       };
@@ -1607,16 +1705,18 @@ function createMenu(flusher) {
     });
   }
 }
-function toggleEnableMenu() {
-  var elementsToToggle = ['flusher-flush', 'flusher-settings', 'flusher-layoutMenu'];
-  elementsToToggle.forEach(function (id) {
-    var element = document.getElementById(id);
-    if (element) {
-      if (id === 'flusher-layoutMenu' && flusher.states.flushState === true && flusher.states.chatEnabled) return;
-      flusher.states.chatEnabled ? flusher.video.style.display = 'flex' : flusher.video.style.display = 'none';
-    }
-  });
-}
+
+/* export function toggleEnableMenu() {
+   var elementsToToggle = ['flusher-flush', 'flusher-settings', 'flusher-layoutMenu'];
+   elementsToToggle.forEach(function (id) {
+      var element = document.getElementById(id);
+      if (element) {
+         if (id === 'flusher-layoutMenu' && flusher.states.flushState === true && flusher.states.chatEnabled) return;
+         flusher.states.chatEnabled ? flusher.video.style.display = 'flex' : flusher.video.style.display = 'none';
+      }
+   });
+} */
+
 function hideMenu(flusher) {
   const baseMenu = flusher.menu.querySelector('.flusher-menu-base');
   const settingsMenu = flusher.menu.querySelector('.flusher-menu-settings');
@@ -1624,7 +1724,8 @@ function hideMenu(flusher) {
   const overlayMenu = flusher.menu.querySelector('.flusher-menu-overlay');
   const messageMenu = flusher.menu.querySelector('.flusher-menu-message');
   const keybindMenu = flusher.menu.querySelector('.flusher-menu-keybind');
-  const anoutMenu = flusher.menu.querySelector('.flusher-menu-about');
+  const aboutMenu = flusher.menu.querySelector('.flusher-menu-about');
+  const eventMenu = flusher.menu.querySelector('.flusher-menu-event');
   flusher.menu.style.display = 'none';
   settingsMenu.style.display = 'none';
   baseMenu.style.display = 'none';
@@ -1632,7 +1733,8 @@ function hideMenu(flusher) {
   overlayMenu.style.display = 'none';
   messageMenu.style.display = 'none';
   keybindMenu.style.display = 'none';
-  anoutMenu.style.display = 'none';
+  aboutMenu.style.display = 'none';
+  eventMenu.style.display = 'none';
   (0,_toggle_toggle_js__WEBPACK_IMPORTED_MODULE_1__.svgToggle)(flusher);
   document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);
 }
@@ -1722,6 +1824,8 @@ async function createChat(flusher) {
   flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
   flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
   flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+  flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
+  flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
   setCustomPosition(flusher);
   flusher.toggle = (0,_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__.createMenu)(flusher);
   flusher.video.parentNode.append(chatFlusher);
@@ -2377,6 +2481,7 @@ async function getBadges(data, flusher) {
 }
 function createUserBanMessage(data, flusher) {
   /* logToConsole("createUserBanMessage") */;
+  if (!flusher.states.bans) return;
   const bannedUser = data.user.username;
   const bannedByUser = data.banned_by.username;
   const banMessageContent = document.createElement("div");
@@ -3112,6 +3217,7 @@ class KeybindListener {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   checkPosition: () => (/* binding */ checkPosition),
 /* harmony export */   checkResize: () => (/* binding */ checkResize),
 /* harmony export */   stopScrollingInterval: () => (/* binding */ stopScrollingInterval)
 /* harmony export */ });
@@ -3128,7 +3234,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function checkResize(flusher) {
-  /* logToConsole("Check Resize"); */
   const target = flusher.props.external ? flusher.video : flusher.video.querySelector("video") ?? flusher.video;
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
@@ -3144,7 +3249,6 @@ function checkResize(flusher) {
           window.currentUrl = window.location.href;
           if ((width === null || width === 0) && (!height || height === 0)) {
             if (flusher !== null) {
-              /* logToConsole("Remove Chat"); */
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
@@ -3158,80 +3262,23 @@ function checkResize(flusher) {
             }
             return;
           }
-
-          /* logToConsole(
-            `Width ${Math.round(width)} height ${Math.round(height)}`
-          ); */
-
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
-          flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
-          flusher.toggle.setAttribute("domain", flusher.props.domain);
-          const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
-          flusher.container.setAttribute("layout", newFlushState);
-          flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
-          flusher.container.setAttribute("shadow", flusher.states.shadow);
-          flusher.container.setAttribute("background", flusher.states.backgroundStates[flusher.states.backgroundState]);
-          setAttribute(flusher.container, "font", flusher.states.sizeStates, flusher.states.fontState);
-          flusher.container.setAttribute("time", flusher.states.timeState);
-          if (flusher.props.isAeroKick) {
-            flusher.container.setAttribute("aerokick", "");
-          }
-          (0,_interface_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__.toggleEnableMenu)();
+
+          /* set data for css */
+          setAttributes();
+
+          /* toggleEnableMenu(); */
+
+          /* set overlay data within menu */
           (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_4__.setCustomPosition)(flusher);
-          const documentWidth = document.documentElement.clientWidth;
-          if (documentWidth < flusher.props.parentWidth / 2 + 10) {
-            flusher.props.isFullscreen = true;
-            startScrollingInterval(flusher);
-            flusher.props.videoSize = "fullscreen";
-          } else {
-            flusher.props.isFullscreen = false;
-            stopScrollingInterval(flusher);
-            if (document.querySelector('.sidebar')) {
-              flusher.props.videoSize = "default";
-            } else {
-              flusher.props.videoSize = "theater";
-            }
-          }
-          chrome.storage.local.get("positionsPerChannel", function (result) {
-            var positionsPerChannel = result.positionsPerChannel || {};
-            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
-            var existingPositionIndex = positionsArray.findIndex(function (item) {
-              return item.videoSize === flusher.props.videoSize;
-            });
-            if (existingPositionIndex !== -1) {
-              const position = positionsArray[existingPositionIndex].position;
-              if (position.top) {
-                flusher.container.removeAttribute("position");
-                var scaleFactor = window.innerWidth / window.outerWidth;
-                flusher.container.style.top = position.top > height ? height - 20 + "px" : Math.round(position.top * scaleFactor) + "px";
-                flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
-              } else {
-                flusher.container.style.top = "";
-                flusher.container.style.left = "";
-                flusher.container.style.alignItems = "";
-                setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
-              }
-              if (position.width) {
-                flusher.container.removeAttribute("size");
-                flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
-                flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
-              } else {
-                flusher.container.style.width = "";
-                flusher.container.style.height = "";
-                setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
-              }
-            } else {
-              flusher.container.style.top = "";
-              flusher.container.style.left = "";
-              flusher.container.style.alignItems = "";
-              flusher.container.style.width = "";
-              flusher.container.style.height = "";
-              setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
-              setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
-            }
-          });
+
+          /* check if fullscreen, theater, etc. */
+          detectViewMode();
+
+          /* set custom overlay position */
+          checkPosition(flusher, height, width);
           flusher.props.elementHeight = null;
           flusher.container.style.display = "flex";
           createIntroMessage(flusher);
@@ -3291,6 +3338,36 @@ function checkResize(flusher) {
     parent.removeChild(introContent);
     flusher.setVerticalWidth();
   }
+  function setAttributes() {
+    flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
+    flusher.toggle.setAttribute("domain", flusher.props.domain);
+    const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
+    flusher.container.setAttribute("layout", newFlushState);
+    flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
+    flusher.container.setAttribute("shadow", flusher.states.shadow);
+    flusher.container.setAttribute("background", flusher.states.backgroundStates[flusher.states.backgroundState]);
+    setAttribute(flusher.container, "font", flusher.states.sizeStates, flusher.states.fontState);
+    flusher.container.setAttribute("time", flusher.states.timeState);
+    if (flusher.props.isAeroKick) {
+      flusher.container.setAttribute("aerokick", "");
+    }
+  }
+  function detectViewMode() {
+    const documentWidth = document.documentElement.clientWidth;
+    if (documentWidth < flusher.props.parentWidth / 2 + 10) {
+      flusher.props.isFullscreen = true;
+      startScrollingInterval(flusher);
+      flusher.props.videoSize = "fullscreen";
+    } else {
+      flusher.props.isFullscreen = false;
+      stopScrollingInterval(flusher);
+      if (document.querySelector('.sidebar')) {
+        flusher.props.videoSize = "default";
+      } else {
+        flusher.props.videoSize = "theater";
+      }
+    }
+  }
 }
 function startScrollingInterval(flusher) {
   if (flusher.props.scrollIntervalId) return;
@@ -3308,6 +3385,59 @@ function stopScrollingInterval(flusher) {
   if (!flusher.props.scrollIntervalId) return;
   clearInterval(flusher.props.scrollIntervalId);
   flusher.props.scrollIntervalId = null;
+}
+function checkPosition(flusher, height, width) {
+  if (!height || !width) {
+    const rect = flusher.video.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+  }
+  if (flusher.states.flushState) {
+    flusher.container.style.top = "";
+    flusher.container.style.left = "";
+    flusher.container.style.alignItems = "";
+    flusher.container.style.width = "";
+    flusher.container.style.height = "";
+  } else {
+    chrome.storage.local.get("positionsPerChannel", function (result) {
+      var positionsPerChannel = result.positionsPerChannel || {};
+      var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+      var existingPositionIndex = positionsArray.findIndex(function (item) {
+        return item.videoSize === flusher.props.videoSize;
+      });
+      if (existingPositionIndex !== -1) {
+        const position = positionsArray[existingPositionIndex].position;
+        if (position.top) {
+          flusher.container.removeAttribute("position");
+          var scaleFactor = window.innerWidth / window.outerWidth;
+          flusher.container.style.top = position.top > height ? height - 50 + "px" : Math.round(position.top * scaleFactor) + "px";
+          flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
+        } else {
+          flusher.container.style.top = "";
+          flusher.container.style.left = "";
+          flusher.container.style.alignItems = "";
+          setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
+        }
+        if (position.width) {
+          flusher.container.removeAttribute("size");
+          flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
+          flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
+        } else {
+          flusher.container.style.width = "";
+          flusher.container.style.height = "";
+          setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
+        }
+      } else {
+        flusher.container.style.top = "";
+        flusher.container.style.left = "";
+        flusher.container.style.alignItems = "";
+        flusher.container.style.width = "";
+        flusher.container.style.height = "";
+        setAttribute(flusher.container, "position", flusher.states.positionStates, flusher.states.positionState);
+        setAttribute(flusher.container, "size", flusher.states.sizeStates, flusher.states.sizeState);
+      }
+    });
+  }
 }
 function scrollChat(flusher) {
   const chatBtn = document.querySelector("#chatroom .justify-center.absolute");
@@ -6728,7 +6858,7 @@ module.exports.formatError = function (err) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("61a2c367d927de505617")
+/******/ 		__webpack_require__.h = () => ("0318b8c01d29fc887228")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */

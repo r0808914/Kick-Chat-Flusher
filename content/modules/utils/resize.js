@@ -10,7 +10,6 @@ import { setCustomPosition } from "../interface/overlay.js";
 import Kick from "../site/kick.js";
 
 export function checkResize(flusher) {
-  /* logToConsole("Check Resize"); */
   const target = flusher.props.external
     ? flusher.video
     : flusher.video.querySelector("video") ?? flusher.video;
@@ -33,7 +32,6 @@ export function checkResize(flusher) {
 
           if ((width === null || width === 0) && (!height || height === 0)) {
             if (flusher !== null) {
-              /* logToConsole("Remove Chat"); */
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
@@ -42,6 +40,7 @@ export function checkResize(flusher) {
               for (const id of flusher.props.timeoutIds) {
                 clearTimeout(id);
               }
+
               flusher.provider.unbindRequests(flusher);
               flusher = null;
               if (init) Kick.init();
@@ -50,132 +49,23 @@ export function checkResize(flusher) {
             return;
           }
 
-          /* logToConsole(
-            `Width ${Math.round(width)} height ${Math.round(height)}`
-          ); */
-
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
 
-          flusher.container.style.setProperty(
-            "--flusher-width",
-            `-${flusher.props.parentWidth}px`
-          );
+          /* set data for css */
+          setAttributes();
 
-          flusher.toggle.setAttribute("domain", flusher.props.domain);
+          /* toggleEnableMenu(); */
 
-          const newFlushState =
-            flusher.states.flushState !== undefined
-              ? flusher.states.flushState
-                ? "horizontal"
-                : "vertical"
-              : flusher.states.flushState
-                ? "horizontal"
-                : "vertical";
-
-          flusher.container.setAttribute("layout", newFlushState);
-
-          flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
-
-          flusher.container.setAttribute("shadow", flusher.states.shadow);
-
-          flusher.container.setAttribute(
-            "background",
-            flusher.states.backgroundStates[flusher.states.backgroundState]
-          );
-
-          setAttribute(
-            flusher.container,
-            "font",
-            flusher.states.sizeStates,
-            flusher.states.fontState
-          );
-
-          flusher.container.setAttribute("time", flusher.states.timeState);
-
-          if (flusher.props.isAeroKick) {
-            flusher.container.setAttribute("aerokick", "");
-          }
-
-          toggleEnableMenu();
-
+          /* set overlay data within menu */
           setCustomPosition(flusher);
 
-          const documentWidth = document.documentElement.clientWidth;
-          if (documentWidth < flusher.props.parentWidth / 2 + 10) {
-            flusher.props.isFullscreen = true;
-            startScrollingInterval(flusher);
-            flusher.props.videoSize = "fullscreen";
-          } else {
-            flusher.props.isFullscreen = false;
-            stopScrollingInterval(flusher);
-            if (document.querySelector('.sidebar')) {
-              flusher.props.videoSize = "default";
-            } else {
-              flusher.props.videoSize = "theater";
-            }
-          }
+          /* check if fullscreen, theater, etc. */
+          detectViewMode();
 
-          chrome.storage.local.get("positionsPerChannel", function (result) {
-            var positionsPerChannel = result.positionsPerChannel || {};
-            var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
-
-            var existingPositionIndex = positionsArray.findIndex(function (item) {
-              return item.videoSize === flusher.props.videoSize;
-            });
-
-            if (existingPositionIndex !== -1) {
-              const position = positionsArray[existingPositionIndex].position;
-              if (position.top) {
-                flusher.container.removeAttribute("position");
-                var scaleFactor = window.innerWidth / window.outerWidth;
-                flusher.container.style.top = position.top > height ? height - 20 + "px" : Math.round(position.top * scaleFactor) + "px";
-                flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
-              } else {
-                flusher.container.style.top = "";
-                flusher.container.style.left = "";
-                flusher.container.style.alignItems = "";
-                setAttribute(
-                  flusher.container,
-                  "position",
-                  flusher.states.positionStates,
-                  flusher.states.positionState
-                );
-              } if (position.width) {
-                flusher.container.removeAttribute("size");
-                flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
-                flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
-              } else {
-                flusher.container.style.width = "";
-                flusher.container.style.height = "";
-                setAttribute(
-                  flusher.container,
-                  "size",
-                  flusher.states.sizeStates,
-                  flusher.states.sizeState
-                );
-              }
-            } else {
-              flusher.container.style.top = "";
-              flusher.container.style.left = "";
-              flusher.container.style.alignItems = "";
-              flusher.container.style.width = "";
-              flusher.container.style.height = "";
-              setAttribute(
-                flusher.container,
-                "position",
-                flusher.states.positionStates,
-                flusher.states.positionState
-              );
-              setAttribute(
-                flusher.container,
-                "size",
-                flusher.states.sizeStates,
-                flusher.states.sizeState
-              );
-            }
-          });
+          /* set custom overlay position */
+          checkPosition(flusher, height, width);
 
           flusher.props.elementHeight = null;
           flusher.container.style.display = "flex";
@@ -260,6 +150,65 @@ export function checkResize(flusher) {
     parent.removeChild(introContent);
     flusher.setVerticalWidth();
   }
+
+  function setAttributes() {
+    flusher.container.style.setProperty(
+      "--flusher-width",
+      `-${flusher.props.parentWidth}px`
+    );
+
+    flusher.toggle.setAttribute("domain", flusher.props.domain);
+
+    const newFlushState =
+      flusher.states.flushState !== undefined
+        ? flusher.states.flushState
+          ? "horizontal"
+          : "vertical"
+        : flusher.states.flushState
+          ? "horizontal"
+          : "vertical";
+
+    flusher.container.setAttribute("layout", newFlushState);
+
+    flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
+
+    flusher.container.setAttribute("shadow", flusher.states.shadow);
+
+    flusher.container.setAttribute(
+      "background",
+      flusher.states.backgroundStates[flusher.states.backgroundState]
+    );
+
+    setAttribute(
+      flusher.container,
+      "font",
+      flusher.states.sizeStates,
+      flusher.states.fontState
+    );
+
+    flusher.container.setAttribute("time", flusher.states.timeState);
+
+    if (flusher.props.isAeroKick) {
+      flusher.container.setAttribute("aerokick", "");
+    }
+  }
+
+  function detectViewMode() {
+    const documentWidth = document.documentElement.clientWidth;
+    if (documentWidth < flusher.props.parentWidth / 2 + 10) {
+      flusher.props.isFullscreen = true;
+      startScrollingInterval(flusher);
+      flusher.props.videoSize = "fullscreen";
+    } else {
+      flusher.props.isFullscreen = false;
+      stopScrollingInterval(flusher);
+      if (document.querySelector('.sidebar')) {
+        flusher.props.videoSize = "default";
+      } else {
+        flusher.props.videoSize = "theater";
+      }
+    }
+  }
 }
 
 function startScrollingInterval(flusher) {
@@ -280,6 +229,81 @@ export function stopScrollingInterval(flusher) {
   if (!flusher.props.scrollIntervalId) return;
   clearInterval(flusher.props.scrollIntervalId);
   flusher.props.scrollIntervalId = null;
+}
+
+export function checkPosition(flusher, height, width) {
+  if (!height || !width) {
+    const rect = flusher.video.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+  }
+  if (flusher.states.flushState) {
+    flusher.container.style.top = "";
+    flusher.container.style.left = "";
+    flusher.container.style.alignItems = "";
+    flusher.container.style.width = "";
+    flusher.container.style.height = "";
+  } else {
+    chrome.storage.local.get("positionsPerChannel", function (result) {
+      var positionsPerChannel = result.positionsPerChannel || {};
+      var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+      var existingPositionIndex = positionsArray.findIndex(function (item) {
+        return item.videoSize === flusher.props.videoSize;
+      });
+
+      if (existingPositionIndex !== -1) {
+        const position = positionsArray[existingPositionIndex].position;
+        if (position.top) {
+          flusher.container.removeAttribute("position");
+          var scaleFactor = window.innerWidth / window.outerWidth;
+          flusher.container.style.top = position.top > height ? height - 50 + "px" : Math.round(position.top * scaleFactor) + "px";
+          flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
+        } else {
+          flusher.container.style.top = "";
+          flusher.container.style.left = "";
+          flusher.container.style.alignItems = "";
+          setAttribute(
+            flusher.container,
+            "position",
+            flusher.states.positionStates,
+            flusher.states.positionState
+          );
+        } if (position.width) {
+          flusher.container.removeAttribute("size");
+          flusher.container.style.width = Math.round(position.width * scaleFactor) + "px";
+          flusher.container.style.height = Math.round(position.height * scaleFactor) + "px";
+        } else {
+          flusher.container.style.width = "";
+          flusher.container.style.height = "";
+          setAttribute(
+            flusher.container,
+            "size",
+            flusher.states.sizeStates,
+            flusher.states.sizeState
+          );
+        }
+      } else {
+        flusher.container.style.top = "";
+        flusher.container.style.left = "";
+        flusher.container.style.alignItems = "";
+        flusher.container.style.width = "";
+        flusher.container.style.height = "";
+        setAttribute(
+          flusher.container,
+          "position",
+          flusher.states.positionStates,
+          flusher.states.positionState
+        );
+        setAttribute(
+          flusher.container,
+          "size",
+          flusher.states.sizeStates,
+          flusher.states.sizeState
+        );
+      }
+    });
+  }
 }
 
 function scrollChat(flusher) {

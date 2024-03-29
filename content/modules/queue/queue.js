@@ -363,6 +363,7 @@ async function getBadges(data, flusher) {
 
 export function createUserBanMessage(data, flusher) {
   /* logToConsole("createUserBanMessage") */;
+  if (!flusher.states.bans) return;
 
   const bannedUser = data.user.username;
   const bannedByUser = data.banned_by.username;

@@ -364,7 +364,7 @@ export class FlusherMessages {
         function observeNestedChildren(parentNode, id, clonedNode) {
           const observer = new MutationObserver(async () => {
             if (clonedNode) {
-              if (parentNode.querySelector('.chat-entry-content-deleted')) {
+              if (flusher.states.deleted && parentNode.querySelector('.chat-entry-content-deleted')) {
                 clonedNode.classList.add('flusher-red');
               } else {
                 clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));

@@ -1,19 +1,28 @@
 export class FlusherStates {
   constructor() {
     this.backgroundStates = ['SMALL', 'LARGE', 'OFF'];
-    this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
-    this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
     this.backgroundState = 2;
+
+    this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
     this.positionState = 4;
+
+    this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
     this.sizeState = 1;
-    this.fontState = 1;
-    this.reply = false;
-    this.slide = true;
+
     this.flushState = false;
     this.chatEnabled = true;
+
     this.shadow = true;
-    this.spamState = true;
+    this.slide = true;
+    this.reply = false;
     this.timeState = false;
-    this.keybinds = { "overlay": "ALT + C", "flush": "ALT + F", "menu": "ALT + M", "spam": "ALT + S" };
+
+    this.spamState = true;
+    this.fontState = 1;
+
+    this.keybinds = { "overlay": "ALT + C", "flush": "ALT + G", "menu": "ALT + M", "spam": "ALT + S" };
+
+    this.bans = true;
+    this.deleted = true;
   }
 }

@@ -56,6 +56,7 @@ export class Flusher {
 		}
 
 		if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
+		this.props.isCaptureKeybind = false;
 
 		this.props.displayedMessages = [];
 

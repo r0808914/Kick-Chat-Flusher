@@ -24,5 +24,6 @@ export class FlusherProps {
     this.messageObservers = new Map();
     this.keydownListener = null;
     this.keydownSetListener = null;
+    this.isCaptureKeybind = false;
   }
 }
