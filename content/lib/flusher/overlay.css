@@ -13,25 +13,42 @@
   will-change: transform;
 }
 
-.flusher-messages .chatroom-event-subgift__container {
+/* .flusher-messages[layout="horizontal"] .chat-entry-username {
+  vertical-align: text-top;
+} */
+
+/* .flusher-messages[layout="horizontal"] .font-bold.text-white,
+.flusher-messages[layout="horizontal"] .chat-entry-content {
+  vertical-align: text-bottom;
+} */
+
+.flusher-messages .chatroom-event-subgift__container,
+.flusher-messages .chatroom-event-sub__container,
+.flusher-messages .chatroom-event-ban__container,
+.flusher-messages .chatroom-event-unban__container {
   margin-left: 0;
   margin-right: 0;
 }
 
+.flusher-messages .mifu-timedout-message {
+  background-color: unset !important;
+  border: 2px solid red;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+.flusher-messages .mifu-timedout-message>* {
+  color: white;
+  opacity: 1;
+}
+
+.flusher-messages .mifu-timedout-message #mifu-event-from {
+  display: none;
+}
+
 .flusher-messages[layout="horizontal"] .flusher-kick .span {
   vertical-align: middle;
-}
-
-.flusher-messages[font="LARGE"][layout="horizontal"] .flusher-kick {
-  top: calc(var(--padding-extra) + var(--row) * (2em + 10px));
-}
-
-.flusher-messages[font="SMALL"][layout="horizontal"] .flusher-kick {
-  top: calc(var(--padding-extra) + var(--row) * 2em);
-}
-
-.flusher-messages[font="NORMAL"][layout="horizontal"] .flusher-kick {
-  top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
 }
 
 .flusher-messages[layout="horizontal"] .chat-entry {
@@ -39,11 +56,14 @@
   min-height: auto !important;
   overflow: hidden;
   padding: 0 !important;
+  border: none !important;
 }
 
+.flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[layout="vertical"][aerokick] .bk-inline,
 .flusher-messages[layout="vertical"] .chat-entry-content {
-  font-weight: 600 !important;
+  font-weight: 800 !important;
 }
 
 .flusher-messages[layout="vertical"][aerokick]>div,
@@ -59,8 +79,8 @@
 .flusher-messages[shadow="true"].flusher-messages[aerokick] span[class="bk-inline"],
 .flusher-messages .chat-entry-content-deleted,
 .flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
+  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
+    1px 1px 1px rgba(0, 0, 0, 0.6);
 }
 
 .flusher-messages[aerokick] div.bk-text-sm,
@@ -68,7 +88,13 @@
 .flusher-messages .chat-entry-content-deleted,
 .flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
   color: white !important;
-  opacity: 1;
+  opacity: .9;
+  white-space: normal;
+}
+
+.flusher-messages[aerokick] div.bk-text-sm,
+.flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
+  font-style: italic;
 }
 
 .flusher-messages {
@@ -106,11 +132,30 @@
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600 !important;
-  height: 2em;
   max-width: calc(100% - 20px);
   position: absolute;
-  top: calc(var(--padding-extra) + var(--row) * (2em + var(--extra-per-row)));
   will-change: transform;
+}
+
+.flusher-messages[layout="horizontal"][font="LARGE"] .flusher-message,
+.flusher-messages[layout="horizontal"][font="LARGE"] .flusher-kick {
+  height: 38px;
+  line-height: 16px;
+  top: calc(var(--padding-extra) + var(--row) * 43px);
+}
+
+.flusher-messages[layout="horizontal"][font="NORMAL"] .flusher-message,
+.flusher-messages[layout="horizontal"][font="NORMAL"] .flusher-kick {
+  height: 32px;
+  line-height: 16px;
+  top: calc(var(--padding-extra) + var(--row) * 37px);
+}
+
+.flusher-messages[layout="horizontal"][font="SMALL"] .flusher-message,
+.flusher-messages[layout="horizontal"][font="SMALL"] .flusher-kick {
+  height: 25px;
+  line-height: 16px;
+  top: calc(var(--padding-extra) + var(--row) * 30px);
 }
 
 .flusher-messages[layout="horizontal"] .flusher-message .bk-inline,
@@ -124,8 +169,8 @@
 }
 
 .flusher-messages[shadow="true"] a {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
+  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
+    1px 1px 1px rgba(0, 0, 0, 0.6);
 }
 
 .flusher-messages a {
@@ -157,7 +202,7 @@
 .flusher-messages[layout="vertical"] .flusher-username {
   display: inline-block;
   vertical-align: middle;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
 .flusher-messages[layout="vertical"] .flusher-emote {
@@ -167,8 +212,8 @@
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .flusher-message {
-  text-shadow: -1px -1px 3px black, 1px -1px 3px black, -1px 1px 3px black,
-    1px 1px 3px black;
+  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
+    1px 1px 1px rgba(0, 0, 0, 0.6);
 }
 
 .flusher-messages[layout="vertical"] .flusher-message {
@@ -298,18 +343,6 @@
   height: 25%;
 }
 
-.flusher-messages[layout="horizontal"][font="LARGE"] .flusher-kick {
-  height: 2.4em;
-}
-
-.flusher-messages[layout="horizontal"][font="NORMAL"] .flusher-kick {
-  height: 2em;
-}
-
-.flusher-messages[layout="horizontal"][font="SMALL"] .flusher-kick {
-  height: 1.6em;
-}
-
 .flusher-animation {
   animation: slide-in 16s linear;
 }
@@ -336,15 +369,15 @@
 }
 
 .flusher-messages[font="NORMAL"] div>span:nth-child(n + 3) img {
-  height: 28px;
+  height: 26px;
 }
 
 .flusher-messages[font="SMALL"] div>span:nth-child(n + 3) img {
-  height: 22px;
+  height: 20px;
 }
 
 .flusher-messages[font="LARGE"] div>span:nth-child(n + 3) img {
-  height: 32px;
+  height: 29px;
 }
 
 .flusher-messages[layout="vertical"][font="LARGE"]>div {
@@ -370,34 +403,40 @@
   font-size: large;
 }
 
+.flusher-messages .text-xs .shrink-0 {
+  display: none;
+}
+
 .flusher-messages[font="SMALL"] .text-xs .truncate {
   font-size: 10px;
+  line-height: normal;
+  margin-bottom: -0.4rem;
+  padding-bottom: 5px;
+  padding-right: 5px;
 }
 
 .flusher-messages[font="NORMAL"] .text-xs .truncate {
   font-size: 14px;
-  padding-bottom: 0.1rem;
+  line-height: normal;
+  margin-bottom: -0.3rem;
+  padding-bottom: 5px;
+  padding-right: 5px;
 }
 
 .flusher-messages[font="LARGE"] .text-xs .truncate {
   font-size: 16px;
-  padding-bottom: 0.1rem;
+  line-height: normal;
+  margin-bottom: -0.2rem;
+  padding-bottom: 5px;
+  padding-right: 5px;
 }
 
-.flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
-}
-
-.flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
-}
-
-.flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
-    1px 1px 2px black;
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"],
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"] {
+  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
+    1px 1px 1px rgba(0, 0, 0, 0.6);
 }
 
 .flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry {
@@ -405,46 +444,14 @@
   min-height: 28px;
 }
 
-.flusher-messages[shadow="true"].flusher-messages[font="SMALL"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
-}
-
-.flusher-messages[shadow="true"].flusher-messages[font="SMALL"][layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[font="SMALL"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
-}
-
-.flusher-messages[shadow="true"].flusher-messages[font="SMALL"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
-}
-
 .flusher-messages[font="SMALL"] .chat-entry {
   padding: 0rem 0.2rem !important;
   min-height: 24px;
 }
 
-.flusher-messages[shadow="true"].flusher-messages[font="LARGE"][layout="vertical"] .chat-entry div>span:nth-child(n + 3) {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
-    1px 1px 2px black;
-}
-
-.flusher-messages[shadow="true"].flusher-messages[font="NORMAL"][layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[font="LARGE"][layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
-}
-
-.flusher-messages[shadow="true"].flusher-messages[font="LARGE"][layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black,
-    1px 1px 2px black;
-}
-
 .flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  font-weight: 700;
+  font-weight: 900;
 }
 
 .flusher-messages[font="LARGE"] .chat-entry {
@@ -471,30 +478,21 @@
 }
 
 .flusher-green {
-  border: 1px solid green;
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+  border: 2px solid green;
 }
 
 .flusher-red {
-  border: 1px solid red;
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+  border: 2px solid red;
 }
 
 .flusher-blue {
-  border: 1px solid blue;
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+  border: 2px solid blue;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .flusher-red,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .flusher-green {
-  text-shadow: -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black,
-    1px 1px 1px black;
+  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
+    1px 1px 1px rgba(0, 0, 0, 0.6);
 }
 
 .flusher-messages[layout="vertical"] .flusher-red,

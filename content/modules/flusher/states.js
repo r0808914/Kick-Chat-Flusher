@@ -9,12 +9,12 @@ export class FlusherStates {
     this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
     this.sizeState = 1;
 
-    this.flushState = false;
     this.chatEnabled = true;
+    this.flushState = false;
 
     this.shadow = true;
     this.slide = true;
-    this.reply = false;
+    this.reply = true;
     this.timeState = false;
 
     this.spamState = true;

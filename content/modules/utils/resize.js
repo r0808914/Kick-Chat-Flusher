@@ -35,7 +35,7 @@ export function checkResize(flusher) {
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
-              flusher.props.keydownListener.stopListening();
+              if (flusher.props.keydownListener) flusher.props.keydownListener.stopListening();
 
               for (const id of flusher.props.timeoutIds) {
                 clearTimeout(id);

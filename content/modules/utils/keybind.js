@@ -16,6 +16,7 @@ export class KeybindListener {
    }
 
    handleKeyDown(event) {
+      if (this.flusher.props.isCaptureKeybind) return;
       if (event.key.length === 1) {
          this.nonModifierKey = event.key.toUpperCase();
       } else if (event.key === 'Alt' || event.key === 'Control' || event.key === 'Shift') {

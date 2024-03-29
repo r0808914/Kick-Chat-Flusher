@@ -65,8 +65,6 @@ export function dragElement(flusher) {
 			height: Math.round(rect.height) / scaleFactor
 		};
 
-		console.log(newPosition);
-
 		if (event) {
 			flusher.container.style.top = Math.round(newPosition.top * scaleFactor) + "px";
 			flusher.container.style.left = Math.round(newPosition.left * scaleFactor) + "px";

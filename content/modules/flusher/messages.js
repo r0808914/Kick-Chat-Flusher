@@ -56,28 +56,28 @@ export class FlusherMessages {
   setupWebSocket(flusher) {
     if (this.socket) return;
 
-    /* console.log('run test');
-
-    const eventData = {
-      "event": "App\\Events\\UserBannedEvent",
-      "channel": "chatrooms.123456.v2",
-      "data": {
-        "id": "7b1d6e2c-ba4f-4d88-87b0-9c9e67a0e731",
-        "user": {
-          "id": 1234567,
-          "username": "User123",
-          "slug": "user123"
-        },
-        "banned_by": {
-          "id": 0,
-          "username": "Mod123",
-          "slug": "mod123"
-        },
-        "expires_at": "2024-03-21T14:18:30+00:00"
-      }
-    };
-
-    createUserBanMessage(eventData.data, flusher); */
+    /*  console.log('run test');
+ 
+     const eventData = {
+       "event": "App\\Events\\UserBannedEvent",
+       "channel": "chatrooms.123456.v2",
+       "data": {
+         "id": "7b1d6e2c-ba4f-4d88-87b0-9c9e67a0e731",
+         "user": {
+           "id": 1234567,
+           "username": "User123",
+           "slug": "user123"
+         },
+         "banned_by": {
+           "id": 0,
+           "username": "Mod123",
+           "slug": "mod123"
+         },
+         "expires_at": "2024-03-21T14:18:30+00:00"
+       }
+     };
+ 
+     createUserBanMessage(eventData.data, flusher); */
 
     const webSocketUrl = "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false";
 
@@ -205,6 +205,7 @@ export class FlusherMessages {
 
           if (!flusher.states.spamState || flusher.states.flushState) {
             let uniqueString = "";
+            let emoteElements;
             uniqueString += userId + "-";
 
             const divTextContent =
@@ -214,19 +215,21 @@ export class FlusherMessages {
             uniqueString += divTextContent + "-";
 
             if (AeroKick && flusher.props.isAeroKick) {
-              const emoteElements = addedNode.querySelectorAll("img");
+              emoteElements = addedNode.querySelectorAll("img");
               emoteElements.forEach((emoteElement) => {
                 const emoteValue = emoteElement.getAttribute("alt");
                 uniqueString += emoteValue;
               });
             } else {
-              const emoteElements =
+              emoteElements =
                 addedNode.querySelectorAll("[data-emote-name]");
               emoteElements.forEach((emoteElement) => {
                 const emoteValue = emoteElement.getAttribute("data-emote-name");
                 uniqueString += emoteValue;
               });
             }
+
+            if (!uniqueString && !emoteElements && flusher.states.flushState) return;
 
             const exist = flusher.props.displayedMessages.find((obj) => {
               return obj.key === uniqueString;
