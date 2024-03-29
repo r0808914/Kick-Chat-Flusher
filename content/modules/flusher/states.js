@@ -14,5 +14,6 @@ export class FlusherStates {
     this.shadow = true;
     this.spamState = true;
     this.timeState = false;
+    this.keybinds = { "overlay": "ALT + C", "flush": "ALT + F", "menu": "ALT + M", "spam": "ALT + S" };
   }
 }

@@ -39,6 +39,8 @@ export function createMenu(flusher) {
       let layoutMenu = parent.querySelector('.flusher-menu-layout');
       let messageMenu = parent.querySelector('.flusher-menu-message');
       let overlayMenu = parent.querySelector('.flusher-menu-overlay');
+      let keybindMenu = parent.querySelector('.flusher-menu-keybind');
+      let aboutMenu = parent.querySelector('.flusher-menu-about');
 
       const closeBtn = parent.querySelector('.flusher-menu-close');
       closeBtn.addEventListener('mousedown', function (event) {
@@ -178,6 +180,24 @@ export function createMenu(flusher) {
          hideMenu(flusher);
       });
 
+      const keybindBtn = parent.querySelector('.flusher-keybind');
+      keybindBtn.addEventListener('mousedown', function (event) {
+         reloadKeybinds();
+         keybindMenu.style.display = 'block';
+         settingsMenu.style.display = 'none';
+      });
+
+      const keybindBackBtn = parent.querySelector('.flusher-keybind-back');
+      keybindBackBtn.addEventListener('mousedown', function (event) {
+         keybindMenu.style.display = 'none';
+         settingsMenu.style.display = 'block';
+      });
+
+      const keybindCloseBtn = parent.querySelector('.flusher-keybind-close');
+      keybindCloseBtn.addEventListener('mousedown', function (event) {
+         hideMenu(flusher);
+      });
+
       const layoutCloseBtn = parent.querySelector('.flusher-layout-close');
       layoutCloseBtn.addEventListener('mousedown', function (event) {
          hideMenu(flusher);
@@ -210,6 +230,23 @@ export function createMenu(flusher) {
       messageBackBtn.addEventListener('mousedown', function (event) {
          messageMenu.style.display = 'none';
          layoutMenu.style.display = 'block';
+      });
+
+      const aboutCloseBtn = parent.querySelector('.flusher-about-close');
+      aboutCloseBtn.addEventListener('mousedown', function (event) {
+         hideMenu(flusher);
+      });
+
+      const aboutMenuBtn = parent.querySelector('.flusher-about');
+      aboutMenuBtn.addEventListener('mousedown', function (event) {
+         aboutMenu.style.display = 'block';
+         settingsMenu.style.display = 'none';
+      });
+
+      const aboutBackBtn = parent.querySelector('.flusher-about-back');
+      aboutBackBtn.addEventListener('mousedown', function (event) {
+         aboutMenu.style.display = 'none';
+         settingsMenu.style.display = 'block';
       });
 
       const overlayCloseBtn = parent.querySelector('.flusher-overlay-close');
@@ -329,6 +366,78 @@ export function createMenu(flusher) {
 
       if (flusher.states.shadow) shadowToggle.classList.toggle(toggledClass);
 
+      const keybindOverlayBtn = keybindMenu.querySelector('.flusher-keybind-overlay');
+      const divInsidekeybindOverlay = keybindOverlayBtn.querySelector('div:empty');
+
+      keybindOverlayBtn.addEventListener('mousedown', async function (event) {
+         reloadKeybinds();
+         divInsidekeybindOverlay.textContent = `waiting`;
+
+         const keyCombination = await captureKeybind();
+
+         let keybind = `${keyCombination.alt ? 'ALT + ' : ''}${keyCombination.ctrl ? 'CTRL + ' : ''}${keyCombination.shift ? 'SHIFT + ' : ''}${keyCombination.key.toUpperCase()}`;
+         keybind = keybind.trim();
+
+         divInsidekeybindOverlay.textContent = keybind
+
+         flusher.states.keybinds.overlay = keybind;
+         setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+      });
+
+      const keybindFlushBtn = keybindMenu.querySelector('.flusher-keybind-flush');
+      const divInsidekeybindFlush = keybindFlushBtn.querySelector('div:empty');
+
+      keybindFlushBtn.addEventListener('mousedown', async function (event) {
+         reloadKeybinds();
+         divInsidekeybindFlush.textContent = `waiting`;
+
+         const keyCombination = await captureKeybind();
+
+         let keybind = `${keyCombination.alt ? 'ALT + ' : ''}${keyCombination.ctrl ? 'CTRL + ' : ''}${keyCombination.shift ? 'SHIFT + ' : ''}${keyCombination.key.toUpperCase()}`;
+         keybind = keybind.trim();
+
+         divInsidekeybindFlush.textContent = keybind
+
+         flusher.states.keybinds.flush = keybind;
+         setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+      });
+
+      const keybindSpamBtn = keybindMenu.querySelector('.flusher-keybind-spam');
+      const divInsidekeybindSpam = keybindSpamBtn.querySelector('div:empty');
+
+      keybindSpamBtn.addEventListener('mousedown', async function (event) {
+         reloadKeybinds();
+         divInsidekeybindSpam.textContent = `waiting`;
+
+         const keyCombination = await captureKeybind();
+
+         let keybind = `${keyCombination.alt ? 'ALT + ' : ''}${keyCombination.ctrl ? 'CTRL + ' : ''}${keyCombination.shift ? 'SHIFT + ' : ''}${keyCombination.key.toUpperCase()}`;
+         keybind = keybind.trim();
+
+         divInsidekeybindSpam.textContent = keybind
+
+         flusher.states.keybinds.spam = keybind;
+         setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+      });
+
+      /* const keybindMenuBtn = keybindMenu.querySelector('.flusher-keybind-menu');
+      const divInsidekeybindMenu = keybindMenuBtn.querySelector('div:empty');
+
+      keybindMenuBtn.addEventListener('mousedown', async function (event) {
+         reloadKeybinds();
+         divInsidekeybindMenu.textContent = `waiting`;
+
+         const keyCombination = await captureKeybind();
+
+         let keybind = `${keyCombination.alt ? 'ALT + ' : ''}${keyCombination.ctrl ? 'CTRL + ' : ''}${keyCombination.shift ? 'SHIFT + ' : ''}${keyCombination.key.toUpperCase()}`;
+         keybind = keybind.trim();
+
+         divInsidekeybindMenu.textContent = keybind
+
+         flusher.states.keybinds.menu = keybind;
+         setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+      }); */
+
       const timeToggleContainer = messageMenu.querySelector('.flusher-time');
       const timeToggle = timeToggleContainer.querySelector('.flusher-toggle');
       timeToggle.addEventListener('mousedown', function (event) {
@@ -404,7 +513,38 @@ export function createMenu(flusher) {
 
       if (flusher.states.chatEnabled) flusherToggle.classList.toggle(toggledClass);
 
+      async function reloadKeybinds() {
+         if (flusher.props.keydownSetListener) window.removeEventListener('keydown', flusher.props.keydownSetListener);
+         divInsidekeybindOverlay.textContent = flusher.states.keybinds.overlay;
+         divInsidekeybindFlush.textContent = flusher.states.keybinds.flush;
+         divInsidekeybindSpam.textContent = flusher.states.keybinds.spam;
+         /* divInsidekeybindMenu.textContent = flusher.states.keybinds.menu; */
+      }
+
       return createToggle(flusher);
+   }
+
+   function captureKeybind() {
+      return new Promise(resolve => {
+         const keysPressed = {
+            alt: false,
+            ctrl: false,
+            shift: false,
+            key: null
+         };
+
+         flusher.props.keydownSetListener = function (event) {
+            if (event.key === 'Alt' || event.key === 'Control' || event.key === 'Shift') {
+               keysPressed[event.key.toLowerCase()] = true;
+            } else {
+               keysPressed.key = event.key;
+               if (flusher.props.keydownSetListener) window.removeEventListener('keydown', flusher.props.keydownSetListener);
+               resolve(keysPressed);
+            }
+         };
+
+         window.addEventListener('keydown', flusher.props.keydownSetListener);
+      });
    }
 
    function setExtensionStorageItem(key, value) {
@@ -432,6 +572,8 @@ export function hideMenu(flusher) {
    const layoutMenu = flusher.menu.querySelector('.flusher-menu-layout');
    const overlayMenu = flusher.menu.querySelector('.flusher-menu-overlay');
    const messageMenu = flusher.menu.querySelector('.flusher-menu-message');
+   const keybindMenu = flusher.menu.querySelector('.flusher-menu-keybind');
+   const anoutMenu = flusher.menu.querySelector('.flusher-menu-about');
 
    flusher.menu.style.display = 'none';
    settingsMenu.style.display = 'none';
@@ -439,6 +581,8 @@ export function hideMenu(flusher) {
    layoutMenu.style.display = 'none';
    overlayMenu.style.display = 'none';
    messageMenu.style.display = 'none';
+   keybindMenu.style.display = 'none';
+   anoutMenu.style.display = 'none';
 
    svgToggle(flusher);
    document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);

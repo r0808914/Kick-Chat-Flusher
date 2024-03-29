@@ -55,6 +55,8 @@ export class Flusher {
 			}
 		}
 
+		if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
+
 		this.props.displayedMessages = [];
 
 		this.props.messageObservers.forEach((observer, entryId) => {

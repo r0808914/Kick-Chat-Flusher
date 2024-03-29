@@ -22,5 +22,7 @@ export class FlusherProps {
     this.maxRows = 99;
     this.isKickTools = false;
     this.messageObservers = new Map();
+    this.keydownListener = null;
+    this.keydownSetListener = null;
   }
 }

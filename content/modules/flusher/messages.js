@@ -3,7 +3,6 @@ import { logToConsole } from "../utils/utils.js";
 
 export class FlusherMessages {
   constructor() {
-    /* logToConsole("Create MessageProvider"); */
     this.socket = null;
     this.nativeChatObserver = null;
     this.channels = new Set();
@@ -11,11 +10,7 @@ export class FlusherMessages {
 
   subscribeChannel(flusher) {
     const id = flusher.props.chatroomId;
-    if (!id) return;
-    if (this.channels.has(id)) {
-      /* logToConsole(`Channel ${id} Is Already Subscribed.`); */
-      return;
-    }
+    if (!id || this.channels.has(id)) return;
 
     const subscriptionMessage = {
       event: "pusher:subscribe",
@@ -48,13 +43,10 @@ export class FlusherMessages {
       const data = await response.json();
 
       if (data && data.data && data.data.messages) {
-        /* logToConsole(`History Has ${data.data.messages.length} Messages`); */
         data.data.messages.forEach((message) => {
           flusher.props.messageQueue.push(message);
         });
         processMessageQueue(flusher);
-      } else {
-        /* logToConsole("No Messages Found In The Response."); */
       }
     } catch (error) {
       console.error("Error Fetching Messages:", error.message);
@@ -62,7 +54,6 @@ export class FlusherMessages {
   }
 
   setupWebSocket(flusher) {
-    /* logToConsole(`Setup WebSocket: ${flusher.props.channelName} (${flusher.props.chatroomId})`); */
     if (this.socket) return;
 
     /* console.log('run test');
@@ -129,7 +120,6 @@ export class FlusherMessages {
   }
 
   async interceptNative(flusher) {
-    /* logToConsole(`Intercept Native Chat`); */
     const self = this;
     self.flusher = flusher;
 
@@ -372,9 +362,13 @@ export class FlusherMessages {
         if (id && !flusher.states.flushState) observeNestedChildren(node, id, clonedNode);
 
         function observeNestedChildren(parentNode, id, clonedNode) {
-          const observer = new MutationObserver(async (mutations) => {
+          const observer = new MutationObserver(async () => {
             if (clonedNode) {
-              clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));
+              if (parentNode.querySelector('.chat-entry-content-deleted')) {
+                clonedNode.classList.add('flusher-red');
+              } else {
+                clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));
+              }
             }
           });
 
@@ -387,17 +381,12 @@ export class FlusherMessages {
     }
 
     function waitForChat(parent) {
-      /* logToConsole(`Looking For Native Chat`); */
-
       if (!parent) parent = document.body;
 
       const chatEntry =
-        parent.querySelector(".rounded-md.bk-block") ||
+        parent.querySelector(".rounded-md.bk-block") ??
         parent.querySelector("[data-chat-entry]");
-      if (chatEntry) {
-        /* logToConsole(`Native Chat Found`); */
-        return chatEntry.parentElement;
-      }
+      if (chatEntry) return chatEntry.parentElement;
 
       return new Promise((resolve) => {
         const config = { attributes: true, childList: true, subtree: true };
@@ -416,7 +405,6 @@ export class FlusherMessages {
                   observer.disconnect();
                   resolve(node.parentNode);
                   found = true;
-                  /* logToConsole(`Native Chat Found`); */
                 }
               });
             }
@@ -430,8 +418,6 @@ export class FlusherMessages {
   }
 
   async bindRequests(flusher) {
-    /* logToConsole(`Bind Requests`); */
-
     if (!flusher) return;
 
     if (!flusher.props.external && !this.nativeChatObserver)
@@ -452,14 +438,9 @@ export class FlusherMessages {
             flusher.props.chatroomId =
               data && data.chatroom && data.chatroom.id;
 
-            /* logToConsole(
-              `chatroomId: ${flusher.props.chatroomId}`
-            ); */
-
             flusher.props.hostId = data.id;
 
             if (flusher.props.external) {
-              /* logToConsole(`${data.subscriber_badges.length} Badges`); */
               flusher.props.badgeCache.push(...data.subscriber_badges);
             }
           } catch (error) {
@@ -475,10 +456,8 @@ export class FlusherMessages {
   }
 
   unbindRequests(flusher) {
-    /* logToConsole(`Unbind Requests`); */
     this.disposeChannel(flusher);
     if (!flusher?.props?.external) {
-      /* logToConsole(`Dispose Native Chat`); */
       if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
       this.nativeChatObserver = null;
       clearTimeout(flusher.props.bindTimeout);

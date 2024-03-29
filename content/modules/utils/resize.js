@@ -4,6 +4,7 @@ import {
 } from "../interface/menu/menu.js";
 import { processMessageQueue } from "../queue/queue.js";
 import { logToConsole } from "./utils.js";
+import { KeybindListener } from "./keybind.js";
 import { setCustomPosition } from "../interface/overlay.js";
 
 import Kick from "../site/kick.js";
@@ -36,6 +37,8 @@ export function checkResize(flusher) {
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
               flusher.resizeObserver = null;
+              flusher.props.keydownListener.stopListening();
+
               for (const id of flusher.props.timeoutIds) {
                 clearTimeout(id);
               }
@@ -192,6 +195,8 @@ export function checkResize(flusher) {
             /* temp fix toggle btn not clickable in theater */
             const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
             if (element) element.classList.remove("z-[500]");
+
+            flusher.props.keydownListener = new KeybindListener(flusher);
 
             logToConsole(
               `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"

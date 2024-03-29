@@ -50,6 +50,7 @@ export async function createChat(flusher) {
    flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
    flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
    flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
+   flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
 
    setCustomPosition(flusher);
 
