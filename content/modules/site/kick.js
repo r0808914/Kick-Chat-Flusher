@@ -26,7 +26,7 @@ class Kick {
             if (channelName && video) {
               channelName = channelName.innerText.trim();
               const AeroKick = video.classList.contains('bk-aspect-video');
-              if (AeroKick) logToConsole(`AeroKick Detected`);
+              /* if (AeroKick) logToConsole(`AeroKick Detected`); */
               const flusher = new Flusher(video, "KICK", channelName, AeroKick);
               try {
                 createChat(flusher);
@@ -49,7 +49,7 @@ class Kick {
                       stopObserver = true;
                       const channelName = document.querySelector(".stream-username").innerText.trim()
                       const AeroKick = video.classList.contains('bk-aspect-video');
-                      if (AeroKick) logToConsole(`AeroKick Detected`);
+                      /* if (AeroKick) logToConsole(`AeroKick Detected`); */
                       const flusher = new Flusher(video, "KICK", channelName, AeroKick);
                       try {
                         createChat(flusher);

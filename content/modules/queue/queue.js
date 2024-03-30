@@ -459,7 +459,7 @@ export function createUserBanMessage(data, flusher) {
 
         logToConsole(logText);
 
-        appendMessage(data, flusher);
+        if (flusher.states.bans) appendMessage(data, flusher);
       }
     }
   }

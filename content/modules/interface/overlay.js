@@ -6,11 +6,9 @@ export async function createChat(flusher) {
    if (flusher.video.hasAttribute('flusher')) return;
    flusher.video.setAttribute('flusher', "");
 
-   /* logToConsole(`Create Chat`); */
-
    const chatFlusher = document.createElement("div");
    chatFlusher.classList.add("flusher");
-   if (flusher.props.isAeroKick) chatFlusher.style.zIndex = 1000;
+   if (flusher.props.isAeroKick) chatFlusher.style.cssText = 'position: absolute !important; z-index: 1010;';
 
    const flusherDiv = document.createElement("div");
    flusherDiv.classList.add("flusher-messages");
@@ -58,7 +56,24 @@ export async function createChat(flusher) {
 
    flusher.toggle = createMenu(flusher);
 
-   flusher.video.parentNode.append(chatFlusher);
+   if (flusher.props.isAeroKick) {
+      const videoHolder = flusher.video.closest('#video-holder');
+      const bkVideoPlayer = document.getElementById('bk-video-player');
+
+      const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
+      const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
+
+      let largestElement;
+
+      if (videoHolderWidth > bkVideoPlayerWidth) {
+         largestElement = videoHolder;
+      } else {
+         largestElement = bkVideoPlayer;
+      }
+      flusher.video = largestElement;
+   }
+
+   flusher.props.isAeroKick ? flusher.video.append(chatFlusher) : flusher.video.parentNode.append(chatFlusher);
    flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
    checkResize(flusher);
 

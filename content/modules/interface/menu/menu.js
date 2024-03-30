@@ -7,7 +7,6 @@ import { checkPosition } from '../../utils/resize.js';
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
 
-   /* flusher.video = flusher.props.external ? flusher.video : flusher.video.closest('.video-js'); */
    const domMenu = flusher.video.querySelector('.flusher-menu');
    if (domMenu === null) {
       const b = typeof browser !== 'undefined' ? browser : chrome;
@@ -15,7 +14,7 @@ export function createMenu(flusher) {
 
       const shadowBox = document.createElement('div');
       shadowBox.id = 'shadowbox';
-      if (flusher.props.isAeroKick) shadowBox.style.zIndex = 1001;
+      if (flusher.props.isAeroKick) shadowBox.style.zIndex = 1020;
 
       const shadowRoot = shadowBox.attachShadow({ mode: 'open' });
 
@@ -31,6 +30,10 @@ export function createMenu(flusher) {
 
       flusher.menu = menu.cloneNode(true);
       flusher.menu.setAttribute('domain', flusher.props.domain);
+      if (flusher.props.isAeroKick) {
+         flusher.menu.style.top = '0 !important';
+         flusher.menu.style.right = '0 !important';
+      }
 
       shadowRoot.appendChild(flusher.menu);
       parent.append(shadowBox);
@@ -53,6 +56,11 @@ export function createMenu(flusher) {
       homeBtn.addEventListener('mousedown', function (event) {
          hideMenu(flusher);
          window.open('https://github.com/r0808914/Kick-Chat-Flusher/issues', '_blank');
+      });
+
+      const debugBtn = parent.querySelector('.flusher-debug');
+      debugBtn.addEventListener('mousedown', function (event) {
+         flusher.states.chatEnabled = false;
       });
 
       const storeBtn = parent.querySelector('.flusher-store');

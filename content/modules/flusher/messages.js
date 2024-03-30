@@ -146,8 +146,7 @@ export class FlusherMessages {
       }, 500);
 
     this.nativeChatObserver = new MutationObserver((mutations) => {
-      const nodesList = flusher.props.isVod ? mutations.reverse() : mutations;
-      nodesList.forEach((mutation) => {
+      mutations.reverse().forEach((mutation) => {
         if (mutation.type === "childList") {
           checkDupe(mutation.addedNodes, AeroKick);
         }

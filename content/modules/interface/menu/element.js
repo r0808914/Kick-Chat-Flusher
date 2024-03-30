@@ -236,6 +236,17 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
+      <div style="display: none;" class="flusher-debug flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+      <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Debug </div>
+      <div class="flex h-10 w-fit items-center justify-end">
+        <div style="width: 16px; height: 16px;" class="flusher-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3.5 12.5V2H2V14H14V12.5H3.5Z" fill="currentColor"></path>
+            <path d="M5.52869 11.5287L10.9999 6.06125V9.5H12.4999V3.5H6.49994V5H9.93869L4.47119 10.4712L5.52869 11.5287Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">

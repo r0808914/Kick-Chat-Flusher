@@ -43,6 +43,8 @@
   opacity: 1;
 }
 
+.chat-message-identity #mifu-supporter-badge:nth-of-type(2),
+.chat-message-identity seventv-container #mifu-supporter-badge,
 .flusher-messages .mifu-timedout-message #mifu-event-from {
   display: none;
 }
@@ -59,11 +61,16 @@
   border: none !important;
 }
 
+.flusher-messages[layout="horizontal"] .chat-message-identity {
+  padding-bottom: .1rem;
+  padding-top: .1rem;
+}
+
 .flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
 .flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[layout="vertical"][aerokick] .bk-inline,
 .flusher-messages[layout="vertical"] .chat-entry-content {
-  font-weight: 800 !important;
+  font-weight: 700 !important;
 }
 
 .flusher-messages[layout="vertical"][aerokick]>div,
@@ -202,7 +209,7 @@
 .flusher-messages[layout="vertical"] .flusher-username {
   display: inline-block;
   vertical-align: middle;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
 }
 
 .flusher-messages[layout="vertical"] .flusher-emote {
@@ -305,8 +312,8 @@
 .flusher-messages[font="LARGE"] .icon.size-sm,
 .flusher-messages[font="LARGE"][layout="horizontal"] .badge-tooltip,
 .flusher-messages[font="LARGE"] .base-icon.icon svg {
-  height: 20.6px !important;
-  width: 20.6px !important;
+  height: 21.6px !important;
+  width: 21.6px !important;
   margin-right: 1px;
 }
 
@@ -314,8 +321,8 @@
 .flusher-messages[font="SMALL"] .base-custom-badge .icon.size-sm,
 .flusher-messages[font="SMALL"][layout="horizontal"] .badge-tooltip,
 .flusher-messages[font="SMALL"] .base-icon.icon svg {
-  height: 14.8px !important;
-  width: 14.8px !important;
+  height: 15.8px !important;
+  width: 15.8px !important;
   margin-right: -1px;
 }
 
@@ -323,8 +330,8 @@
 .flusher-messages[font="NORMAL"] .base-custom-badge .icon.size-sm,
 .flusher-messages[font="NORMAL"][layout="horizontal"] .badge-tooltip,
 .flusher-messages[font="NORMAL"] .base-icon.icon svg {
-  height: 18.2px !important;
-  width: 18.2px !important;
+  height: 19.2px !important;
+  width: 19.2px !important;
 }
 
 .flusher-messages .badge-tooltip {
@@ -451,7 +458,7 @@
 
 .flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .flusher-messages[font="LARGE"] .chat-entry {

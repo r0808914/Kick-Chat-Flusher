@@ -1,18 +1,16 @@
-import {
-  toggleEnableMenu,
-  togglePointerEvents,
-} from "../interface/menu/menu.js";
+import Kick from "../site/kick.js";
+import { togglePointerEvents } from "../interface/menu/menu.js";
 import { processMessageQueue } from "../queue/queue.js";
 import { logToConsole } from "./utils.js";
 import { KeybindListener } from "./keybind.js";
 import { setCustomPosition } from "../interface/overlay.js";
 
-import Kick from "../site/kick.js";
-
 export function checkResize(flusher) {
-  const target = flusher.props.external
-    ? flusher.video
-    : flusher.video.querySelector("video") ?? flusher.video;
+  const videoElement = flusher.video.querySelector("video");
+  let target;
+  if (!flusher.props.isAeroKick && videoElement) {
+    target = videoElement;
+  } else { target = flusher.video; }
 
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
@@ -30,7 +28,8 @@ export function checkResize(flusher) {
 
           window.currentUrl = window.location.href;
 
-          if ((width === null || width === 0) && (!height || height === 0)) {
+          const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
+          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged) {
             if (flusher !== null) {
               const init = !flusher.props.external;
               flusher.resizeObserver.disconnect();
@@ -48,6 +47,8 @@ export function checkResize(flusher) {
 
             return;
           }
+
+          checkAeroKick();
 
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
@@ -109,11 +110,19 @@ export function checkResize(flusher) {
 
     const intervalId = setInterval(() => {
       const KickTools = document.querySelector('.vjs-progress-control')?.style?.display == 'flex' ? true : false;
-      if (KickTools) {
+      if (KickTools && !flusher.props.isKickTools) {
         logToConsole(`KickTools Detected`);
         flusher.props.isKickTools = true;
-        clearInterval(intervalId);
       }
+
+      const AeroKick = document.body.classList.contains("aerokick-customization");
+      if (AeroKick && !flusher.props.isAeroKick) {
+        flusher.props.isAeroKick = true;
+        logToConsole(`AeroKick Detected`);
+        checkAeroKick();
+      }
+
+      if (KickTools && AeroKick) clearInterval(intervalId);
 
       counter++;
 
@@ -122,6 +131,57 @@ export function checkResize(flusher) {
       }
     }, 1000)
     flusher.props.timeoutIds.push(intervalId);
+  }
+
+  function checkAeroKick() {
+    if (flusher.props.isAeroKick) {
+      const videoHolder = flusher.video.closest('#video-holder');
+      const bkVideoPlayer = document.getElementById('bk-video-player');
+
+      const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
+      const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
+
+      let largestElement;
+
+      if (videoHolderWidth > bkVideoPlayerWidth) {
+        largestElement = videoHolder;
+      } else if (videoHolderWidth < bkVideoPlayerWidth) {
+        largestElement = bkVideoPlayer;
+      }
+
+      if (!largestElement) return false;
+
+      if (largestElement !== target) {
+        flusher.resizeObserver.disconnect();
+        flusher.resizeObserver = null;
+
+        const flusherElement = document.querySelector('.flusher');
+        if (!flusherElement) return false;
+
+        largestElement.appendChild(flusherElement);
+
+        const shadowboxElement = document.querySelector('#shadowbox');
+        if (shadowboxElement) largestElement.appendChild(shadowboxElement);
+
+        flusher.video = largestElement;
+        flusherElement.style.cssText = 'position: absolute !important; z-index: 1010;';
+
+        const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
+        toggle.style.marginLeft = "1rem";
+        toggle.style.marginRight = "1rem";
+
+        flusher.menu.style.top = '0 !important';
+        flusher.menu.style.right = '0 !important';
+
+        shadowboxElement.style.zIndex = 1020;
+
+        const existingButton = flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4');
+        existingButton.parentElement.insertBefore(toggle, existingButton);
+
+        checkResize(flusher, largestElement);
+        return true;
+      }
+    } return false;
   }
 
   function createIntroMessage(flusher) {

@@ -2,18 +2,18 @@ const path = require('path');
 
 module.exports = {
    entry: './modules/content.js',
-   mode: 'production', // production development
+   mode: 'development', // production development
    optimization: {
       minimize: false
    },
-   /* devtool: 'source-map', */ // or 'cheap-module-source-map', etc.
+   devtool: 'source-map', // or 'cheap-module-source-map', etc.
    output: {
       path: path.resolve(__dirname, 'dist'),
       filename: 'kick-chat-flusher.js'
    },
    devServer: {
       static: './dist/',
-      hot: true,
+      hot: false,
       devMiddleware: {
          publicPath: '/dist/',
          writeToDisk: true,
