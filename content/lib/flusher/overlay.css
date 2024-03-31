@@ -66,13 +66,6 @@
   padding-top: .1rem;
 }
 
-.flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
-.flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[layout="vertical"][aerokick] .bk-inline,
-.flusher-messages[layout="vertical"] .chat-entry-content {
-  font-weight: 700 !important;
-}
-
 .flusher-messages[layout="vertical"][aerokick]>div,
 .flusher-messages[layout="vertical"] .chat-entry {
   background: none;
@@ -82,12 +75,24 @@
   letter-spacing: .1px;
 }
 
+.flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
+.flusher-messages[layout="vertical"][aerokick] .bk-inline,
+.flusher-messages[layout="vertical"] .chat-entry-content {
+  font-weight: 800 !important;
+}
+
 .flusher-messages[shadow="true"].flusher-messages[aerokick] div.bk-text-sm,
 .flusher-messages[shadow="true"].flusher-messages[aerokick] span[class="bk-inline"],
 .flusher-messages .chat-entry-content-deleted,
 .flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
   text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
     1px 1px 1px rgba(0, 0, 0, 0.6);
+  font-weight: 700;
+}
+
+.flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
+  font-weight: 800;
 }
 
 .flusher-messages[aerokick] div.bk-text-sm,
@@ -209,7 +214,7 @@
 .flusher-messages[layout="vertical"] .flusher-username {
   display: inline-block;
   vertical-align: middle;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
 .flusher-messages[layout="vertical"] .flusher-emote {
@@ -440,10 +445,15 @@
 
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"],
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"] {
   text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
     1px 1px 1px rgba(0, 0, 0, 0.6);
+}
+
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
+  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.5), 1px -1px 1px rgba(0, 0, 0, 0.5), -1px 1px 1px rgba(0, 0, 0, 0.5),
+    1px 1px 1px rgba(0, 0, 0, 0.5);
+  font-family: 900;
 }
 
 .flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry {
@@ -454,11 +464,6 @@
 .flusher-messages[font="SMALL"] .chat-entry {
   padding: 0rem 0.2rem !important;
   min-height: 24px;
-}
-
-.flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  font-weight: 700;
 }
 
 .flusher-messages[font="LARGE"] .chat-entry {
@@ -509,7 +514,7 @@
 }
 
 .flusher-username {
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
 .flusher-messages .chat-emote-container {
