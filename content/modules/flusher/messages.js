@@ -146,8 +146,10 @@ export class FlusherMessages {
       }, 500);
 
     this.nativeChatObserver = new MutationObserver((mutations) => {
+
+
       mutations.reverse().forEach((mutation) => {
-        if (mutation.type === "childList") {
+        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           checkDupe(mutation.addedNodes, AeroKick);
         }
       });

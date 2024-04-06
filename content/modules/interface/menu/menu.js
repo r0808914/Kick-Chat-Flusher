@@ -60,7 +60,7 @@ export function createMenu(flusher) {
 
       const debugBtn = parent.querySelector('.flusher-debug');
       debugBtn.addEventListener('mousedown', function (event) {
-         flusher.states.chatEnabled = false;
+         flusher.states.chatEnabled = !flusher.states.chatEnabled;
       });
 
       const storeBtn = parent.querySelector('.flusher-store');

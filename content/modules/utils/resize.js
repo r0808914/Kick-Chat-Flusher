@@ -166,17 +166,20 @@ export function checkResize(flusher) {
         flusher.video = largestElement;
         flusherElement.style.cssText = 'position: absolute !important; z-index: 1010;';
 
-        const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
-        toggle.style.marginLeft = "1rem";
-        toggle.style.marginRight = "1rem";
-
         flusher.menu.style.top = '0 !important';
         flusher.menu.style.right = '0 !important';
 
         shadowboxElement.style.zIndex = 1020;
 
+        const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
+
         const existingButton = flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4');
         existingButton.parentElement.insertBefore(toggle, existingButton);
+
+        if (!document.querySelector('.vjs-control-bar .flusher-toggle')) {
+          toggle.style.marginLeft = "1rem";
+          toggle.style.marginRight = "1rem";
+        }
 
         checkResize(flusher, largestElement);
         return true;

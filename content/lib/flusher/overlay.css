@@ -39,7 +39,7 @@
 }
 
 .flusher-messages .mifu-timedout-message>* {
-  color: white;
+  color: var(--flusher-white);
   opacity: 1;
 }
 
@@ -68,6 +68,7 @@
 
 .flusher-messages[layout="vertical"][aerokick]>div,
 .flusher-messages[layout="vertical"] .chat-entry {
+  align-content: center;
   background: none;
   font-size: 1rem;
   margin: 0;
@@ -99,7 +100,7 @@
 .flusher-messages[aerokick] span[class="bk-inline"],
 .flusher-messages .chat-entry-content-deleted,
 .flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
-  color: white !important;
+  color: var(--flusher-white) !important;
   opacity: .9;
   white-space: normal;
 }
@@ -109,9 +110,14 @@
   font-style: italic;
 }
 
+.flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
+  padding-top: .2rem;
+}
+
 .flusher-messages {
   --extra-per-row: 5px;
   --flusher-green: rgb(83, 252, 24);
+  --flusher-white: rgb(253, 254, 254);
   font-family: Inter;
   --padding-extra: 2px;
 }
@@ -186,12 +192,12 @@
 }
 
 .flusher-messages a {
-  color: white;
+  color: var(--flusher-white);
   opacity: 1;
 }
 
 .flusher-messages .flusher-message .font-bold {
-  color: white;
+  color: var(--flusher-white);
   padding-right: 0.1rem;
 }
 
@@ -315,7 +321,8 @@
 
 .flusher-messages[font="LARGE"] .base-custom-badge,
 .flusher-messages[font="LARGE"] .icon.size-sm,
-.flusher-messages[font="LARGE"][layout="horizontal"] .badge-tooltip,
+.flusher-messages[font="LARGE"] .badge-tooltip,
+.flusher-messages[font="NORMAL"] .badge-tooltip svg,
 .flusher-messages[font="LARGE"] .base-icon.icon svg {
   height: 21.6px !important;
   width: 21.6px !important;
@@ -324,7 +331,8 @@
 
 .flusher-messages[font="SMALL"] .base-custom-badge,
 .flusher-messages[font="SMALL"] .base-custom-badge .icon.size-sm,
-.flusher-messages[font="SMALL"][layout="horizontal"] .badge-tooltip,
+.flusher-messages[font="SMALL"] .badge-tooltip,
+.flusher-messages[font="NORMAL"] .badge-tooltip svg,
 .flusher-messages[font="SMALL"] .base-icon.icon svg {
   height: 15.8px !important;
   width: 15.8px !important;
@@ -333,14 +341,38 @@
 
 .flusher-messages[font="NORMAL"] .base-custom-badge,
 .flusher-messages[font="NORMAL"] .base-custom-badge .icon.size-sm,
-.flusher-messages[font="NORMAL"][layout="horizontal"] .badge-tooltip,
+.flusher-messages[font="NORMAL"] .badge-tooltip,
+.flusher-messages[font="NORMAL"] .badge-tooltip svg,
 .flusher-messages[font="NORMAL"] .base-icon.icon svg {
   height: 19.2px !important;
   width: 19.2px !important;
 }
 
-.flusher-messages .badge-tooltip {
-  margin-right: 2px;
+.flusher-messages[font="SMALL"] .badge-tooltip {
+  padding-right: 0px;
+  width: 16px;
+}
+
+.flusher-messages[font="SMALL"] .chat-entry .badge-tooltip:last-child {
+  padding-right: 0px;
+}
+
+.flusher-messages[font="NORMAL"] .badge-tooltip {
+  padding-right: 2px;
+  width: 19px;
+}
+
+.flusher-messages[font="NORMAL"] .chat-entry .badge-tooltip:last-child {
+  padding-right: 3px;
+}
+
+.flusher-messages[font="LARGE"] .badge-tooltip {
+  padding-right: 3px;
+  width: 21px;
+}
+
+.flusher-messages[font="LARGE"] .chat-entry .badge-tooltip:last-child {
+  padding-right: 4px;
 }
 
 .flusher-messages[layout="vertical"][size="LARGE"] {
@@ -355,12 +387,9 @@
   height: 25%;
 }
 
-.flusher-animation {
-  animation: slide-in 16s linear;
-}
-
-.flusher-animation-vertical {
-  animation: slide-in-vertical 0.1s ease forwards;
+.flusher-messages[layout="vertical"][font="SMALL"] .chat-entry,
+.flusher-messages[layout="vertical"][font="SMALL"] .chat-entry .chat-entry-content {
+  line-height: 1rem;
 }
 
 .flusher-badge {
@@ -451,9 +480,9 @@
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.5), 1px -1px 1px rgba(0, 0, 0, 0.5), -1px 1px 1px rgba(0, 0, 0, 0.5),
-    1px 1px 1px rgba(0, 0, 0, 0.5);
-  font-family: 900;
+  text-shadow: -1px -1px 2px rgba(23, 32, 42, 0.5), 1px -1px 2px rgba(23, 32, 42, 0.5), -1px 1px 2px rgba(23, 32, 42, 0.5),
+    1px 1px 2px rgba(23, 32, 42, 0.8);
+  font-weight: 900;
 }
 
 .flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry {
@@ -520,6 +549,14 @@
 .flusher-messages .chat-emote-container {
   height: auto !important;
   width: auto !important;
+}
+
+.flusher-animation {
+  animation: slide-in 16s linear;
+}
+
+.flusher-animation-vertical {
+  animation: slide-in-vertical 0.1s ease forwards;
 }
 
 @keyframes slide-in {
