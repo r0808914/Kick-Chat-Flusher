@@ -30,9 +30,9 @@ export function selectRow(message, flusher) {
 	if (message !== null) startAnimation(message, flusher);
 }
 
-function startAnimation(messageData, flusher) {
+async function startAnimation(messageData, flusher) {
 	const message = messageData.container;
-	const space = 4;
+	const space = 5;
 	const rowIndex = messageData.row;
 
 	const lastItem = flusher.props.lastPositionPerRow?.[rowIndex];
@@ -48,12 +48,9 @@ function startAnimation(messageData, flusher) {
 		requestAnimationFrame(() => {
 			flusher.container.appendChild(message);
 			messageWidth = message.offsetWidth;
-			message.style.marginRight = `-${messageWidth}px`;
 
-			const rect1 = message.getBoundingClientRect();
 			const rect2 = lastContainer.getBoundingClientRect();
-
-			overlap = rect2.right - rect1.left;
+			overlap = rect2.right - (flusher.props.parentRight ?? 0);
 
 			/* queue running */
 			if (lastItem.run === false) {
@@ -106,9 +103,9 @@ function startAnimation(messageData, flusher) {
 	function checkQueue(messageData, flusher) {
 		const index = messageData.row;
 
-		if(!flusher?.props?.rowQueue[index]) return;
+		if (!flusher?.props?.rowQueue[index]) return;
 		const queueItem = flusher.props.rowQueue[index].shift();
-		
+
 		if (queueItem) {
 			checkRow(queueItem, index, flusher);
 		} else {
@@ -119,7 +116,7 @@ function startAnimation(messageData, flusher) {
 
 	function checkRow(messageData, rowIndex, flusher) {
 		/* To be Fixed */
-		
+
 		/* if ((rowIndex + 1) > flusher.props.lastRow) {
 			for (let i = 0; i < rowIndex; i++) {
 				if (flusher.props.lastPositionPerRow[i] === undefined || flusher.props.lastPositionPerRow[i].run === true) {
@@ -158,8 +155,8 @@ function prepareAnimation(data, flusher) {
 			const oldest = flusher.container.firstChild;
 			if (!flusher.states.spamState) {
 				const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
-				if(entryId)
-				flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+				if (entryId)
+					flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
 			}
 			oldest.remove();
 		} catch { }

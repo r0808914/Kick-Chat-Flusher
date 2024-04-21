@@ -17,7 +17,7 @@ class FlusherStates {
     this.slide = true;
     this.reply = true;
     this.timeState = false;
-    this.spamState = true;
+    this.spamState = false;
     this.fontState = 1;
     this.keybinds = {
       "overlay": "ALT + C",
@@ -84,9 +84,9 @@ function selectRow(message, flusher) {
   message = prepareAnimation(message, flusher);
   if (message !== null) startAnimation(message, flusher);
 }
-function startAnimation(messageData, flusher) {
+async function startAnimation(messageData, flusher) {
   const message = messageData.container;
-  const space = 4;
+  const space = 5;
   const rowIndex = messageData.row;
   const lastItem = flusher.props.lastPositionPerRow?.[rowIndex];
   !flusher.props.lastPositionPerRow ? flusher.props.lastPositionPerRow = [] : null;
@@ -101,10 +101,8 @@ function startAnimation(messageData, flusher) {
     requestAnimationFrame(() => {
       flusher.container.appendChild(message);
       messageWidth = message.offsetWidth;
-      message.style.marginRight = `-${messageWidth}px`;
-      const rect1 = message.getBoundingClientRect();
       const rect2 = lastContainer.getBoundingClientRect();
-      overlap = rect2.right - rect1.left;
+      overlap = rect2.right - (flusher.props.parentRight ?? 0);
 
       /* queue running */
       if (lastItem.run === false) {
@@ -591,16 +589,16 @@ function createUserBanMessage(data, flusher) {
       timeDiffText = humanizeDuration(timeDifference + 5000);
       const userId = data.user.id;
       addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
-      logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+      logText = `🟥 ${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     } else {
-      logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+      logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     }
   } else {
-    logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+    logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
     const expiresText = document.createTextNode(logText);
     banMessageSpan.appendChild(expiresText);
   }
@@ -642,7 +640,7 @@ function createUserBanMessage(data, flusher) {
         unbanMessageContent.classList.add("flusher-message", "flusher-green");
         const unbanMessageSpan = document.createElement("span");
         let logText;
-        logText = `${username}'s ban expired`;
+        logText = `🟩 ${username}'s ban expired`;
         const unbanText = document.createTextNode(logText);
         unbanMessageSpan.appendChild(unbanText);
         unbanMessageContent.appendChild(unbanMessageSpan);
@@ -702,6 +700,7 @@ function createSubMessage(data, flusher) {
 function createHostMessage(data, flusher) {
   /* logToConsole(`createHostMessage`); */
 
+  if (flusher.states.flushState) return;
   const hostUsername = data.host_username;
   const viewersCount = data.number_viewers;
   const hostMessageContent = document.createElement("div");
@@ -1358,7 +1357,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">0.9.9</div>
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.0</div>
         </div>
       </div>
     </div>
@@ -2488,6 +2487,7 @@ function checkResize(flusher) {
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
+          flusher.props.parentRight = rect.right;
 
           /* set data for css */
           setAttributes();

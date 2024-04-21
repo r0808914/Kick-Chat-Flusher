@@ -53,6 +53,7 @@ export function checkResize(flusher) {
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
+          flusher.props.parentRight = rect.right;
 
           /* set data for css */
           setAttributes();

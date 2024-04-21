@@ -17,7 +17,7 @@ export class FlusherStates {
     this.reply = true;
     this.timeState = false;
 
-    this.spamState = true;
+    this.spamState = false;
     this.fontState = 1;
 
     this.keybinds = { "overlay": "ALT + C", "flush": "ALT + G", "menu": "ALT + M", "spam": "ALT + S" };

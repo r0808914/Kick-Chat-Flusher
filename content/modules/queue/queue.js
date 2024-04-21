@@ -385,17 +385,17 @@ export function createUserBanMessage(data, flusher) {
       const userId = data.user.id;
       addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
 
-      logText = `${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+      logText = `🟥 ${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     } else {
-      logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+      logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     }
 
   } else {
-    logText = `${bannedUser} permanently banned by ${bannedByUser}`;
+    logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
     const expiresText = document.createTextNode(logText);
     banMessageSpan.appendChild(expiresText);
   }
@@ -448,7 +448,7 @@ export function createUserBanMessage(data, flusher) {
 
         let logText;
 
-        logText = `${username}'s ban expired`;
+        logText = `🟩 ${username}'s ban expired`;
         const unbanText = document.createTextNode(logText);
         unbanMessageSpan.appendChild(unbanText);
 
@@ -524,6 +524,8 @@ function createSubMessage(data, flusher) {
 
 function createHostMessage(data, flusher) {
   /* logToConsole(`createHostMessage`); */
+
+  if (flusher.states.flushState) return;
 
   const hostUsername = data.host_username;
   const viewersCount = data.number_viewers;

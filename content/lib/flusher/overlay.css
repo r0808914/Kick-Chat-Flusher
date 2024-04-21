@@ -22,6 +22,15 @@
   vertical-align: text-bottom;
 } */
 
+.flusher-messages .chat-entry-clip {
+  height: auto;
+}
+
+.flusher-messages .chat-entry-clip-img {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
 .flusher-messages .chatroom-event-subgift__container,
 .flusher-messages .chatroom-event-sub__container,
 .flusher-messages .chatroom-event-ban__container,
@@ -59,6 +68,7 @@
   overflow: hidden;
   padding: 0 !important;
   border: none !important;
+  line-height: 2;
 }
 
 .flusher-messages[layout="horizontal"] .chat-message-identity {
@@ -238,7 +248,7 @@
   border-radius: 8px;
   box-sizing: border-box;
   font-size: 0.9rem;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   line-height: 1.2rem;
   margin-top: 2px;
   max-width: 100%;
@@ -421,6 +431,10 @@
   height: 29px;
 }
 
+.flusher-messages span.inline-flex.translate-y-\[3px\].items-center.mr-1 {
+  vertical-align: baseline;
+}
+
 .flusher-messages[layout="vertical"][font="LARGE"]>div {
   padding: 0.1rem 0.4rem;
 }
@@ -432,14 +446,20 @@
   padding: 0.2rem 0.4rem;
 }
 
+.flusher-messages[layout="vertical"][font="SMALL"] .flusher-green,
+.flusher-messages[layout="vertical"][font="SMALL"] .flusher-red,
 .flusher-messages[font="SMALL"] span {
   font-size: small;
 }
 
+.flusher-messages[layout="vertical"][font="NORMAL"] .flusher-green,
+.flusher-messages[layout="vertical"][font="NORMAL"] .flusher-red,
 .flusher-messages[font="NORMAL"] span {
   font-size: normal;
 }
 
+.flusher-messages[layout="vertical"][font="LARGE"] .flusher-green,
+.flusher-messages[layout="vertical"][font="LARGE"] .flusher-red,
 .flusher-messages[font="LARGE"] span {
   font-size: large;
 }
@@ -474,15 +494,25 @@
 
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"] {
-  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
-    1px 1px 1px rgba(0, 0, 0, 0.6);
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"],
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
+  text-shadow: -1px -1px 2px rgba(75 75 75 / 50%), 1px -1px 2px rgb(75 75 75 / 50%), -1px 1px 2px rgba(75 75 75 / 50%),
+    1px 1px 2px rgb(0 0 0);
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 2px rgba(23, 32, 42, 0.5), 1px -1px 2px rgba(23, 32, 42, 0.5), -1px 1px 2px rgba(23, 32, 42, 0.5),
-    1px 1px 2px rgba(23, 32, 42, 0.8);
-  font-weight: 900;
+  font-weight: 700;
+}
+
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"][aerokick] .bk-text-transparent,
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry span[class="font-bold text-white"],
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry span[class="chat-entry-username"] {
+  font-weight: 600;
+}
+
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry span[class="chat-entry-username"] {
+  font-weight: 700;
 }
 
 .flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry {
@@ -518,11 +548,16 @@
   vertical-align: middle;
 }
 
-.flusher-green {
+.flusher-messages[layout="vertical"] .flusher-red,
+.flusher-messages[layout="vertical"] .flusher-green {
+  color: white;
+}
+
+.flusher-messages[layout="horizontal"] .flusher-green {
   border: 2px solid green;
 }
 
-.flusher-red {
+.flusher-messages[layout="horizontal"] .flusher-red {
   border: 2px solid red;
 }
 
@@ -538,8 +573,7 @@
 
 .flusher-messages[layout="vertical"] .flusher-red,
 .flusher-messages[layout="vertical"] .flusher-green {
-  margin: 0.4rem 0.2rem !important;
-  padding: 0.2rem 0.3rem !important;
+  margin: 0.2rem !important;
 }
 
 .flusher-username {
