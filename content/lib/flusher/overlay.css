@@ -90,7 +90,7 @@
 .flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[layout="vertical"][aerokick] .bk-inline,
 .flusher-messages[layout="vertical"] .chat-entry-content {
-  font-weight: 800 !important;
+  font-weight: 700 !important;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[aerokick] div.bk-text-sm,
@@ -226,13 +226,6 @@
   width: var(--flusher-vertical-width);
 }
 
-.flusher-messages[layout="vertical"] .flusher-badges,
-.flusher-messages[layout="vertical"] .flusher-username {
-  display: inline-block;
-  vertical-align: middle;
-  font-weight: 800 !important;
-}
-
 .flusher-messages[layout="vertical"] .flusher-emote {
   max-height: 1.4rem;
   padding: 0 0.1em;
@@ -256,15 +249,7 @@
 }
 
 .flusher-messages[layout="vertical"] .flusher-message .flusher-content {
-  align-items: center;
   color: rgb(255, 255, 255);
-}
-
-.flusher-messages[layout="vertical"] .last-flusher-emote {
-  height: 1.4rem;
-  padding-left: 0.1em;
-  padding-right: 0;
-  vertical-align: middle;
 }
 
 .flusher-messages[layout="vertical"][background="LARGE"]>div {
@@ -332,7 +317,7 @@
 .flusher-messages[font="LARGE"] .base-custom-badge,
 .flusher-messages[font="LARGE"] .icon.size-sm,
 .flusher-messages[font="LARGE"] .badge-tooltip,
-.flusher-messages[font="NORMAL"] .badge-tooltip svg,
+.flusher-messages[font="LARGE"] .badge-tooltip svg,
 .flusher-messages[font="LARGE"] .base-icon.icon svg {
   height: 21.6px !important;
   width: 21.6px !important;
@@ -342,7 +327,7 @@
 .flusher-messages[font="SMALL"] .base-custom-badge,
 .flusher-messages[font="SMALL"] .base-custom-badge .icon.size-sm,
 .flusher-messages[font="SMALL"] .badge-tooltip,
-.flusher-messages[font="NORMAL"] .badge-tooltip svg,
+.flusher-messages[font="SMALL"] .badge-tooltip svg,
 .flusher-messages[font="SMALL"] .base-icon.icon svg {
   height: 15.8px !important;
   width: 15.8px !important;
@@ -354,36 +339,11 @@
 .flusher-messages[font="NORMAL"] .badge-tooltip,
 .flusher-messages[font="NORMAL"] .badge-tooltip svg,
 .flusher-messages[font="NORMAL"] .base-icon.icon svg {
-  height: 19.2px !important;
-  width: 19.2px !important;
+  height: 16px !important;
+  width: 16x !important;
 }
 
-.flusher-messages[font="SMALL"] .badge-tooltip {
-  padding-right: 0px;
-  width: 16px;
-}
 
-.flusher-messages[font="SMALL"] .chat-entry .badge-tooltip:last-child {
-  padding-right: 0px;
-}
-
-.flusher-messages[font="NORMAL"] .badge-tooltip {
-  padding-right: 2px;
-  width: 19px;
-}
-
-.flusher-messages[font="NORMAL"] .chat-entry .badge-tooltip:last-child {
-  padding-right: 3px;
-}
-
-.flusher-messages[font="LARGE"] .badge-tooltip {
-  padding-right: 3px;
-  width: 21px;
-}
-
-.flusher-messages[font="LARGE"] .chat-entry .badge-tooltip:last-child {
-  padding-right: 4px;
-}
 
 .flusher-messages[layout="vertical"][size="LARGE"] {
   height: 100%;
@@ -432,7 +392,8 @@
 }
 
 .flusher-messages span.inline-flex.translate-y-\[3px\].items-center.mr-1 {
-  vertical-align: baseline;
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .flusher-messages[layout="vertical"][font="LARGE"]>div {
@@ -496,12 +457,8 @@
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"],
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: -1px -1px 2px rgba(75 75 75 / 50%), 1px -1px 2px rgb(75 75 75 / 50%), -1px 1px 2px rgba(75 75 75 / 50%),
-    1px 1px 2px rgb(0 0 0);
-}
-
-.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  font-weight: 700;
+  text-shadow: 0px 1px 2px #000000e0, -1px -1px 1px #000000e0, 1px -1px 1px #000000e0, -1px 1px 1px #000000e0,
+    1px 1px 1px #000000e0, 1px 0px 2px #ffffff;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry div>span:nth-child(n + 3),
@@ -546,6 +503,10 @@
 .flusher-messages .base-icon.icon.size-sm {
   height: auto !important;
   vertical-align: middle;
+}
+
+.flusher-messages .translate-y-\[3px\] {
+  --tw-translate-y: 2.5px !important;
 }
 
 .flusher-messages[layout="vertical"] .flusher-red,
