@@ -104,6 +104,7 @@
 
 .flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
   font-weight: 800;
+  opacity: .9;
 }
 
 .flusher-messages[aerokick] div.bk-text-sm,
@@ -113,6 +114,14 @@
   color: var(--flusher-white) !important;
   opacity: .9;
   white-space: normal;
+}
+
+/* .flusher-messages div.flusher-deleted .chat-entry-content {
+  color: rgba(255, 0, 0, 0.7) !important;
+} */
+
+.flusher-messages div.flusher-deleted {
+  opacity: .7 !important;
 }
 
 .flusher-messages[aerokick] div.bk-text-sm,
@@ -457,8 +466,8 @@
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"],
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: 0px 1px 2px #000000e0, -1px -1px 1px #000000e0, 1px -1px 1px #000000e0, -1px 1px 1px #000000e0,
-    1px 1px 1px #000000e0, 1px 0px 2px #ffffff;
+  text-shadow: 0px 1px 2px #000000d0, -1px -1px 1px #000000d0, 1px -1px 1px #000000d0, -1px 1px 1px #000000d0,
+    1px 1px 1px #000000d0, 1px 0px 2px #ffffff;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry div>span:nth-child(n + 3),
