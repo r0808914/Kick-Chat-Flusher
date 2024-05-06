@@ -33,6 +33,35 @@ export function createToggle(flusher) {
 		svgToggle(flusher);
 		flusher.clickOutsideHandlerFunction = (event) => clickOutsideHandler(event, flusher);
 		document.addEventListener('mousedown', flusher.clickOutsideHandlerFunction);
+		flusher.container.classList.add('flusher-hover');
+
+		if (flusher.props.popupContainer) {
+			flusher.props.popupContainer.style.display = "block";
+			window.addEventListener("click", closePopupOutside);
+
+			const closeBtn = flusher.props.popupContainer.querySelector("#closeBtn");
+
+			function closePopup() {
+				flusher.props.popupContainer.style.display = "none";
+
+				window.removeEventListener("click", closePopupOutside);
+
+				const data = { ['flusher-intro']: true };
+				chrome.storage.local.set(data, () => {
+					/* logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`); */
+				});
+
+				flusher.props.popupContainer = null;
+			}
+
+			function closePopupOutside(event) {
+				if (!flusher.props.popupContainer.contains(event.target) && !flusher.toggle.contains(event.target)) {
+					closePopup();
+				}
+			}
+
+			closeBtn.onclick = closePopup;
+		}
 	}
 	return toggleBtn;
 }

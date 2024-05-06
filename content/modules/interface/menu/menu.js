@@ -582,6 +582,21 @@ export function createMenu(flusher) {
          /* divInsidekeybindMenu.textContent = flusher.states.keybinds.menu; */
       }
 
+      if (!flusher.props.intro) {
+         const popupHtml = `
+         <div id="flusher-popup">
+           <h2>Kick Chat Flusher</h2>
+           <p>Spam hidden by default. Show all messages by toggling "Show Spam" in settings.</p>
+           <button id="closeBtn">OK</button>
+         </div>`;
+
+         const parser = new DOMParser();
+         const popupDoc = parser.parseFromString(popupHtml, 'text/html');
+         flusher.props.popupContainer = popupDoc.body.firstChild.cloneNode(true);
+
+         flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
+      }
+
       return createToggle(flusher);
    }
 
@@ -651,12 +666,15 @@ export function hideMenu(flusher) {
 
    svgToggle(flusher);
    document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);
+
+   flusher.container.classList.remove('flusher-hover');
 }
 
 export function clickOutsideHandler(event, flusher) {
    if (flusher.menu !== null && !flusher.menu.contains(event.target)
       && flusher.menu.style.display === 'block'
-      && !isClickInsideShadowBox(event.target)) {
+      && !isClickInsideShadowBox(event.target)
+      && !flusher.props.popupContainer?.contains(event.target)) {
       if (flusher.toggle.contains(event.target) || event.target === flusher.toggle) return;
       hideMenu(flusher);
    }

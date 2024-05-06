@@ -193,7 +193,7 @@ function prepareAnimation(data, flusher) {
   data.container.style.setProperty('--row', data.row);
   data.container.addEventListener("animationend", function () {
     try {
-      const oldest = flusher.container.firstChild;
+      const oldest = flusher.container.firstElementChild;
       if (!flusher.states.spamState) {
         const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
         if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
@@ -240,7 +240,7 @@ function appendVertical(message, flusher) {
     }
   }
   while (flusher.container.children.length > flusher.props.maxRows) {
-    const oldest = flusher.container.lastChild;
+    const oldest = flusher.container.lastElementChild;
     const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
     if (entryId) {
       const observer = flusher.props.messageObservers.get(entryId);
@@ -930,98 +930,110 @@ class FlusherMessages {
           };
         }
       }
-
-      /* function getRandomColor() {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-               color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-         }
-          const randomColor = getRandomColor();
-         node.style.border = `2px solid ${randomColor}`;
-         clonedNode.style.border = `2px solid ${randomColor}`; */
-
       if (id || id === "") {
         if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
-          //////////
-          //  REMOVE FOR SINGLE CONTENT SPAN
-          //////////
+          let lastText;
+          let textDupe = false;
+          let lastEmoji;
+          let emojiCount = 0;
+          let emojiTrain = [];
+          let isTrain = false;
+          const elements = Array.from(clonedNode.querySelectorAll('.chat-entry-content, .chat-emote-container'));
+          for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            if (element.classList.contains('chat-entry-content')) {
+              let text;
+              emojiCount = 0;
+              /* isTrain = false; */
 
-          const chatContents = clonedNode.querySelectorAll(".chat-entry-content");
-          function removeDuplicates(text) {
-            if (text.includes('STOP THE SPAM SPAM')) {
-              console.log('okay');
-            }
+              /* Remove if same as last */
+              if (element.textContent === lastText) {
+                element.parentElement.remove();
+                textDupe = true;
+              } else {
+                text = element.textContent;
+                lastText = text;
+                textDupe = false;
+                try {
+                  /* excessive spaces and newlines */
+                  text = text.replace(/\s+/g, ' ').trim();
 
-            /* Remove duplicate sentences */
-            const regex = /(?:^|\W)(.+?)\1+/g;
-            let matches = [];
-            let match;
-            while ((match = regex.exec(text)) !== null) {
-              if (match[1] && match[1].length > 1) {
-                if (text === (match[1] + match[0]).trim()) {
-                  text = match[1].trim();
-                } else {
-                  text = text.replace(new RegExp(match[0], 'g'), ` ${match[1]}`).trim();
+                  /* Remove duplicate consecutive characters */
+                  text = text.replace(/([\s\S])(\1{2,})/gu, '$1$1$1');
+
+                  /* Remove duplicate sentences */
+                  const regex = /(.+)(?= \1)/g;
+                  text = text.replace(regex, "").trim();
+                  element.textContent = text;
+                } catch (error) {
+                  console.error('Error occurred while processing text:', error);
+                  console.log('Text causing error:', text);
                 }
               }
-            }
-
-            /* Remove duplicate words */
-            text = text.replace(/\b(\w+)\s+\1\b/g, '$1');
-
-            /* Remove duplicate consecutive characters */
-            text = text.replace(/([\s\S])(\1{2,})/gu, '$1$1$1');
-
-            /* Remove duplicate text+emoji */
-            /* text = text.replace(/(\b[\p{Extended_Pictographic}\w]+\b)[\p{Extended_Pictographic}\w]*\s*\1\s*$/gu, '$1'); */
-
-            return text;
-          }
-          chatContents.forEach(content => {
-            let text = content.textContent.trim();
-            text = removeDuplicates(text);
-            content.textContent = text;
-          });
-
-          //////////
-          //  REMOVE FOR WHOLE CONTENT
-          //////////
-
-          const chatContent = clonedNode.querySelectorAll(".chat-entry-content");
-          const emoteContainers = Array.from(clonedNode.querySelectorAll(".chat-emote-container"));
-          const uniqueTexts = new Set();
-          const uniqueEmojis = new Set();
-          chatContent.forEach(content => {
-            const text = content.textContent.trim();
-            if (!uniqueTexts.has(text)) {
-              uniqueTexts.add(text);
             } else {
-              content.textContent = "";
-            }
-          });
-          let emojiCount = 0;
-          emoteContainers.forEach(container => {
-            const emojis = container.querySelectorAll("img[data-emote-name]");
-            emojis.forEach(emoji => {
-              if (emojiCount < 3) {
-                const altText = emoji.getAttribute("alt");
-                if (!uniqueEmojis.has(altText)) {
-                  uniqueEmojis.add(altText);
-                  emojiCount++;
+              const alt = element.querySelector('img').getAttribute('alt');
+
+              /* Train hits on > 1 emojis */
+              if (emojiTrain.length > 1 && emojiTrain[0] === alt) {
+                // Start checking for the train
+                let currentElement = element.parentElement.nextElementSibling;
+                let detectedTrain = [];
+                if (currentElement) {
+                  for (let i = 1; i < emojiTrain.length; i++) {
+                    if (currentElement?.querySelector('img')?.getAttribute('alt') !== emojiTrain[i]) {
+                      isTrain = false;
+                      detectedTrain = [];
+                      break;
+                    }
+                    detectedTrain.push(currentElement);
+                    currentElement = currentElement.nextElementSibling;
+                  }
+                }
+
+                // Remove the detected train
+                if (detectedTrain.length > 0) {
+                  detectedTrain.push(element.parentElement);
+                  detectedTrain.forEach(element => element.remove());
+                  elements.splice(i, detectedTrain.length);
+                  i--;
                 } else {
-                  container.remove();
+                  processTrain();
                 }
               } else {
-                container.remove();
+                /* if (!isTrain) {
+                  emojiTrain = [];
+                  lastEmoji = null;
+                } */
+                processTrain();
               }
-            });
-          });
+              function processTrain() {
+                // Start a new train
+                /* isTrain = true; */
+                emojiTrain.push(alt);
+                if (alt === lastEmoji) {
+                  /* Remove excessive emojis */
+                  emojiCount++;
+                  if (emojiCount > 2) {
+                    element.parentElement.remove();
+                  }
+
+                  /* Check if emoji + text spam */else if (!textDupe && emojiCount === 1) {
+                    const nextElement = elements[i + 1];
+                    if (nextElement && nextElement.classList.contains('chat-entry-content')) {
+                      if (nextElement.textContent === lastText) {
+                        element.parentElement.remove();
+                      }
+                    }
+                  }
+                } else {
+                  lastEmoji = alt;
+                  emojiCount = 0;
+                }
+              }
+            }
+          }
         }
-        const isDupe = checkDupe();
-        if (isDupe) return;
+        if (checkDupe() && !update) return;
         if (!flusher.states.reply || flusher.states.flushState) {
           if (AeroKick) {
             const chatEntry = clonedNode.querySelector(".bk-text-sm");
@@ -1060,25 +1072,55 @@ class FlusherMessages {
             }
           }
           if (!flusher.states.spamState || flusher.states.flushState) {
-            let uniqueString = "";
             let emoteElements;
-            uniqueString += userId + "-";
+            let uniqueString = "";
             const divTextContent = AeroKick && flusher.props.isAeroKick ? clonedNode.querySelector("span.bk-inline").textContent : clonedNode.querySelector(".chat-entry-content")?.textContent;
-            uniqueString += divTextContent + "-";
-            if (AeroKick && flusher.props.isAeroKick) {
+
+            /* set text content */
+            if (divTextContent) {
+              uniqueString += divTextContent + " ";
+
+              /* Remove duplicate consecutive characters */
+              uniqueString = uniqueString.replace(/([\s\S])(\1{1,})/gu, '$1');
+            }
+
+            /* set emotes */
+            if (AeroKick) {
               emoteElements = clonedNode.querySelectorAll("img");
-              emoteElements.forEach(emoteElement => {
-                const emoteValue = emoteElement.getAttribute("alt");
-                uniqueString += emoteValue;
-              });
+              if (emoteElements.length > 0) {
+                emoteElements.forEach(emoteElement => {
+                  const emoteValue = emoteElement.getAttribute("alt");
+                  if (uniqueString.indexOf(emoteValue) === -1) {
+                    uniqueString += emoteValue + " ";
+                  }
+                });
+
+                /* Remove duplicate sentences */
+                const regex = /(.+)(?= \1)/g;
+                uniqueString = uniqueString.replace(regex, "").trim();
+              }
             } else {
               emoteElements = clonedNode.querySelectorAll("[data-emote-name]");
-              emoteElements.forEach(emoteElement => {
-                const emoteValue = emoteElement.getAttribute("data-emote-name");
-                uniqueString += emoteValue;
-              });
+              if (emoteElements.length > 0) {
+                emoteElements.forEach(emoteElement => {
+                  const emoteValue = emoteElement.getAttribute("alt");
+                  if (uniqueString.indexOf(emoteValue) === -1) {
+                    uniqueString += emoteValue + " ";
+                  }
+                });
+
+                /* Remove duplicate sentences */
+                const regex = /(.+)(?= \1)/g;
+                uniqueString = uniqueString.replace(regex, "").trim();
+              }
             }
-            if (!uniqueString && !emoteElements && flusher.states.flushState) return true;
+
+            /* set userId */
+            uniqueString = userId + uniqueString;
+
+            /* remove spaces */
+            uniqueString = uniqueString.replace(/\s/g, '');
+            if (flusher.states.flushState) return true;
             const exist = flusher.props.displayedMessages.find(obj => {
               return obj.key === uniqueString;
             });
@@ -1090,6 +1132,7 @@ class FlusherMessages {
             return false;
           }
         }
+        return false;
       }
       function addMessage() {
         flusher.props.elementQueue.push(clonedNode);
@@ -1101,7 +1144,7 @@ class FlusherMessages {
               if (flusher.states.deleted && parentNode.querySelector('.chat-entry-content-deleted')) {
                 clonedNode.classList.add('flusher-deleted');
               } else {
-                clonedNode.replaceWith(await prepareMessage(parentNode, id, defaultAvatar, true));
+                clonedNode.replaceWith(await prepareMessage(parentNode, true));
               }
             }
           });
@@ -1666,6 +1709,29 @@ function createToggle(flusher) {
     svgToggle(flusher);
     flusher.clickOutsideHandlerFunction = event => clickOutsideHandler(event, flusher);
     document.addEventListener('mousedown', flusher.clickOutsideHandlerFunction);
+    flusher.container.classList.add('flusher-hover');
+    if (flusher.props.popupContainer) {
+      flusher.props.popupContainer.style.display = "block";
+      window.addEventListener("click", closePopupOutside);
+      const closeBtn = flusher.props.popupContainer.querySelector("#closeBtn");
+      function closePopup() {
+        flusher.props.popupContainer.style.display = "none";
+        window.removeEventListener("click", closePopupOutside);
+        const data = {
+          ['flusher-intro']: true
+        };
+        chrome.storage.local.set(data, () => {
+          /* logToConsole(`Value for key ${key} has been set to ${value} in extension storage.`); */
+        });
+        flusher.props.popupContainer = null;
+      }
+      function closePopupOutside(event) {
+        if (!flusher.props.popupContainer.contains(event.target) && !flusher.toggle.contains(event.target)) {
+          closePopup();
+        }
+      }
+      closeBtn.onclick = closePopup;
+    }
   }
   return toggleBtn;
 }
@@ -2243,6 +2309,18 @@ function createMenu(flusher) {
       divInsidekeybindSpam.textContent = flusher.states.keybinds.spam;
       /* divInsidekeybindMenu.textContent = flusher.states.keybinds.menu; */
     }
+    if (!flusher.props.intro) {
+      const popupHtml = `
+         <div id="flusher-popup">
+           <h2>Kick Chat Flusher</h2>
+           <p>Spam hidden by default. Show all messages by toggling "Show Spam" in settings.</p>
+           <button id="closeBtn">OK</button>
+         </div>`;
+      const parser = new DOMParser();
+      const popupDoc = parser.parseFromString(popupHtml, 'text/html');
+      flusher.props.popupContainer = popupDoc.body.firstChild.cloneNode(true);
+      flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
+    }
     return createToggle(flusher);
   }
   function captureKeybind() {
@@ -2308,9 +2386,10 @@ function hideMenu(flusher) {
   eventMenu.style.display = 'none';
   svgToggle(flusher);
   document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);
+  flusher.container.classList.remove('flusher-hover');
 }
 function clickOutsideHandler(event, flusher) {
-  if (flusher.menu !== null && !flusher.menu.contains(event.target) && flusher.menu.style.display === 'block' && !isClickInsideShadowBox(event.target)) {
+  if (flusher.menu !== null && !flusher.menu.contains(event.target) && flusher.menu.style.display === 'block' && !isClickInsideShadowBox(event.target) && !flusher.props.popupContainer?.contains(event.target)) {
     if (flusher.toggle.contains(event.target) || event.target === flusher.toggle) return;
     hideMenu(flusher);
   }
@@ -2469,6 +2548,7 @@ async function createChat(flusher) {
   flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
   flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
   flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
+  flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
   setCustomPosition(flusher);
   flusher.toggle = createMenu(flusher);
   if (flusher.props.isAeroKick) {

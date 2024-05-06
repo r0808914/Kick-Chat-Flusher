@@ -51,6 +51,7 @@ export async function createChat(flusher) {
    flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
    flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
    flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
+   flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
 
    setCustomPosition(flusher);
 

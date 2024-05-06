@@ -38,7 +38,7 @@ export function appendVertical(message, flusher) {
 	}
 
 	while (flusher.container.children.length > flusher.props.maxRows) {
-		const oldest = flusher.container.lastChild;
+		const oldest = flusher.container.lastElementChild;
 		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
 		if (entryId) {
 			const observer = flusher.props.messageObservers.get(entryId);

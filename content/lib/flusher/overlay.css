@@ -104,15 +104,19 @@
 
 .flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
   font-weight: 800;
-  opacity: .9;
 }
+
+/* .flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(233, 17, 60)"],
+.flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(20, 117, 225)"] {
+  opacity: .95 !important;
+} */
 
 .flusher-messages[aerokick] div.bk-text-sm,
 .flusher-messages[aerokick] span[class="bk-inline"],
 .flusher-messages .chat-entry-content-deleted,
 .flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
   color: var(--flusher-white) !important;
-  opacity: .9;
+  opacity: .95;
   white-space: normal;
 }
 
@@ -277,6 +281,11 @@
 }
 
 .flusher-messages[layout="vertical"][enabled="true"]:hover {
+  border-radius: 1px;
+  outline: 2px solid var(--flusher-green);
+}
+
+.flusher-hover {
   border-radius: 1px;
   outline: 2px solid var(--flusher-green);
 }
@@ -466,8 +475,13 @@
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"],
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  text-shadow: 0px 1px 2px #000000d0, -1px -1px 1px #000000d0, 1px -1px 1px #000000d0, -1px 1px 1px #000000d0,
-    1px 1px 1px #000000d0, 1px 0px 2px #ffffff;
+  /* text-shadow: 0px 1px 1px #00000000, -1px -1px 1px #000000d0, 1px -1px 1px #000000d0, -1px 1px 1px #000000d0,
+    1px 1px 1px #000000d0, 1px 0px 2px #ffffff; */
+  /* text-shadow: -1px -1px 2px #262626, 1px -1px 2px #000000, -1px 1px 2px #262626,
+    1px 1px 2px #000000; */
+  text-shadow: 0px -1px 1.5px #202020, 0px 1px 1.5px #202020, 1px 0px 1.5px #202020,
+    -1px 0px 1.5px #202020, 0px 0px 3px #000000;
+  opacity: .98;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry div>span:nth-child(n + 3),
@@ -561,6 +575,52 @@
 
 .flusher-animation-vertical {
   animation: slide-in-vertical 0.1s ease forwards;
+}
+
+#flusher-popup {
+  color: white;
+  z-index: 999;
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #333333e6;
+  padding: 20px;
+  border: 2px solid white;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  font-weight: bold;
+}
+
+#flusher-popup>* {
+  text-align: center;
+}
+
+#flusher-popup h2 {
+  text-align: center;
+  font-size: 15px;
+  font-style: italic;
+}
+
+#flusher-popup p,
+#flusher-popup button {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#flusher-popup button {
+  align-content: center;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+#flusher-popup h2 {
+  margin-bottom: 1rem;
 }
 
 @keyframes slide-in {

@@ -152,7 +152,7 @@ function prepareAnimation(data, flusher) {
 	data.container.style.setProperty('--row', data.row);
 	data.container.addEventListener("animationend", function () {
 		try {
-			const oldest = flusher.container.firstChild;
+			const oldest = flusher.container.firstElementChild;
 			if (!flusher.states.spamState) {
 				const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
 				if (entryId)
