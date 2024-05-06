@@ -48,7 +48,7 @@ export function checkResize(flusher) {
             return;
           }
 
-          checkAeroKick();
+          if (flusher.props.isAeroKick) checkAeroKick();
 
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
@@ -117,9 +117,9 @@ export function checkResize(flusher) {
       }
 
       const AeroKick = document.body.classList.contains("aerokick-customization");
-      if (AeroKick && !flusher.props.isAeroKick) {
+      if (AeroKick) {
         flusher.props.isAeroKick = true;
-        logToConsole(`AeroKick Detected`);
+        /* logToConsole(`AeroKick Detected`); */
         checkAeroKick();
       }
 
@@ -135,57 +135,52 @@ export function checkResize(flusher) {
   }
 
   function checkAeroKick() {
-    if (flusher.props.isAeroKick) {
-      const videoHolder = flusher.video.closest('#video-holder');
-      const bkVideoPlayer = document.getElementById('bk-video-player');
+    /* if (flusher.props.isAeroKick) { */
+    const videoHolder = flusher.video.closest('#video-holder');
+    const bkVideoPlayer = document.getElementById('bk-video-player');
 
-      const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
-      const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
+    const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
+    const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
 
-      let largestElement;
+    flusher.toggle.setAttribute("AeroKick", "");
 
-      if (videoHolderWidth > bkVideoPlayerWidth) {
-        largestElement = videoHolder;
-      } else if (videoHolderWidth < bkVideoPlayerWidth) {
-        largestElement = bkVideoPlayer;
-      }
+    let largestElement;
 
-      if (!largestElement) return false;
+    if (videoHolderWidth > bkVideoPlayerWidth) {
+      largestElement = videoHolder;
+    } else if (videoHolderWidth < bkVideoPlayerWidth) {
+      largestElement = bkVideoPlayer;
+    }
 
-      if (largestElement !== target) {
-        flusher.resizeObserver.disconnect();
-        flusher.resizeObserver = null;
+    if (!largestElement) return false;
 
-        const flusherElement = document.querySelector('.flusher');
-        if (!flusherElement) return false;
+    if (largestElement !== target) {
+      flusher.resizeObserver.disconnect();
+      flusher.resizeObserver = null;
 
-        largestElement.appendChild(flusherElement);
+      const flusherElement = document.querySelector('.flusher');
+      if (!flusherElement) return false;
 
-        const shadowboxElement = document.querySelector('#shadowbox');
-        if (shadowboxElement) largestElement.appendChild(shadowboxElement);
+      largestElement.appendChild(flusherElement);
 
-        flusher.video = largestElement;
-        flusherElement.style.cssText = 'position: absolute !important; z-index: 1010;';
+      const shadowboxElement = document.querySelector('#shadowbox');
+      if (shadowboxElement) largestElement.appendChild(shadowboxElement);
 
-        flusher.menu.style.top = '0 !important';
-        flusher.menu.style.right = '0 !important';
+      flusher.video = largestElement;
+      flusherElement.style.cssText = 'position: absolute !important; z-index: 1010;';
 
-        shadowboxElement.style.zIndex = 1020;
+      flusher.menu.style.top = '0 !important';
+      flusher.menu.style.right = '0 !important';
 
-        const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
+      shadowboxElement.style.zIndex = 1020;
 
-        const existingButton = flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4');
-        existingButton.parentElement.insertBefore(toggle, existingButton);
+      const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
 
-        if (!document.querySelector('.vjs-control-bar .flusher-toggle')) {
-          toggle.style.marginLeft = "1rem";
-          toggle.style.marginRight = "1rem";
-        }
+      const existingButton = flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4');
+      existingButton.parentElement.insertBefore(toggle, existingButton);
 
-        checkResize(flusher, largestElement);
-        return true;
-      }
-    } return false;
+      checkResize(flusher, largestElement);
+    }
   }
 
   function createIntroMessage(flusher) {

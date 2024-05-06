@@ -32,6 +32,11 @@
 	width: 20px;
 }
 
+.toggle-icon[AeroKick] {
+	margin-left: 1rem;
+	margin-right: 1rem;
+}
+
 .vjs-control-bar {
 	z-index: 2;
 }

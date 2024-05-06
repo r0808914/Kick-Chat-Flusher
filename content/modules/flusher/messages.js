@@ -56,29 +56,6 @@ export class FlusherMessages {
   setupWebSocket(flusher) {
     if (this.socket) return;
 
-    /*  console.log('run test');
- 
-     const eventData = {
-       "event": "App\\Events\\UserBannedEvent",
-       "channel": "chatrooms.123456.v2",
-       "data": {
-         "id": "7b1d6e2c-ba4f-4d88-87b0-9c9e67a0e731",
-         "user": {
-           "id": 1234567,
-           "username": "User123",
-           "slug": "user123"
-         },
-         "banned_by": {
-           "id": 0,
-           "username": "Mod123",
-           "slug": "mod123"
-         },
-         "expires_at": "2024-03-21T14:18:30+00:00"
-       }
-     };
- 
-     createUserBanMessage(eventData.data, flusher); */
-
     const webSocketUrl = "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false";
 
     this.socket = new WebSocket(webSocketUrl);
@@ -247,7 +224,7 @@ export class FlusherMessages {
           let emojiCount = 0;
 
           let emojiTrain = [];
-          let isTrain = false;
+          /* let isTrain = false; */
 
           const elements = Array.from(clonedNode.querySelectorAll('.chat-entry-content, .chat-emote-container'));
           for (let i = 0; i < elements.length; i++) {
@@ -357,7 +334,6 @@ export class FlusherMessages {
           }
         }
 
-
         if (checkDupe() && !update) return;
 
         if (!flusher.states.reply || flusher.states.flushState) {
@@ -466,13 +442,11 @@ export class FlusherMessages {
             /* remove spaces */
             uniqueString = uniqueString.replace(/\s/g, '');
 
-            if (flusher.states.flushState) return true;
-
             const exist = flusher.props.displayedMessages.find((obj) => {
               return obj.key === uniqueString;
             });
 
-            if (exist && (!flusher.states.spamState || flusher.states.flushState)) return true;
+            if (exist) return true;
 
             flusher.props.displayedMessages.push({ id: id, key: uniqueString });
 

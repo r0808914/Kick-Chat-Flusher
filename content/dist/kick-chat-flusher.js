@@ -811,28 +811,6 @@ class FlusherMessages {
   }
   setupWebSocket(flusher) {
     if (this.socket) return;
-
-    /*  console.log('run test');
-       const eventData = {
-       "event": "App\\Events\\UserBannedEvent",
-       "channel": "chatrooms.123456.v2",
-       "data": {
-         "id": "7b1d6e2c-ba4f-4d88-87b0-9c9e67a0e731",
-         "user": {
-           "id": 1234567,
-           "username": "User123",
-           "slug": "user123"
-         },
-         "banned_by": {
-           "id": 0,
-           "username": "Mod123",
-           "slug": "mod123"
-         },
-         "expires_at": "2024-03-21T14:18:30+00:00"
-       }
-     };
-       createUserBanMessage(eventData.data, flusher); */
-
     const webSocketUrl = "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false";
     this.socket = new WebSocket(webSocketUrl);
     this.socket.onmessage = event => {
@@ -937,7 +915,8 @@ class FlusherMessages {
           let lastEmoji;
           let emojiCount = 0;
           let emojiTrain = [];
-          let isTrain = false;
+          /* let isTrain = false; */
+
           const elements = Array.from(clonedNode.querySelectorAll('.chat-entry-content, .chat-emote-container'));
           for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
@@ -1120,11 +1099,10 @@ class FlusherMessages {
 
             /* remove spaces */
             uniqueString = uniqueString.replace(/\s/g, '');
-            if (flusher.states.flushState) return true;
             const exist = flusher.props.displayedMessages.find(obj => {
               return obj.key === uniqueString;
             });
-            if (exist && (!flusher.states.spamState || flusher.states.flushState)) return true;
+            if (exist) return true;
             flusher.props.displayedMessages.push({
               id: id,
               key: uniqueString
@@ -1693,7 +1671,7 @@ function createToggle(flusher) {
   const baseMenu = popupMenu.querySelector('.flusher-menu-base');
   const existingButton = flusher.props.external ? parent : flusher.props.isAeroKick ? flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4') : document.querySelector('.vjs-fullscreen-control');
   const toggleBtn = flusher.props.external || flusher.props.isAeroKick ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
-  if (flusher.props.isAeroKick && !document.querySelector('.vjs-control-bar .flusher-toggle')) {
+  if (flusher.props.external && !document.querySelector('.vjs-control-bar .flusher-toggle')) {
     toggleBtn.style.marginLeft = "1rem";
     toggleBtn.style.marginRight = "1rem";
   }
@@ -2649,7 +2627,7 @@ function checkResize(flusher) {
             }
             return;
           }
-          checkAeroKick();
+          if (flusher.props.isAeroKick) checkAeroKick();
           const oldWidth = flusher.props.parentWidth;
           flusher.props.parentWidth = Math.trunc(width) * 2;
           flusher.props.parentHeight = Math.trunc(height);
@@ -2701,9 +2679,9 @@ function checkResize(flusher) {
         flusher.props.isKickTools = true;
       }
       const AeroKick = document.body.classList.contains("aerokick-customization");
-      if (AeroKick && !flusher.props.isAeroKick) {
+      if (AeroKick) {
         flusher.props.isAeroKick = true;
-        logToConsole(`AeroKick Detected`);
+        /* logToConsole(`AeroKick Detected`); */
         checkAeroKick();
       }
       if (KickTools && AeroKick) clearInterval(intervalId);
@@ -2715,43 +2693,37 @@ function checkResize(flusher) {
     flusher.props.timeoutIds.push(intervalId);
   }
   function checkAeroKick() {
-    if (flusher.props.isAeroKick) {
-      const videoHolder = flusher.video.closest('#video-holder');
-      const bkVideoPlayer = document.getElementById('bk-video-player');
-      const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
-      const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
-      let largestElement;
-      if (videoHolderWidth > bkVideoPlayerWidth) {
-        largestElement = videoHolder;
-      } else if (videoHolderWidth < bkVideoPlayerWidth) {
-        largestElement = bkVideoPlayer;
-      }
-      if (!largestElement) return false;
-      if (largestElement !== target) {
-        flusher.resizeObserver.disconnect();
-        flusher.resizeObserver = null;
-        const flusherElement = document.querySelector('.flusher');
-        if (!flusherElement) return false;
-        largestElement.appendChild(flusherElement);
-        const shadowboxElement = document.querySelector('#shadowbox');
-        if (shadowboxElement) largestElement.appendChild(shadowboxElement);
-        flusher.video = largestElement;
-        flusherElement.style.cssText = 'position: absolute !important; z-index: 1010;';
-        flusher.menu.style.top = '0 !important';
-        flusher.menu.style.right = '0 !important';
-        shadowboxElement.style.zIndex = 1020;
-        const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
-        const existingButton = flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4');
-        existingButton.parentElement.insertBefore(toggle, existingButton);
-        if (!document.querySelector('.vjs-control-bar .flusher-toggle')) {
-          toggle.style.marginLeft = "1rem";
-          toggle.style.marginRight = "1rem";
-        }
-        checkResize(flusher, largestElement);
-        return true;
-      }
+    /* if (flusher.props.isAeroKick) { */
+    const videoHolder = flusher.video.closest('#video-holder');
+    const bkVideoPlayer = document.getElementById('bk-video-player');
+    const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
+    const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
+    flusher.toggle.setAttribute("AeroKick", "");
+    let largestElement;
+    if (videoHolderWidth > bkVideoPlayerWidth) {
+      largestElement = videoHolder;
+    } else if (videoHolderWidth < bkVideoPlayerWidth) {
+      largestElement = bkVideoPlayer;
     }
-    return false;
+    if (!largestElement) return false;
+    if (largestElement !== target) {
+      flusher.resizeObserver.disconnect();
+      flusher.resizeObserver = null;
+      const flusherElement = document.querySelector('.flusher');
+      if (!flusherElement) return false;
+      largestElement.appendChild(flusherElement);
+      const shadowboxElement = document.querySelector('#shadowbox');
+      if (shadowboxElement) largestElement.appendChild(shadowboxElement);
+      flusher.video = largestElement;
+      flusherElement.style.cssText = 'position: absolute !important; z-index: 1010;';
+      flusher.menu.style.top = '0 !important';
+      flusher.menu.style.right = '0 !important';
+      shadowboxElement.style.zIndex = 1020;
+      const toggle = flusher.toggle.querySelector('svg') ?? flusher.toggle;
+      const existingButton = flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4');
+      existingButton.parentElement.insertBefore(toggle, existingButton);
+      checkResize(flusher, largestElement);
+    }
   }
   function createIntroMessage(flusher) {
     const introContent = document.createElement("div");
