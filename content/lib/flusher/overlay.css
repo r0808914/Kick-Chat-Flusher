@@ -106,10 +106,10 @@
   font-weight: 800;
 }
 
-/* .flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(233, 17, 60)"],
+.flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(233, 17, 60)"],
 .flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(20, 117, 225)"] {
   opacity: .95 !important;
-} */
+}
 
 .flusher-messages[aerokick] div.bk-text-sm,
 .flusher-messages[aerokick] span[class="bk-inline"],
@@ -475,12 +475,10 @@
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"],
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  /* text-shadow: 0px 1px 1px #00000000, -1px -1px 1px #000000d0, 1px -1px 1px #000000d0, -1px 1px 1px #000000d0,
-    1px 1px 1px #000000d0, 1px 0px 2px #ffffff; */
-  /* text-shadow: -1px -1px 2px #262626, 1px -1px 2px #000000, -1px 1px 2px #262626,
-    1px 1px 2px #000000; */
-  text-shadow: 0px -1px 1.5px #202020, 0px 1px 1.5px #202020, 1px 0px 1.5px #202020,
-    -1px 0px 1.5px #202020;
+  /* text-shadow: 0px -1px 1.5px #202020, 0px 1px 1.5px #202020, 1px 0px 1.5px #202020,
+    -1px 0px 1.5px #202020; */
+  text-shadow: 0px -1px 1.5px #1d1d1d, 0px 1px 1.5px #1d1d1d, 1px 0px 1.5px #181818,
+    -1px 0px 1.5px #1d1d1d, 1.5px 1.5px 1.5px #1d1d1d;
   opacity: .98;
 }
 

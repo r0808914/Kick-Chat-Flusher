@@ -586,7 +586,7 @@ export function createMenu(flusher) {
          const popupHtml = `
          <div id="flusher-popup">
            <h2>Kick Chat Flusher</h2>
-           <p>Spam hidden by default. Show all messages by toggling "Show Spam" in settings.</p>
+           <p>By default, spam messages are filtered. To view all messages, toggle the 'Show Spam' option in settings. Note that filtering spam may result in increased workload in certain scenarios.</p>
            <button id="closeBtn">OK</button>
          </div>`;
 

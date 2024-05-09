@@ -250,7 +250,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.2</div>
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.3</div>
         </div>
       </div>
     </div>

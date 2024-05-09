@@ -139,7 +139,7 @@ export class FlusherMessages {
     const observerConfig = { childList: true, subtree: false };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
 
-    async function prepareMessage(addedNode, update) {
+    function prepareMessage(addedNode, update) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
 
       if (AeroKick && !flusher.props.isVod) {
@@ -247,16 +247,132 @@ export class FlusherMessages {
 
                 try {
                   /* excessive spaces and newlines */
-                  text = text.replace(/\s+/g, ' ').trim();
+                  text = text.replace(/\s+/g, ' ');
 
                   /* Remove duplicate consecutive characters */
-                  text = text.replace(/([\s\S])(\1{2,})/gu, '$1$1$1');
+                  /* text = text.replace(/([\s\S])(\1{2,})/gu, '$1$1$1'); */
+                  text = text.replace(/([\p{Emoji}]|[\p{L}])(\1{2,})/gu, '$1$1$1');
+
+                  let regex;
 
                   /* Remove duplicate sentences */
-                  const regex = /(.+)(?= \1)/g;
-                  text = text.replace(regex, "").trim();
+                  /* 
+                  text = text.replace(regex, "$1"); */
+                  /* text = splitAndFilterStringByEmoji(text); */
+
+                  // Regular expression to match repeating sequences
+                  regex = /(.+?)\1{2,}/g;
+                  text.replace(regex, (match, group) => group + '(' + (match.length / group.length) + ')');
 
                   element.textContent = text;
+
+                  function splitAndFilterStringByEmoji(inputString) {
+
+                    let lastText2 = "";
+                    let textDupe2 = false;
+
+                    let lastEmoji2;
+                    let emojiCount2 = 0;
+
+                    let emojiTrain2 = [];
+                    let result = [];
+
+                    let regex2 = /([\p{Emoji}]\s?|[^\p{Emoji}]+)/gu;
+                    let matches = [...inputString.matchAll(regex2)];
+
+                    for (let i = 0; i < matches.length; i++) {
+                      let segment = matches[i].input;
+
+                      const regexExp = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/gi;
+                      if (!regexExp.test(segment)) {
+                        emojiCount2 = 0;
+                        /* isTrain = false; */
+
+                        const regexSentence = /(\b.+?\b)\1+/g;
+                        segment = segment.replace(regexSentence, "$1");
+
+                        /* Remove if same as last */
+                        if (lastText2.includes(segment)) {
+                          textDupe2 = true;
+                        } else {
+                          result.push(segment);
+                          lastText2 = segment;
+                          textDupe2 = false;
+                        }
+                      } else {
+
+                        /* Train hits on > 1 emojis */
+                        if (emojiTrain2.length > 1 && emojiTrain2[0] === segment) {
+
+                          // Start checking for the train
+                          let currentElementCount = i + 1;
+                          let currentElement = matches[currentElementCount]?.input;
+                          let detectedTrain = [];
+
+                          if (currentElement) {
+                            for (let i = 1; i < emojiTrain2.length; i++) {
+                              if (currentElement !== emojiTrain2[i]) {
+                                /* isTrain = false; */
+                                detectedTrain = [];
+                                break;
+                              }
+
+                              detectedTrain.push(currentElement);
+                              currentElementCount++;
+                              currentElement = matches[currentElementCount]?.input;
+                            }
+                          }
+
+                          // Remove the detected train
+                          if (detectedTrain.length > 0) {
+                            /* elements.splice(i, detectedTrain.length);
+                            i--; */
+                          } else {
+                            processTrain();
+                          }
+                        } else {
+                          /* if (!isTrain) {
+                            emojiTrain = [];
+                            lastEmoji = null;
+                          } */
+                          processTrain();
+                        }
+
+                        function processTrain() {
+                          // Start a new train
+                          /* isTrain = true; */
+                          emojiTrain2.push(segment);
+
+                          if (segment === lastEmoji2) {
+
+                            /* Remove excessive emojis */
+                            emojiCount2++;
+                            if (emojiCount2 > 2) {
+                            }
+
+                            /* Check if emoji + text spam */
+                            else if (!textDupe2 && emojiCount2 === 1) {
+                              const nextElement = elements[i + 1];
+                              if (nextElement && /[\p{Emoji}]/gu.test(nextElement)) {
+                                if (nextElement === lastText2) {
+                                }
+                              }
+                            } else {
+                              result.push(segment);
+                            }
+
+                          } else {
+                            result.push(segment);
+
+                            lastText2 = segment;
+                            emojiCount2 = 0;
+                          }
+                        }
+                      }
+                    }
+                    return result.join('');
+                  }
+
                 } catch (error) {
                   console.error('Error occurred while processing text:', error);
                   console.log('Text causing error:', text);
@@ -275,7 +391,7 @@ export class FlusherMessages {
                 if (currentElement) {
                   for (let i = 1; i < emojiTrain.length; i++) {
                     if (currentElement?.querySelector('img')?.getAttribute('alt') !== emojiTrain[i]) {
-                      isTrain = false;
+                      /* isTrain = false; */
                       detectedTrain = [];
                       break;
                     }
@@ -311,7 +427,7 @@ export class FlusherMessages {
 
                   /* Remove excessive emojis */
                   emojiCount++;
-                  if (emojiCount > 2) {
+                  if (emojiCount > 3) {
                     element.parentElement.remove();
                   }
 
@@ -402,7 +518,8 @@ export class FlusherMessages {
               uniqueString += divTextContent + " ";
 
               /* Remove duplicate consecutive characters */
-              uniqueString = uniqueString.replace(/([\s\S])(\1{1,})/gu, '$1');
+              uniqueString = uniqueString.replace(/([\p{Emoji}]|[\p{L}])(\1{2,})/gu, '$1');
+
             }
 
             /* set emotes */
@@ -463,12 +580,12 @@ export class FlusherMessages {
         if (id && !flusher.states.flushState) observeNestedChildren(addedNode, id, clonedNode);
 
         function observeNestedChildren(parentNode, id, clonedNode) {
-          const observer = new MutationObserver(async () => {
+          const observer = new MutationObserver(() => {
             if (clonedNode) {
               if (flusher.states.deleted && parentNode.querySelector('.chat-entry-content-deleted')) {
                 clonedNode.classList.add('flusher-deleted');
               } else {
-                clonedNode.replaceWith(await prepareMessage(parentNode, true));
+                clonedNode.replaceWith(prepareMessage(parentNode, true));
               }
             }
           });
