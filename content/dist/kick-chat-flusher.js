@@ -14,7 +14,7 @@ class FlusherStates {
     this.chatEnabled = true;
     this.flushState = false;
     this.shadow = true;
-    this.slide = true;
+    this.slide = false;
     this.reply = true;
     this.timeState = false;
     this.spamState = false;
@@ -195,7 +195,7 @@ function prepareAnimation(data, flusher) {
     try {
       const oldest = flusher.container.firstElementChild;
       if (!flusher.states.spamState) {
-        const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
+        const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-index');
         if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
       }
       oldest.remove();
@@ -241,7 +241,7 @@ function appendVertical(message, flusher) {
   }
   while (flusher.container.children.length > flusher.props.maxRows) {
     const oldest = flusher.container.lastElementChild;
-    const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
+    const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-index');
     if (entryId) {
       const observer = flusher.props.messageObservers.get(entryId);
       if (observer) {
@@ -845,7 +845,7 @@ class FlusherMessages {
     self.flusher = flusher;
     const AeroKick = document.body.classList.contains("aerokick-customization");
     if (AeroKick) logToConsole(`AeroKick Detected`);
-    const nativeChat = await waitForChat(flusher.props.isVod ? document.querySelector("#chatroom-replay") : document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : ".overflow-y-scroll.py-3"), AeroKick);
+    const nativeChat = await waitForChat(document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages"), AeroKick);
     flusher.props.nativeChat = nativeChat;
     const b = typeof browser !== "undefined" ? browser : chrome;
     const defaultAvatar = b.runtime.getURL("lib/kick/user-profile-pic.png");
@@ -870,6 +870,11 @@ class FlusherMessages {
     this.nativeChatObserver.observe(nativeChat, observerConfig);
     function prepareMessage(addedNode, update) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
+
+      /* hotfix */
+      const id = addedNode.getAttribute("data-index");
+      addedNode = addedNode.firstElementChild;
+      addedNode.setAttribute('data-index', id);
       if (AeroKick && !flusher.props.isVod) {
         const button = addedNode.querySelector("button");
         if (!button) {
@@ -877,9 +882,14 @@ class FlusherMessages {
           return;
         }
       }
-      const id = AeroKick && flusher.props.isAeroKick ? addedNode.querySelector("button").getAttribute("data-radial-id") : addedNode.getAttribute("data-chat-entry");
-      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "")) return;
+
+      /* const id =
+        AeroKick && flusher.props.isAeroKick
+          ? addedNode.querySelector("button").getAttribute("data-radial-id")
+          : addedNode.getAttribute("data-chat-entry"); */
+      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "") /* fix */) return;
       const clonedNode = addedNode.cloneNode(true);
+      clonedNode.classList.remove("relative", "group");
       if (self.flusher.props.isAeroKick) {
         clonedNode.style.fontSize = null;
         clonedNode.style.marginTop = null;
@@ -908,7 +918,10 @@ class FlusherMessages {
           };
         }
       }
-      if (id || id === "") {
+
+      /* temp */
+      const disableCondition = true;
+      if (!disableCondition && (id || id === "")) {
         if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
           let lastText;
           let textDupe = false;
@@ -1232,8 +1245,11 @@ class FlusherMessages {
     }
     function waitForChat(parent) {
       if (!parent) parent = document.body;
-      const chatEntry = parent.querySelector(".rounded-md.bk-block") ?? parent.querySelector("[data-chat-entry]");
-      if (chatEntry) return chatEntry.parentElement;
+      const chatEntry = parent.querySelector(".rounded-md.bk-block") ?? parent.querySelector(".group.relative");
+
+      /* hotfix */
+      /* if (chatEntry) return chatEntry.parentElement; */
+      if (chatEntry) return chatEntry.closest('.no-scrollbar.relative');
       return new Promise(resolve => {
         const config = {
           attributes: true,
@@ -1241,22 +1257,42 @@ class FlusherMessages {
           subtree: true
         };
         let found = false;
-        const mutationCallback = function (mutationsList, observer) {
-          for (const mutation of mutationsList) {
-            if (mutation.type === "childList") {
-              mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1 && (node.classList.contains("bk-block.rounded-md") || node.hasAttribute("data-chat-entry"))) {
-                  if (found) return;
-                  observer.disconnect();
-                  resolve(node.parentNode);
-                  found = true;
-                }
-              });
+        let parent = document.querySelector('#chatroom-messages');
+        const startObserver = () => {
+          if (!parent) return;
+          const mutationCallback = function (mutationsList, observer) {
+            for (const mutation of mutationsList) {
+              if (mutation.type === "childList") {
+                mutation.addedNodes.forEach(node => {
+                  if (node.nodeType === 1 && (node.classList.contains("bk-block.rounded-md") || !!node.querySelector(".group.relative"))) {
+                    if (found) {
+                      return;
+                    }
+                    found = true;
+                    observer.disconnect();
+                    clearInterval(intervalId);
+                    resolve(node.closest('.no-scrollbar.relative'));
+                  }
+                });
+              }
             }
-          }
+          };
+          const observer = new MutationObserver(mutationCallback);
+          observer.observe(parent, config);
         };
-        const observer = new MutationObserver(mutationCallback);
-        observer.observe(parent, config);
+        startObserver();
+        const intervalId = setInterval(() => {
+          if (!document.body.contains(parent)) {
+            console.log('Parent element is no longer in the DOM, restarting...');
+            found = false;
+            parent = document.querySelector('#chatroom-messages');
+          } else {}
+        }, 2000);
+        const originalResolve = resolve;
+        resolve = result => {
+          clearInterval(intervalId);
+          originalResolve(result);
+        };
       });
     }
   }
@@ -1759,18 +1795,24 @@ const toggle = element_doc.body.firstChild;
 
 let clickOutsideHandlerFunction = null;
 function createToggle(flusher) {
-  const parent = !flusher.props.isAeroKick && !flusher.props.external ? flusher.video.closest('#video-holder') : flusher.video.parentNode;
-  const domToggle = parent.querySelector('.flusher-toggle-btn');
-  if (domToggle !== null) return;
+  /* const parent = (!flusher.props.isAeroKick && !flusher.props.external) ? flusher.video.closest('#video-holder') : flusher.video.parentNode; */
+  const parent = flusher.video.parentNode;
   const popupMenu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
   const baseMenu = popupMenu.querySelector('.flusher-menu-base');
-  const existingButton = flusher.props.external ? parent : flusher.props.isAeroKick ? flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4') : document.querySelector('.vjs-fullscreen-control');
-  const toggleBtn = flusher.props.external || flusher.props.isAeroKick ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
-  if (flusher.props.external && !document.querySelector('.vjs-control-bar .flusher-toggle')) {
-    toggleBtn.style.marginLeft = "1rem";
-    toggleBtn.style.marginRight = "1rem";
+  let toggleBtn;
+  if (!flusher.toggleNative) {
+    const domToggle = parent?.querySelector('.flusher-toggle-btn');
+    if (domToggle !== null) return;
+    toggleBtn = flusher.props.external || flusher.props.isAeroKick ? toggle.querySelector('svg').cloneNode(true) : toggle.cloneNode(true);
+    if (flusher.props.external && !document.querySelector('.vjs-control-bar .flusher-toggle')) {
+      toggleBtn.style.marginLeft = "1rem";
+      toggleBtn.style.marginRight = "1rem";
+    }
+    const existingButton = flusher.props.external ? parent : flusher.props.isAeroKick ? flusher.video.parentElement.querySelector('button.bk-relative.bk-mr-4') : document.querySelector('.vjs-fullscreen-control');
+    flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, flusher.props.isAeroKick ? existingButton : existingButton.nextSibling);
+  } else {
+    toggleBtn = flusher.toggleNative;
   }
-  flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, flusher.props.isAeroKick ? existingButton : existingButton.nextSibling);
   svgToggle(flusher);
   toggleBtn.addEventListener('mousedown', function (event) {
     event.stopPropagation();
@@ -1930,12 +1972,21 @@ function dragElement(flusher) {
 
 
 
+function safeTextContent(element, content) {
+  if (element) {
+    try {
+      element.textContent = content;
+    } catch (error) {
+      console.error('Error updating text content:', error);
+    }
+  }
+}
 function createMenu(flusher) {
   const toggledClass = 'toggled-on';
   const domMenu = flusher.video.querySelector('.flusher-menu');
   if (domMenu === null) {
     const b = typeof browser !== 'undefined' ? browser : chrome;
-    let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : document.querySelector('.vjs-control-bar');
+    let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : flusher.controls;
     const shadowBox = document.createElement('div');
     shadowBox.id = 'shadowbox';
     if (flusher.props.isAeroKick) shadowBox.style.zIndex = 1020;
@@ -1987,7 +2038,7 @@ function createMenu(flusher) {
     });
     const positionBtn = overlayMenu.querySelector('.flusher-position');
     const divInsidePosition = positionBtn.querySelector('div:empty');
-    divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+    safeTextContent(divInsidePosition, toTitleCase(flusher.states.positionStates[flusher.states.positionState]));
     positionBtn.addEventListener('mousedown', function (event) {
       flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
       divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
@@ -2026,7 +2077,7 @@ function createMenu(flusher) {
     });
     const sizeBtn = overlayMenu.querySelector('.flusher-size');
     const divInsideSize = sizeBtn.querySelector('div:empty');
-    divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
+    safeTextContent(divInsideSize, toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]));
     sizeBtn.addEventListener('mousedown', function (event) {
       flusher.states.sizeState = (flusher.states.sizeState + 1) % flusher.states.sizeStates.length;
       divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
@@ -2065,7 +2116,7 @@ function createMenu(flusher) {
     });
     const backgroundBtn = messageMenu.querySelector('.flusher-background');
     const divInsideBackground = backgroundBtn.querySelector('div:empty');
-    divInsideBackground.textContent = toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]);
+    safeTextContent(divInsideBackground, toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]));
     backgroundBtn.addEventListener('mousedown', function (event) {
       flusher.states.backgroundState = (flusher.states.backgroundState + 1) % flusher.states.backgroundStates.length;
       setExtensionStorageItem('flusher-background', flusher.states.backgroundState);
@@ -2202,7 +2253,7 @@ function createMenu(flusher) {
     if (flusher.states.spamState) spamBtn.classList.toggle(toggledClass);
     const fontBtn = settingsMenu.querySelector('.flusher-font');
     const divInsideFont = fontBtn.querySelector('div:empty');
-    divInsideFont.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.fontState]);
+    safeTextContent(divInsideFont, toTitleCase(flusher.states.sizeStates[flusher.states.fontState]));
     fontBtn.addEventListener('mousedown', function (event) {
       flusher.states.fontState = (flusher.states.fontState + 1) % flusher.states.sizeStates.length;
       setExtensionStorageItem('flusher-font', flusher.states.fontState);
@@ -2382,18 +2433,22 @@ function createMenu(flusher) {
       divInsidekeybindSpam.textContent = flusher.states.keybinds.spam;
       /* divInsidekeybindMenu.textContent = flusher.states.keybinds.menu; */
     }
-    if (!flusher.props.intro) {
-      const popupHtml = `
-         <div id="flusher-popup">
-           <h2>Kick Chat Flusher</h2>
-           <p>By default, spam messages are filtered. To view all messages, toggle the 'Show Spam' option in settings. Note that filtering spam may result in increased workload in certain scenarios.</p>
-           <button id="closeBtn">OK</button>
-         </div>`;
-      const parser = new DOMParser();
-      const popupDoc = parser.parseFromString(popupHtml, 'text/html');
-      flusher.props.popupContainer = popupDoc.body.firstChild.cloneNode(true);
-      flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
-    }
+
+    /* temp disabled */
+
+    /* if (!flusher.props.intro) {
+       const popupHtml = `
+       <div id="flusher-popup">
+         <h2>Kick Chat Flusher</h2>
+         <p>By default, spam messages are filtered. To view all messages, toggle the 'Show Spam' option in settings. Note that filtering spam may result in increased workload in certain scenarios.</p>
+         <button id="closeBtn">OK</button>
+       </div>`;
+        const parser = new DOMParser();
+       const popupDoc = parser.parseFromString(popupHtml, 'text/html');
+       flusher.props.popupContainer = popupDoc.body.firstChild.cloneNode(true);
+        flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
+    } */
+
     return createToggle(flusher);
   }
   function captureKeybind() {
@@ -2623,7 +2678,77 @@ async function createChat(flusher) {
   flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
   flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
   setCustomPosition(flusher);
-  flusher.toggle = createMenu(flusher);
+
+  /* important */
+  /* doing this fix cause z-controls is dynamic */
+
+  function addBtn(node) {
+    const buttons = node.querySelectorAll('button');
+    const existingButton = Array.from(buttons).find(button => button.hasAttribute('data-flusher'));
+    if (!existingButton && buttons.length > 0) {
+      const lastButton = buttons[buttons.length - 1];
+      const clone = lastButton.cloneNode(true);
+      clone.setAttribute('data-flusher', 'true');
+      const svgString = `
+          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="24" height="24" rx="5" fill="none" stroke="rgba(83,252,24,1)" stroke-width="4" />
+          </svg>`;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgString, 'image/svg+xml');
+      const newSVG = doc.documentElement;
+      clone.replaceChildren(newSVG);
+      lastButton.parentNode.insertBefore(clone, lastButton.nextSibling);
+      flusher.controls = node;
+
+      /* temp fix */
+      flusher.toggleNative = clone;
+      flusher.toggle = createMenu(flusher);
+    }
+    checkResize(flusher);
+  }
+  function dupeBtn(node) {
+    const btn = node.querySelector('button');
+    if (btn) {
+      addBtn(node);
+    } else {
+      flusher.props.controlsDupeObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          mutation.addedNodes.forEach(function (node) {
+            if (node.classList.contains('z-controls')) {
+              flusher.props.controlsDupeObserver.disconnect();
+              addBtn(node);
+            }
+          });
+        });
+      });
+      flusher.props.controlsDupeObserver.observe(flusher.video.parentNode, {
+        childList: true,
+        subtree: true
+      });
+    }
+  }
+  flusher.props.controlsObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      if (mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('z-controls')) {
+            dupeBtn(node);
+          }
+        });
+      }
+    });
+  });
+  flusher.props.controlsObserver.observe(flusher.video.parentNode, {
+    childList: true,
+    subtree: true
+  });
+
+  /* temp fix */
+  flusher.props.isAeroKick ? flusher.video.append(chatFlusher) : flusher.video.parentNode.append(chatFlusher);
+  flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
+  checkResize(flusher);
+  /* - */
+
   if (flusher.props.isAeroKick) {
     const videoHolder = flusher.video.closest('#video-holder');
     const bkVideoPlayer = document.getElementById('bk-video-player');
@@ -2637,9 +2762,6 @@ async function createChat(flusher) {
     }
     flusher.video = largestElement;
   }
-  flusher.props.isAeroKick ? flusher.video.append(chatFlusher) : flusher.video.parentNode.append(chatFlusher);
-  flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
-  checkResize(flusher);
   function getExtensionStorageItem(key, defaultValue) {
     return new Promise(resolve => {
       chrome.storage.local.get([key], result => {
@@ -2686,7 +2808,38 @@ function setCustomPosition(flusher) {
 
 
 
+function resize_reset(flusher) {
+  const init = !flusher.props.external;
+  if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
+  flusher.resizeObserver = null;
+  if (flusher.props.keydownListener) flusher.props.keydownListener.stopListening();
+  for (const id of flusher.props.timeoutIds) {
+    clearTimeout(id);
+  }
+
+  /* temp fix */
+  const flusherElements = document.querySelectorAll('.flusher');
+  flusherElements.forEach(element => {
+    element.remove();
+  });
+  if (flusher.video) flusher.video.removeAttribute('flusher');
+  /* - */
+
+  flusher.clear();
+  flusher.provider.unbindRequests(flusher);
+  flusher = null;
+  if (init) kick.init();
+}
 function checkResize(flusher) {
+  /* temp fix */
+  const isUrlEqual = window.currentUrl === undefined || window.currentUrl === window.location.href;
+  if (!isUrlEqual) {
+    window.currentUrl = window.location.href;
+    resize_reset(flusher);
+    return;
+  }
+  /* - */
+
   const videoElement = flusher.video.querySelector("video");
   let target;
   if (!flusher.props.isAeroKick && videoElement) {
@@ -2697,7 +2850,9 @@ function checkResize(flusher) {
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver(entries => {
-    if (flusher.container !== null) flusher.container.style.display = "none";
+    /* temp disable testing */
+    /* if (flusher.container !== null) flusher.container.style.display = "none"; */
+
     for (let entry of entries) {
       if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
       flusher.resizeTimer = setTimeout(() => {
@@ -2705,21 +2860,13 @@ function checkResize(flusher) {
           const rect = target.getBoundingClientRect();
           let width = rect.width;
           let height = rect.height;
+
+          /* temp fix */
+          const isUrlEqual = window.currentUrl === undefined || window.currentUrl === window.location.href;
           window.currentUrl = window.location.href;
           const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
-          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged) {
-            if (flusher !== null) {
-              const init = !flusher.props.external;
-              flusher.resizeObserver.disconnect();
-              flusher.resizeObserver = null;
-              if (flusher.props.keydownListener) flusher.props.keydownListener.stopListening();
-              for (const id of flusher.props.timeoutIds) {
-                clearTimeout(id);
-              }
-              flusher.provider.unbindRequests(flusher);
-              flusher = null;
-              if (init) kick.init();
-            }
+          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged || !isUrlEqual) {
+            if (flusher !== null) resize_reset(flusher);
             return;
           }
           if (flusher.props.isAeroKick) checkAeroKick();
@@ -2751,6 +2898,9 @@ function checkResize(flusher) {
             processMessageQueue(flusher);
             togglePointerEvents(flusher);
             checkAddons(flusher);
+
+            /* temp fix moved */
+            window.currentUrl = window.location.href;
 
             /* temp fix toggle btn not clickable in theater */
             const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
@@ -2841,7 +2991,7 @@ function checkResize(flusher) {
   }
   function setAttributes() {
     flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
-    flusher.toggle.setAttribute("domain", flusher.props.domain);
+    if (flusher.toggle) flusher.toggle.setAttribute("domain", flusher.props.domain);
     const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
     flusher.container.setAttribute("layout", newFlushState);
     flusher.container.setAttribute("enabled", flusher.states.chatEnabled);
@@ -3123,6 +3273,11 @@ class Flusher {
     }
   }
   clear() {
+    /* temp fix */
+    if (this.props.controlsDupeObserver) this.props.controlsDupeObserver.disconnect();
+    if (this.props.controlsObserver) this.props.controlsObserver.disconnect();
+    /* - */
+
     if (this.container) this.container.style.display = 'none';
     const isEnabled = this.states.chatEnabled;
     this.states.chatEnabled = false;
@@ -3184,8 +3339,7 @@ class Flusher {
 
 class Kick {
   static init() {
-    /* logToConsole(`Initialize`); */
-
+    logToConsole(`Initialize`);
     let stopObserver = false;
     const observeVideo = () => {
       const videoObserver = new MutationObserver(() => {
@@ -3197,7 +3351,7 @@ class Kick {
           setTimeout(() => {
             let video = document.getElementsByTagName('video');
             video = video[video.length - 1];
-            let channelName = document.querySelector(".stream-username");
+            let channelName = document.getElementById("channel-username");
             if (channelName && video) {
               channelName = channelName.innerText.trim();
               const AeroKick = video.classList.contains('bk-aspect-video');
@@ -3216,13 +3370,13 @@ class Kick {
             const observer = new MutationObserver(mutations => {
               mutations.forEach(mutation => {
                 if (!stopObserver && mutation.addedNodes) {
-                  if (document.querySelector(".stream-username")) {
+                  if (document.getElementById("channel-username")) {
                     let video = document.getElementsByTagName('video');
                     video = video[video.length - 1];
                     if (video) {
                       /* logToConsole(`KICK stop video observer`); */
                       stopObserver = true;
-                      const channelName = document.querySelector(".stream-username").innerText.trim();
+                      const channelName = document.getElementById("channel-username").innerText.trim();
                       const AeroKick = video.classList.contains('bk-aspect-video');
                       /* if (AeroKick) logToConsole(`AeroKick Detected`); */
                       const flusher = new Flusher(video, "KICK", channelName, AeroKick);

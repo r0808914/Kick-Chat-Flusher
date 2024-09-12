@@ -30,7 +30,6 @@ export function appendVertical(message, flusher) {
 		if (message.container) {
 			if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
 			flusher.container['insertBefore'](message.container, lastItem);
-
 		} else {
 			if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
 			flusher.container['insertBefore'](message, lastItem);
@@ -39,7 +38,7 @@ export function appendVertical(message, flusher) {
 
 	while (flusher.container.children.length > flusher.props.maxRows) {
 		const oldest = flusher.container.lastElementChild;
-		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-chat-entry');
+		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-index');
 		if (entryId) {
 			const observer = flusher.props.messageObservers.get(entryId);
 			if (observer) {

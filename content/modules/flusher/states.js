@@ -13,7 +13,7 @@ export class FlusherStates {
     this.flushState = false;
 
     this.shadow = true;
-    this.slide = true;
+    this.slide = false;
     this.reply = true;
     this.timeState = false;
 

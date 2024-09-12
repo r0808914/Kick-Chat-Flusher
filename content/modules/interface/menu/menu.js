@@ -4,13 +4,24 @@ import { dragElement } from '../../utils/drag.js';
 import { toTitleCase, logToConsole } from '../../utils/utils.js';
 import { checkPosition } from '../../utils/resize.js';
 
+function safeTextContent(element, content) {
+   if (element) {
+      try {
+         element.textContent = content;
+      } catch (error) {
+         console.error('Error updating text content:', error);
+      }
+   }
+}
+
+
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
 
    const domMenu = flusher.video.querySelector('.flusher-menu');
    if (domMenu === null) {
       const b = typeof browser !== 'undefined' ? browser : chrome;
-      let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : document.querySelector('.vjs-control-bar');
+      let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : flusher.controls;
 
       const shadowBox = document.createElement('div');
       shadowBox.id = 'shadowbox';
@@ -74,7 +85,7 @@ export function createMenu(flusher) {
 
       const positionBtn = overlayMenu.querySelector('.flusher-position');
       const divInsidePosition = positionBtn.querySelector('div:empty');
-      divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+      safeTextContent(divInsidePosition, toTitleCase(flusher.states.positionStates[flusher.states.positionState]));
 
       positionBtn.addEventListener('mousedown', function (event) {
          flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
@@ -118,7 +129,7 @@ export function createMenu(flusher) {
 
       const sizeBtn = overlayMenu.querySelector('.flusher-size');
       const divInsideSize = sizeBtn.querySelector('div:empty');
-      divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
+      safeTextContent(divInsideSize, toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]));
 
       sizeBtn.addEventListener('mousedown', function (event) {
          flusher.states.sizeState = (flusher.states.sizeState + 1) % flusher.states.sizeStates.length;
@@ -162,7 +173,7 @@ export function createMenu(flusher) {
 
       const backgroundBtn = messageMenu.querySelector('.flusher-background');
       const divInsideBackground = backgroundBtn.querySelector('div:empty');
-      divInsideBackground.textContent = toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]);
+      safeTextContent(divInsideBackground, toTitleCase(flusher.states.backgroundStates[flusher.states.backgroundState]));
 
       backgroundBtn.addEventListener('mousedown', function (event) {
          flusher.states.backgroundState = (flusher.states.backgroundState + 1) % flusher.states.backgroundStates.length;
@@ -329,7 +340,7 @@ export function createMenu(flusher) {
 
       const fontBtn = settingsMenu.querySelector('.flusher-font');
       const divInsideFont = fontBtn.querySelector('div:empty');
-      divInsideFont.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.fontState]);
+      safeTextContent(divInsideFont, toTitleCase(flusher.states.sizeStates[flusher.states.fontState]));
 
       fontBtn.addEventListener('mousedown', function (event) {
          flusher.states.fontState = (flusher.states.fontState + 1) % flusher.states.sizeStates.length;
@@ -582,7 +593,9 @@ export function createMenu(flusher) {
          /* divInsidekeybindMenu.textContent = flusher.states.keybinds.menu; */
       }
 
-      if (!flusher.props.intro) {
+      /* temp disabled */
+
+      /* if (!flusher.props.intro) {
          const popupHtml = `
          <div id="flusher-popup">
            <h2>Kick Chat Flusher</h2>
@@ -595,7 +608,7 @@ export function createMenu(flusher) {
          flusher.props.popupContainer = popupDoc.body.firstChild.cloneNode(true);
 
          flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
-      }
+      } */
 
       return createToggle(flusher);
    }

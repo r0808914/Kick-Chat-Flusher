@@ -13,20 +13,20 @@
   will-change: transform;
 }
 
-/* .flusher-messages[layout="horizontal"] .chat-entry-username {
+/* .flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower-username {
   vertical-align: text-top;
 } */
 
 /* .flusher-messages[layout="horizontal"] .font-bold.text-white,
-.flusher-messages[layout="horizontal"] .chat-entry-content {
+.flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower-content {
   vertical-align: text-bottom;
 } */
 
-.flusher-messages .chat-entry-clip {
+.flusher-messages .betterhover\:group-hover\:bg-shade-lower-clip {
   height: auto;
 }
 
-.flusher-messages .chat-entry-clip-img {
+.flusher-messages .betterhover\:group-hover\:bg-shade-lower-clip-img {
   margin-top: auto;
   margin-bottom: auto;
 }
@@ -62,7 +62,7 @@
   vertical-align: middle;
 }
 
-.flusher-messages[layout="horizontal"] .chat-entry {
+.flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower {
   margin: 0 !important;
   min-height: auto !important;
   overflow: hidden;
@@ -77,7 +77,7 @@
 }
 
 .flusher-messages[layout="vertical"][aerokick]>div,
-.flusher-messages[layout="vertical"] .chat-entry {
+.flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower {
   align-content: center;
   background: none;
   font-size: 1rem;
@@ -86,41 +86,42 @@
   letter-spacing: .1px;
 }
 
-.flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
 .flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-messages[layout="vertical"][aerokick] .bk-inline,
-.flusher-messages[layout="vertical"] .chat-entry-content {
+.flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower-content,
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower span.font-normal,
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower button.font-bold,
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower>span {
   font-weight: 700 !important;
 }
 
 .flusher-messages[shadow="true"].flusher-messages[aerokick] div.bk-text-sm,
 .flusher-messages[shadow="true"].flusher-messages[aerokick] span[class="bk-inline"],
-.flusher-messages .chat-entry-content-deleted,
-.flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
+.flusher-messages .betterhover\:group-hover\:bg-shade-lower-content-deleted,
+.flusher-messages[shadow="true"] .betterhover\:group-hover\:bg-shade-lower span[class="truncate"] {
   text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
     1px 1px 1px rgba(0, 0, 0, 0.6);
   font-weight: 700;
 }
 
-.flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
+.flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
   font-weight: 800;
 }
 
-.flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(233, 17, 60)"],
-.flusher-messages[layout="vertical"] .chat-entry span.chat-entry-username[style*="color: rgb(20, 117, 225)"] {
-  opacity: .95 !important;
-}
+.flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower span.betterhover\:group-hover\:bg-shade-lower-username[style*="color: rgb(233, 17, 60)"],
+.flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower span.betterhover\:group-hover\:bg-shade-lower-username[style*="color: rgb(20, 117, 225)"] {}
 
 .flusher-messages[aerokick] div.bk-text-sm,
 .flusher-messages[aerokick] span[class="bk-inline"],
-.flusher-messages .chat-entry-content-deleted,
-.flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
+.flusher-messages .betterhover\:group-hover\:bg-shade-lower-content-deleted,
+.flusher-messages[shadow="true"] .betterhover\:group-hover\:bg-shade-lower span[class="truncate"] {
   color: var(--flusher-white) !important;
   opacity: .95;
   white-space: normal;
 }
 
-/* .flusher-messages div.flusher-deleted .chat-entry-content {
+/* .flusher-messages div.flusher-deleted .betterhover\:group-hover\:bg-shade-lower-content {
   color: rgba(255, 0, 0, 0.7) !important;
 } */
 
@@ -129,11 +130,11 @@
 }
 
 .flusher-messages[aerokick] div.bk-text-sm,
-.flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
+.flusher-messages[shadow="true"] .betterhover\:group-hover\:bg-shade-lower span[class="truncate"] {
   font-style: italic;
 }
 
-.flusher-messages[shadow="true"] .chat-entry span[class="truncate"] {
+.flusher-messages[shadow="true"] .betterhover\:group-hover\:bg-shade-lower span[class="truncate"] {
   padding-top: .2rem;
 }
 
@@ -375,8 +376,8 @@
   height: 25%;
 }
 
-.flusher-messages[layout="vertical"][font="SMALL"] .chat-entry,
-.flusher-messages[layout="vertical"][font="SMALL"] .chat-entry .chat-entry-content {
+.flusher-messages[layout="vertical"][font="SMALL"] .betterhover\:group-hover\:bg-shade-lower,
+.flusher-messages[layout="vertical"][font="SMALL"] .betterhover\:group-hover\:bg-shade-lower .betterhover\:group-hover\:bg-shade-lower-content {
   line-height: 1rem;
 }
 
@@ -471,39 +472,40 @@
   padding-right: 5px;
 }
 
-.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="font-bold text-white"],
-.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .chat-entry span[class="chat-entry-username"] {
-  /* text-shadow: 0px -1px 1.5px #202020, 0px 1px 1.5px #202020, 1px 0px 1.5px #202020,
-    -1px 0px 1.5px #202020; */
-  text-shadow: 0px -1px 1.5px #1d1d1d, 0px 1px 1.5px #1d1d1d, 1px 0px 1.5px #181818,
-    -1px 0px 1.5px #1d1d1d, 1.5px 1.5px 1.5px #1d1d1d;
-  opacity: .98;
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower span.font-normal,
+.flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
+  /* text-shadow: -1px 0px 1px black, 0px -1px 0.5px black, 0px 1px 0.5px black, 0px 0px 1px black; */
+  text-shadow: 0px -1px 1.5px #000000e8, 0px 1px 1.5px #000000eb, 1px 0px 1.5px #000000eb,
+    -1px 0px 1.5px #000000eb;
+  /* text-shadow: 0px -1px 1.5px #1d1d1d, 0px 1px 1.5px #1d1d1d, 1px 0px 1.5px #181818,
+    -1px 0px 1.5px #1d1d1d, 1.5px 1.5px 1.5px #1d1d1d; */
+  filter: brightness(1.1) contrast(.9);
 }
 
-.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry div>span:nth-child(n + 3),
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
 .flusher-messages[shadow="true"].flusher-messages[layout="horizontal"][aerokick] .bk-text-transparent,
-.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry span[class="font-bold text-white"],
-.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry span[class="chat-entry-username"] {
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower span.font-normal,
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
   font-weight: 600;
 }
 
-.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .chat-entry span[class="chat-entry-username"] {
+.flusher-messages[shadow="true"].flusher-messages[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
   font-weight: 700;
 }
 
-.flusher-messages[font="NORMAL"][layout="vertical"] .chat-entry {
+.flusher-messages[font="NORMAL"][layout="vertical"] .betterhover\:group-hover\:bg-shade-lower {
   padding: 0.1rem 0.2rem !important;
   min-height: 28px;
 }
 
-.flusher-messages[font="SMALL"] .chat-entry {
+.flusher-messages[font="SMALL"] .betterhover\:group-hover\:bg-shade-lower {
   padding: 0rem 0.2rem !important;
   min-height: 24px;
 }
 
-.flusher-messages[font="LARGE"] .chat-entry {
+.flusher-messages[font="LARGE"] .betterhover\:group-hover\:bg-shade-lower {
   padding: 0.2rem 0.2rem !important;
   min-height: 30px;
 }

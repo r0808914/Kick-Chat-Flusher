@@ -104,13 +104,11 @@ export class FlusherMessages {
     if (AeroKick) logToConsole(`AeroKick Detected`);
 
     const nativeChat = await waitForChat(
-      flusher.props.isVod
-        ? document.querySelector("#chatroom-replay")
-        : document.querySelector(
-          AeroKick
-            ? ".chat-container .bk-overflow-y-auto"
-            : ".overflow-y-scroll.py-3"
-        ),
+      document.querySelector(
+        AeroKick
+          ? ".chat-container .bk-overflow-y-auto"
+          : "#chatroom-messages"
+      ),
       AeroKick
     );
 
@@ -142,6 +140,12 @@ export class FlusherMessages {
     function prepareMessage(addedNode, update) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
 
+      /* hotfix */
+      const id = addedNode.getAttribute("data-index");
+      addedNode = addedNode.firstElementChild;
+      addedNode.setAttribute('data-index', id);
+
+
       if (AeroKick && !flusher.props.isVod) {
         const button = addedNode.querySelector("button");
         if (!button) {
@@ -153,21 +157,23 @@ export class FlusherMessages {
         }
       }
 
-      const id =
+      /* const id =
         AeroKick && flusher.props.isAeroKick
           ? addedNode.querySelector("button").getAttribute("data-radial-id")
-          : addedNode.getAttribute("data-chat-entry");
+          : addedNode.getAttribute("data-chat-entry"); */
       if (
         id === "history_breaker" ||
-        (flusher.states.flushState && (!id || id === ""))
+        (flusher.states.flushState && (!id || id === "")) /* fix */
       )
         return;
 
       const clonedNode = addedNode.cloneNode(true);
+      clonedNode.classList.remove("relative", "group");
 
       if (self.flusher.props.isAeroKick) {
         clonedNode.style.fontSize = null;
         clonedNode.style.marginTop = null;
+
         clonedNode.classList.remove("relative", "bk-pl-1.5");
 
         if (flusher.states.flushState) {
@@ -211,7 +217,9 @@ export class FlusherMessages {
         }
       }
 
-      if (id || id === "") {
+      /* temp */
+      const disableCondition = true;
+      if (!disableCondition && (id || id === "")) {
         if (
           (!flusher.states.spamState || flusher.states.flushState) &&
           !flusher.props.isVod
@@ -603,35 +611,65 @@ export class FlusherMessages {
 
       const chatEntry =
         parent.querySelector(".rounded-md.bk-block") ??
-        parent.querySelector("[data-chat-entry]");
-      if (chatEntry) return chatEntry.parentElement;
+        parent.querySelector(".group.relative");
+
+      /* hotfix */
+      /* if (chatEntry) return chatEntry.parentElement; */
+      if (chatEntry) return chatEntry.closest('.no-scrollbar.relative');
 
       return new Promise((resolve) => {
         const config = { attributes: true, childList: true, subtree: true };
         let found = false;
+        let parent = document.querySelector('#chatroom-messages');
 
-        const mutationCallback = function (mutationsList, observer) {
-          for (const mutation of mutationsList) {
-            if (mutation.type === "childList") {
-              mutation.addedNodes.forEach((node) => {
-                if (
-                  node.nodeType === 1 &&
-                  (node.classList.contains("bk-block.rounded-md") ||
-                    node.hasAttribute("data-chat-entry"))
-                ) {
-                  if (found) return;
-                  observer.disconnect();
-                  resolve(node.parentNode);
-                  found = true;
-                }
-              });
+        const startObserver = () => {
+          if (!parent) return;
+
+          const mutationCallback = function (mutationsList, observer) {
+            for (const mutation of mutationsList) {
+              if (mutation.type === "childList") {
+                mutation.addedNodes.forEach((node) => {
+                  if (
+                    node.nodeType === 1 &&
+                    (node.classList.contains("bk-block.rounded-md") ||
+                      !!node.querySelector(".group.relative"))
+                  ) {
+                    if (found) {
+                      return;
+                    }
+                    found = true;
+                    observer.disconnect();
+                    clearInterval(intervalId);
+                    resolve(node.closest('.no-scrollbar.relative'));
+                  }
+                });
+              }
             }
-          }
+          };
+
+          const observer = new MutationObserver(mutationCallback);
+          observer.observe(parent, config);
         };
 
-        const observer = new MutationObserver(mutationCallback);
-        observer.observe(parent, config);
+        startObserver();
+
+        const intervalId = setInterval(() => {
+          if (!document.body.contains(parent)) {
+            console.log('Parent element is no longer in the DOM, restarting...');
+            found = false;
+            parent = document.querySelector('#chatroom-messages');
+          } else {
+          }
+        }, 2000);
+
+        const originalResolve = resolve;
+        resolve = (result) => {
+          clearInterval(intervalId);
+          originalResolve(result);
+        };
       });
+
+
     }
   }
 

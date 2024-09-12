@@ -4,7 +4,7 @@ import { logToConsole } from '../utils/utils.js';
 
 class Kick {
   static init() {
-    /* logToConsole(`Initialize`); */
+    logToConsole(`Initialize`);
 
     let stopObserver = false;
 
@@ -21,7 +21,7 @@ class Kick {
             let video = document.getElementsByTagName('video');
             video = video[video.length - 1];
 
-            let channelName = document.querySelector(".stream-username");
+            let channelName = document.getElementById("channel-username");
 
             if (channelName && video) {
               channelName = channelName.innerText.trim();
@@ -41,13 +41,13 @@ class Kick {
             const observer = new MutationObserver((mutations) => {
               mutations.forEach((mutation) => {
                 if (!stopObserver && mutation.addedNodes) {
-                  if (document.querySelector(".stream-username")) {
+                  if (document.getElementById("channel-username")) {
                     let video = document.getElementsByTagName('video');
                     video = video[video.length - 1];
                     if (video) {
                       /* logToConsole(`KICK stop video observer`); */
                       stopObserver = true;
-                      const channelName = document.querySelector(".stream-username").innerText.trim()
+                      const channelName = document.getElementById("channel-username").innerText.trim()
                       const AeroKick = video.classList.contains('bk-aspect-video');
                       /* if (AeroKick) logToConsole(`AeroKick Detected`); */
                       const flusher = new Flusher(video, "KICK", channelName, AeroKick);

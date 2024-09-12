@@ -5,7 +5,43 @@ import { logToConsole } from "./utils.js";
 import { KeybindListener } from "./keybind.js";
 import { setCustomPosition } from "../interface/overlay.js";
 
+function reset(flusher) {
+  const init = !flusher.props.external;
+  if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
+  flusher.resizeObserver = null;
+  if (flusher.props.keydownListener) flusher.props.keydownListener.stopListening();
+
+  for (const id of flusher.props.timeoutIds) {
+    clearTimeout(id);
+  }
+
+  /* temp fix */
+  const flusherElements = document.querySelectorAll('.flusher');
+
+  flusherElements.forEach(element => {
+    element.remove();
+  });
+
+  if (flusher.video) flusher.video.removeAttribute('flusher')
+  /* - */
+
+  flusher.clear();
+  flusher.provider.unbindRequests(flusher);
+  flusher = null;
+
+  if (init) Kick.init();
+}
+
 export function checkResize(flusher) {
+  /* temp fix */
+  const isUrlEqual = (window.currentUrl === undefined || window.currentUrl === window.location.href);
+  if (!isUrlEqual) {
+    window.currentUrl = window.location.href;
+    reset(flusher);
+    return;
+  }
+  /* - */
+
   const videoElement = flusher.video.querySelector("video");
   let target;
   if (!flusher.props.isAeroKick && videoElement) {
@@ -15,7 +51,9 @@ export function checkResize(flusher) {
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver((entries) => {
-    if (flusher.container !== null) flusher.container.style.display = "none";
+
+    /* temp disable testing */
+    /* if (flusher.container !== null) flusher.container.style.display = "none"; */
 
     for (let entry of entries) {
       if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
@@ -26,25 +64,13 @@ export function checkResize(flusher) {
           let width = rect.width;
           let height = rect.height;
 
+          /* temp fix */
+          const isUrlEqual = (window.currentUrl === undefined || window.currentUrl === window.location.href);
           window.currentUrl = window.location.href;
 
           const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
-          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged) {
-            if (flusher !== null) {
-              const init = !flusher.props.external;
-              flusher.resizeObserver.disconnect();
-              flusher.resizeObserver = null;
-              if (flusher.props.keydownListener) flusher.props.keydownListener.stopListening();
-
-              for (const id of flusher.props.timeoutIds) {
-                clearTimeout(id);
-              }
-
-              flusher.provider.unbindRequests(flusher);
-              flusher = null;
-              if (init) Kick.init();
-            }
-
+          if (((width === null || width === 0) && (!height || height === 0) && !videoChanged) || !isUrlEqual) {
+            if (flusher !== null) reset(flusher);
             return;
           }
 
@@ -83,6 +109,9 @@ export function checkResize(flusher) {
             togglePointerEvents(flusher);
 
             checkAddons(flusher);
+
+            /* temp fix moved */
+            window.currentUrl = window.location.href;
 
             /* temp fix toggle btn not clickable in theater */
             const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
@@ -216,7 +245,7 @@ export function checkResize(flusher) {
       `-${flusher.props.parentWidth}px`
     );
 
-    flusher.toggle.setAttribute("domain", flusher.props.domain);
+    if (flusher.toggle) flusher.toggle.setAttribute("domain", flusher.props.domain);
 
     const newFlushState =
       flusher.states.flushState !== undefined

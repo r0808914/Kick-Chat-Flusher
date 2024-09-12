@@ -35,6 +35,11 @@ export class Flusher {
 	}
 
 	clear() {
+		/* temp fix */
+		if (this.props.controlsDupeObserver) this.props.controlsDupeObserver.disconnect();
+		if (this.props.controlsObserver) this.props.controlsObserver.disconnect();
+		/* - */
+
 		if (this.container) this.container.style.display = 'none';
 
 		const isEnabled = this.states.chatEnabled;
