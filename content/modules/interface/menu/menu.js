@@ -350,7 +350,7 @@ export function createMenu(flusher) {
          if (flusher.states.flushState) flusher.clear();
       });
 
-      (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex';
+      /* (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex'; */
 
       const replyToggleContainer = parent.querySelector('.flusher-reply');
       const replyToggle = replyToggleContainer.querySelector('.flusher-toggle');
@@ -576,7 +576,7 @@ export function createMenu(flusher) {
          (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
          (flusher.states.flushState || !flusher.states.chatEnabled) ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
          (!flusher.states.chatEnabled) ? flusherToggleContainer.style.display = 'none' : flusherToggleContainer.style.display = 'flex';
-         (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex';
+         /* (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex'; */
 
          flusher.container.setAttribute('enabled', newChatEnabled);
 

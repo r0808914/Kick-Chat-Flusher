@@ -97,8 +97,14 @@ export function processElementQueue(flusher) {
         processElementQueue(flusher);
       }, wait);
     } else {
-      flusher.props.isProcessingElements = false;
-      processElementQueue(flusher);
+      /* flusher.props.isProcessingElements = false;
+      processElementQueue(flusher); */
+      const queueLength = flusher.props.elementQueue.length;
+      let wait = Math.trunc(1200 / queueLength);
+      setTimeout(function () {
+        flusher.props.isProcessingElements = false;
+        processElementQueue(flusher);
+      }, wait);
     }
   } catch (error) {
     flusher.props.isProcessingElements = false;

@@ -116,7 +116,7 @@
 .flusher-messages[aerokick] span[class="bk-inline"],
 .flusher-messages .betterhover\:group-hover\:bg-shade-lower-content-deleted,
 .flusher-messages[shadow="true"] .betterhover\:group-hover\:bg-shade-lower span[class="truncate"] {
-  color: var(--flusher-white) !important;
+  color: white !important;
   opacity: .95;
   white-space: normal;
 }
@@ -333,36 +333,31 @@
   top: 0;
 }
 
-.flusher-messages[font="LARGE"] .base-custom-badge,
-.flusher-messages[font="LARGE"] .icon.size-sm,
-.flusher-messages[font="LARGE"] .badge-tooltip,
-.flusher-messages[font="LARGE"] .badge-tooltip svg,
-.flusher-messages[font="LARGE"] .base-icon.icon svg {
+.flusher-messages[font="LARGE"] div.flex.items-center div,
+.flusher-messages[font="LARGE"] div.flex.items-center span,
+.flusher-messages[font="LARGE"] div.flex.items-center svg,
+.flusher-messages[font="LARGE"] div.flex.items-center img {
   height: 21.6px !important;
   width: 21.6px !important;
   margin-right: 1px;
 }
 
-.flusher-messages[font="SMALL"] .base-custom-badge,
-.flusher-messages[font="SMALL"] .base-custom-badge .icon.size-sm,
-.flusher-messages[font="SMALL"] .badge-tooltip,
-.flusher-messages[font="SMALL"] .badge-tooltip svg,
-.flusher-messages[font="SMALL"] .base-icon.icon svg {
+.flusher-messages[font="SMALL"] div.flex.items-center div,
+.flusher-messages[font="SMALL"] div.flex.items-center span,
+.flusher-messages[font="SMALL"] div.flex.items-center svg,
+.flusher-messages[font="SMALL"] div.flex.items-center img {
   height: 15.8px !important;
   width: 15.8px !important;
   margin-right: -1px;
 }
 
-.flusher-messages[font="NORMAL"] .base-custom-badge,
-.flusher-messages[font="NORMAL"] .base-custom-badge .icon.size-sm,
-.flusher-messages[font="NORMAL"] .badge-tooltip,
-.flusher-messages[font="NORMAL"] .badge-tooltip svg,
-.flusher-messages[font="NORMAL"] .base-icon.icon svg {
-  height: 16px !important;
-  width: 16x !important;
+.flusher-messages[font="NORMAL"] div.flex.items-center div,
+.flusher-messages[font="NORMAL"] div.flex.items-center span,
+.flusher-messages[font="NORMAL"] div.flex.items-center svg,
+.flusher-messages[font="NORMAL"] div.flex.items-center img {
+  height: 18px !important;
+  width: 18px !important;
 }
-
-
 
 .flusher-messages[layout="vertical"][size="LARGE"] {
   height: 100%;
@@ -398,16 +393,25 @@
   user-select: none;
 }
 
-.flusher-messages[font="NORMAL"] div>span:nth-child(n + 3) img {
+.flusher-messages[font="NORMAL"] .font-normal span.relative,
+.flusher-messages[font="NORMAL"] .font-normal div.absolute {
+  height: 22px;
+  width: 22px;
+  margin-right: 2px;
+}
+
+.flusher-messages[font="SMALL"] .font-normal span.relative,
+.flusher-messages[font="SMALL"] .font-normal div.absolute {
+  height: 18px;
+  width: 18px;
+  margin-right: 5px;
+}
+
+.flusher-messages[font="LARGE"] .font-normal span.relative,
+.flusher-messages[font="LARGE"] .font-normal div.absolute {
   height: 26px;
-}
-
-.flusher-messages[font="SMALL"] div>span:nth-child(n + 3) img {
-  height: 20px;
-}
-
-.flusher-messages[font="LARGE"] div>span:nth-child(n + 3) img {
-  height: 29px;
+  width: 26px;
+  margin-right: 5px;
 }
 
 .flusher-messages span.inline-flex.translate-y-\[3px\].items-center.mr-1 {
@@ -448,24 +452,47 @@
   display: none;
 }
 
-.flusher-messages[font="SMALL"] .text-xs .truncate {
-  font-size: 10px;
+.text-xs.truncate div {
+  height: 14px !important;
+  width: 14px !important;
+}
+
+.text-xs.truncate {
+  white-space: normal;
+}
+
+.text-xs.truncate,
+.text-xs.truncate button,
+.font-semibold {
+  color: white;
+  text-shadow: 0px -1px 1.5px #000000e8, 0px 1px 1.5px #000000eb, 1px 0px 1.5px #000000eb,
+    -1px 0px 1.5px #000000eb;
+  opacity: .85;
+}
+
+.text-xs.truncate svg {
+  stroke-width: 1;
+  stroke: black;
+}
+
+.flusher-messages[font="SMALL"] .text-xs.truncate {
+  font-size: 8px;
   line-height: normal;
   margin-bottom: -0.4rem;
   padding-bottom: 5px;
   padding-right: 5px;
 }
 
-.flusher-messages[font="NORMAL"] .text-xs .truncate {
-  font-size: 14px;
+.flusher-messages[font="NORMAL"] .text-xs.truncate {
+  font-size: 12px;
   line-height: normal;
   margin-bottom: -0.3rem;
   padding-bottom: 5px;
   padding-right: 5px;
 }
 
-.flusher-messages[font="LARGE"] .text-xs .truncate {
-  font-size: 16px;
+.flusher-messages[font="LARGE"] .text-xs.truncate {
+  font-size: 14px;
   line-height: normal;
   margin-bottom: -0.2rem;
   padding-bottom: 5px;
@@ -635,8 +662,8 @@
 
 @keyframes slide-in-vertical {
   0% {
-    transform: translateY(75%);
-    opacity: 0;
+    transform: translateY(25%);
+    opacity: 0.3;
   }
 
   100% {

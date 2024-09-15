@@ -88,7 +88,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+      <div style="display: none;" class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Font Size</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></div>
@@ -124,7 +124,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+      <div style="display: none;" class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Events</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div style="width: 16px; height: 16px;" class="flusher-icon">
@@ -250,7 +250,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.3</div>
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.5</div>
         </div>
       </div>
     </div>

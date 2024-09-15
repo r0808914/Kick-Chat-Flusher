@@ -125,7 +125,7 @@ export class FlusherMessages {
       }, 500);
 
     this.nativeChatObserver = new MutationObserver((mutations) => {
-      mutations.reverse().forEach((mutation) => {
+      mutations.forEach((mutation) => {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           mutation.addedNodes.forEach((addedNode) => {
             prepareMessage(addedNode, false);
@@ -137,14 +137,20 @@ export class FlusherMessages {
     const observerConfig = { childList: true, subtree: false };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
 
+    let currentId;
+
     function prepareMessage(addedNode, update) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
 
       /* hotfix */
-      const id = addedNode.getAttribute("data-index");
+      let id = parseInt(addedNode.getAttribute("data-index"), 10);
+
+      let reset = (currentId > 300) && id < 300;
+      if (id <= currentId && !reset) return;
+      currentId = id === 299 || reset ? undefined : id;
+
       addedNode = addedNode.firstElementChild;
       addedNode.setAttribute('data-index', id);
-
 
       if (AeroKick && !flusher.props.isVod) {
         const button = addedNode.querySelector("button");
@@ -163,11 +169,16 @@ export class FlusherMessages {
           : addedNode.getAttribute("data-chat-entry"); */
       if (
         id === "history_breaker" ||
-        (flusher.states.flushState && (!id || id === "")) /* fix */
+        (flusher.states.flushState && (!id || id === "")) /* fix also remove history_breaker */
       )
         return;
 
       const clonedNode = addedNode.cloneNode(true);
+
+      if (clonedNode.classList.contains('items-center')) {
+        console.log('message rejected', clonedNode);
+        return;
+      }
       clonedNode.classList.remove("relative", "group");
 
       if (self.flusher.props.isAeroKick) {
@@ -704,8 +715,8 @@ export class FlusherMessages {
           }
         }
 
-        if (!this.socket && !flusher.props.isVod)
-          this.subscribeChannel(flusher);
+        /* if (!this.socket && !flusher.props.isVod)
+          this.subscribeChannel(flusher); */
       },
       flusher.props.external ? 0 : 5000
     );

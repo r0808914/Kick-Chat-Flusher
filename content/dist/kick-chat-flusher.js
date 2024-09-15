@@ -14,7 +14,7 @@ class FlusherStates {
     this.chatEnabled = true;
     this.flushState = false;
     this.shadow = true;
-    this.slide = false;
+    this.slide = true;
     this.reply = true;
     this.timeState = false;
     this.spamState = false;
@@ -371,8 +371,14 @@ function processElementQueue(flusher) {
         processElementQueue(flusher);
       }, wait);
     } else {
-      flusher.props.isProcessingElements = false;
-      processElementQueue(flusher);
+      /* flusher.props.isProcessingElements = false;
+      processElementQueue(flusher); */
+      const queueLength = flusher.props.elementQueue.length;
+      let wait = Math.trunc(1200 / queueLength);
+      setTimeout(function () {
+        flusher.props.isProcessingElements = false;
+        processElementQueue(flusher);
+      }, wait);
     }
   } catch (error) {
     flusher.props.isProcessingElements = false;
@@ -855,7 +861,7 @@ class FlusherMessages {
       });
     }, 500);
     this.nativeChatObserver = new MutationObserver(mutations => {
-      mutations.reverse().forEach(mutation => {
+      mutations.forEach(mutation => {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           mutation.addedNodes.forEach(addedNode => {
             prepareMessage(addedNode, false);
@@ -868,11 +874,15 @@ class FlusherMessages {
       subtree: false
     };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
+    let currentId;
     function prepareMessage(addedNode, update) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
 
       /* hotfix */
-      const id = addedNode.getAttribute("data-index");
+      let id = parseInt(addedNode.getAttribute("data-index"), 10);
+      let reset = currentId > 300 && id < 300;
+      if (id <= currentId && !reset) return;
+      currentId = id === 299 || reset ? undefined : id;
       addedNode = addedNode.firstElementChild;
       addedNode.setAttribute('data-index', id);
       if (AeroKick && !flusher.props.isVod) {
@@ -887,8 +897,12 @@ class FlusherMessages {
         AeroKick && flusher.props.isAeroKick
           ? addedNode.querySelector("button").getAttribute("data-radial-id")
           : addedNode.getAttribute("data-chat-entry"); */
-      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "") /* fix */) return;
+      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "") /* fix also remove history_breaker */) return;
       const clonedNode = addedNode.cloneNode(true);
+      if (clonedNode.classList.contains('items-center')) {
+        console.log('message rejected', clonedNode);
+        return;
+      }
       clonedNode.classList.remove("relative", "group");
       if (self.flusher.props.isAeroKick) {
         clonedNode.style.fontSize = null;
@@ -1315,7 +1329,9 @@ class FlusherMessages {
           console.error("Error fetching data:", error);
         }
       }
-      if (!this.socket && !flusher.props.isVod) this.subscribeChannel(flusher);
+
+      /* if (!this.socket && !flusher.props.isVod)
+        this.subscribeChannel(flusher); */
     }, flusher.props.external ? 0 : 5000);
   }
   unbindRequests(flusher) {
@@ -1418,7 +1434,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+      <div style="display: none;" class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Font Size</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium"></div>
@@ -1454,7 +1470,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+      <div style="display: none;" class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Events</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div style="width: 16px; height: 16px;" class="flusher-icon">
@@ -1580,7 +1596,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.3</div>
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.5</div>
         </div>
       </div>
     </div>
@@ -2261,7 +2277,9 @@ function createMenu(flusher) {
       flusher.container.setAttribute('font', flusher.states.sizeStates[flusher.states.fontState].replace(/\s/g, ""));
       if (flusher.states.flushState) flusher.clear();
     });
-    !flusher.states.chatEnabled ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex';
+
+    /* (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex'; */
+
     const replyToggleContainer = parent.querySelector('.flusher-reply');
     const replyToggle = replyToggleContainer.querySelector('.flusher-toggle');
     replyToggle.addEventListener('mousedown', function (event) {
@@ -2421,7 +2439,8 @@ function createMenu(flusher) {
       flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
       flusher.states.flushState || !flusher.states.chatEnabled ? layoutMenuBtn.style.display = 'none' : layoutMenuBtn.style.display = 'flex';
       !flusher.states.chatEnabled ? flusherToggleContainer.style.display = 'none' : flusherToggleContainer.style.display = 'flex';
-      !flusher.states.chatEnabled ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex';
+      /* (!flusher.states.chatEnabled) ? fontBtn.style.display = 'none' : fontBtn.style.display = 'flex'; */
+
       flusher.container.setAttribute('enabled', newChatEnabled);
       setExtensionStorageItem('flusher-enable', newChatEnabled);
     });
@@ -2690,7 +2709,7 @@ async function createChat(flusher) {
       const clone = lastButton.cloneNode(true);
       clone.setAttribute('data-flusher', 'true');
       const svgString = `
-          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="margin-top: 1px;">
             <rect x="4" y="4" width="24" height="24" rx="5" fill="none" stroke="rgba(83,252,24,1)" stroke-width="4" />
           </svg>`;
       const parser = new DOMParser();
@@ -2809,6 +2828,7 @@ function setCustomPosition(flusher) {
 
 
 function resize_reset(flusher) {
+  return;
   const init = !flusher.props.external;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = null;
@@ -3256,7 +3276,7 @@ class Flusher {
     this.badges = new badges().badgeTypeToSVG;
     this.props.domain = domain;
     this.props.external = domain === 'KICK' ? false : true;
-    this.props.isVod = window.location.href.includes('/video/');
+    this.props.isVod = window.location.href.includes('/videos/');
     this.props.isAeroKick = aeroKick ?? false;
     this.props.channelName = channelName;
     this.provider = new FlusherMessages();

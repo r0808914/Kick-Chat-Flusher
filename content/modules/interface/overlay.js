@@ -70,7 +70,7 @@ export async function createChat(flusher) {
          clone.setAttribute('data-flusher', 'true');
 
          const svgString = `
-          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="margin-top: 1px;">
             <rect x="4" y="4" width="24" height="24" rx="5" fill="none" stroke="rgba(83,252,24,1)" stroke-width="4" />
           </svg>`;
 

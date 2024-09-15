@@ -14,7 +14,7 @@ export class Flusher {
 		this.badges = new Badges().badgeTypeToSVG;
 		this.props.domain = domain;
 		this.props.external = domain === 'KICK' ? false : true;
-		this.props.isVod = window.location.href.includes('/video/');
+		this.props.isVod = window.location.href.includes('/videos/');
 		this.props.isAeroKick = aeroKick ?? false;
 		this.props.channelName = channelName;
 
