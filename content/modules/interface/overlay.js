@@ -39,19 +39,59 @@ export async function createChat(flusher) {
 
    flusher.container = flusherDiv;
 
-   flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-   flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
-   flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
-   flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
-   flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
-   flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-   flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
-   flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
-   flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
-   flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
-   flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
-   flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
-   flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
+   function setExtensionStorageItem(key, value) {
+      const data = { [key]: value };
+      chrome.storage.local.set(data, () => {
+
+      });
+   }
+
+   async function initializeDefaultSettings() {
+      const currentVersion = '1.0.6';
+      const storedVersion = await getExtensionStorageItem('flusher-version', null);
+
+      if (storedVersion !== currentVersion) {
+         console.log('New update detected. Resetting settings to default.');
+         setExtensionStorageItem('flusher-background', flusher.states.backgroundState);
+         setExtensionStorageItem('flusher-position', flusher.states.positionState);
+         setExtensionStorageItem('flusher-size', flusher.states.sizeState);
+         setExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
+         setExtensionStorageItem('flusher-flush', flusher.states.flushState);
+         setExtensionStorageItem('flusher-shadow', flusher.states.shadow);
+         setExtensionStorageItem('flusher-slide', flusher.states.slide);
+         setExtensionStorageItem('flusher-reply', flusher.states.reply);
+         setExtensionStorageItem('flusher-spam', flusher.states.spamState);
+         setExtensionStorageItem('flusher-font', flusher.states.fontState);
+         setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+         setExtensionStorageItem('flusher-event-bans', flusher.states.bans);
+         setExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
+
+         logToConsole(`Updated kick Chat Flusher`);
+         setExtensionStorageItem('flusher-version', currentVersion);
+         await loadSetting();
+      } else {
+         logToConsole(`Kick Chat Flusher is up to date`);
+         await loadSetting();
+      }
+
+      async function loadSetting() {
+         flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
+         flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
+         flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
+         flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
+         flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
+         flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
+         flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
+         flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
+         flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
+         flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
+         flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
+         flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
+         flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
+      }
+   }
+
+   initializeDefaultSettings();
 
    setCustomPosition(flusher);
 

@@ -1,13 +1,13 @@
 export class FlusherStates {
   constructor() {
     this.backgroundStates = ['SMALL', 'LARGE', 'OFF'];
-    this.backgroundState = 2;
+    this.backgroundState = 0;
 
     this.positionStates = ['TOP LEFT', 'LEFT', 'BOTTOM LEFT', 'TOP RIGHT', 'RIGHT', 'BOTTOM RIGHT'];
     this.positionState = 4;
 
     this.sizeStates = ['SMALL', 'NORMAL', 'LARGE'];
-    this.sizeState = 1;
+    this.sizeState = 0;
 
     this.chatEnabled = true;
     this.flushState = false;
