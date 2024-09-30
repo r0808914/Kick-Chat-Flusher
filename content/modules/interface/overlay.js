@@ -2,18 +2,21 @@ import { createMenu } from './menu/menu.js';
 import { checkResize } from '../utils/resize.js';
 import { getFont, logToConsole, toTitleCase } from '../utils/utils.js';
 
+let flusherObject;
+
 export async function createChat(flusher) {
-   if (flusher.video.hasAttribute('flusher')) return;
-   flusher.video.setAttribute('flusher', "");
+   flusherObject = flusher;
+   if (flusherObject.video.hasAttribute('flusher')) return;
+   flusherObject.video.setAttribute('flusher', "");
 
-   const chatFlusher = document.createElement("div");
-   chatFlusher.classList.add("flusher");
-   if (flusher.props.isAeroKick) chatFlusher.style.cssText = 'position: absolute !important; z-index: 1010;';
+   const chatflusherObject = document.createElement("div");
+   chatflusherObject.classList.add("flusher");
+   if (flusherObject.props.isAeroKick) chatflusherObject.style.cssText = 'position: absolute !important; z-index: 1010;';
 
-   const flusherDiv = document.createElement("div");
-   flusherDiv.classList.add("flusher-messages");
+   const flusherObjectDiv = document.createElement("div");
+   flusherObjectDiv.classList.add("flusher-messages");
 
-   const shadowRoot = flusher.props.external ? chatFlusher.attachShadow({ mode: 'open' }) : null;
+   const shadowRoot = flusherObject.props.external ? chatflusherObject.attachShadow({ mode: 'open' }) : null;
    const b = typeof browser !== 'undefined' ? browser : chrome;
 
    const mainStylesDom = document.getElementById('flusher-css-overlay');
@@ -29,15 +32,15 @@ export async function createChat(flusher) {
    }
 
    const menuStylesDom = document.getElementById('flusher-css');
-   if (!menuStylesDom || flusher.props.external) {
+   if (!menuStylesDom || flusherObject.props.external) {
       const menuStyle = document.createElement('link');
       menuStyle.href = b.runtime.getURL('lib/flusher/overlay.css');
       menuStyle.rel = 'stylesheet';
       menuStyle.id = 'flusher-css';
-      flusher.props.external ? shadowRoot.appendChild(menuStyle) : document.head.append(menuStyle);
+      flusherObject.props.external ? shadowRoot.appendChild(menuStyle) : document.head.append(menuStyle);
    }
 
-   flusher.container = flusherDiv;
+   flusherObject.container = flusherObjectDiv;
 
    function setExtensionStorageItem(key, value) {
       const data = { [key]: value };
@@ -47,56 +50,55 @@ export async function createChat(flusher) {
    }
 
    async function initializeDefaultSettings() {
-      const currentVersion = '1.0.6';
+      const currentVersion = '1.0.7';
       const storedVersion = await getExtensionStorageItem('flusher-version', null);
 
       if (storedVersion !== currentVersion) {
-         console.log('New update detected. Resetting settings to default.');
-         setExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-         setExtensionStorageItem('flusher-position', flusher.states.positionState);
-         setExtensionStorageItem('flusher-size', flusher.states.sizeState);
-         setExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-         setExtensionStorageItem('flusher-flush', flusher.states.flushState);
-         setExtensionStorageItem('flusher-shadow', flusher.states.shadow);
-         setExtensionStorageItem('flusher-slide', flusher.states.slide);
-         setExtensionStorageItem('flusher-reply', flusher.states.reply);
-         setExtensionStorageItem('flusher-spam', flusher.states.spamState);
-         setExtensionStorageItem('flusher-font', flusher.states.fontState);
-         setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
-         setExtensionStorageItem('flusher-event-bans', flusher.states.bans);
-         setExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
-
-         logToConsole(`Updated kick Chat Flusher`);
+         logToConsole('New update detected. Resetting settings to default.');
+         setExtensionStorageItem('flusher-background', flusherObject.states.backgroundState);
+         setExtensionStorageItem('flusher-position', flusherObject.states.positionState);
+         setExtensionStorageItem('flusher-size', flusherObject.states.sizeState);
+         setExtensionStorageItem('flusher-enable', flusherObject.states.chatEnabled);
+         setExtensionStorageItem('flusher-flush', flusherObject.states.flushState);
+         setExtensionStorageItem('flusher-shadow', flusherObject.states.shadow);
+         setExtensionStorageItem('flusher-slide', flusherObject.states.slide);
+         setExtensionStorageItem('flusher-reply', flusherObject.states.reply);
+         setExtensionStorageItem('flusher-spam', flusherObject.states.spamState);
+         setExtensionStorageItem('flusher-font', flusherObject.states.fontState);
+         setExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
+         setExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
+         setExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
          setExtensionStorageItem('flusher-version', currentVersion);
+
+         chrome.storage.local.remove("positionsPerChannel", function () {
+            console.log("customPositions have been removed from the db.");
+         });
+
          await loadSetting();
       } else {
-         logToConsole(`Kick Chat Flusher is up to date`);
          await loadSetting();
       }
 
       async function loadSetting() {
-         flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-         flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
-         flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
-         flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
-         flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
-         flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-         flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
-         flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
-         flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
-         flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
-         flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
-         flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
-         flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
+         flusherObject.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusherObject.states.chatEnabled);
+         flusherObject.states.flushState = await getExtensionStorageItem('flusher-flush', flusherObject.states.flushState);
+         flusherObject.states.reply = await getExtensionStorageItem('flusher-reply', flusherObject.states.reply);
+         flusherObject.states.spamState = await getExtensionStorageItem('flusher-spam', flusherObject.states.spamState);
+         flusherObject.states.fontState = await getExtensionStorageItem('flusher-font', flusherObject.states.fontState);
+         flusherObject.states.backgroundState = await getExtensionStorageItem('flusher-background', flusherObject.states.backgroundState);
+         flusherObject.states.timeState = await getExtensionStorageItem('flusher-time', flusherObject.states.timeState);
+         flusherObject.states.shadow = await getExtensionStorageItem('flusher-shadow', flusherObject.states.shadow);
+         flusherObject.states.slide = await getExtensionStorageItem('flusher-slide', flusherObject.states.slide);
+         flusherObject.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
+         flusherObject.states.bans = await getExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
+         flusherObject.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
+         flusherObject.props.intro = await getExtensionStorageItem('flusher-intro', false);
       }
    }
 
    initializeDefaultSettings();
 
-   setCustomPosition(flusher);
-
-   /* important */
-   /* doing this fix cause z-controls is dynamic */
+   setCustomPosition(flusherObject);
 
    function addBtn(node) {
       const buttons = node.querySelectorAll('button');
@@ -122,42 +124,60 @@ export async function createChat(flusher) {
          clone.replaceChildren(newSVG);
          lastButton.parentNode.insertBefore(clone, lastButton.nextSibling);
 
-         flusher.controls = node;
+         flusherObject.controls = node;
 
          /* temp fix */
-         flusher.toggleNative = clone;
+         flusherObject.toggleNative = clone;
 
-         flusher.toggle = createMenu(flusher);
+         flusherObject.toggle = createMenu(flusherObject);
       }
 
-      checkResize(flusher);
+      checkResize(flusherObject);
    }
-
 
    function dupeBtn(node) {
       const btn = node.querySelector('button');
       if (btn) {
          addBtn(node);
       } else {
-         flusher.props.controlsDupeObserver = new MutationObserver(function (mutations) {
+         flusherObject.props.controlsDupeObserver = new MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
                mutation.addedNodes.forEach(function (node) {
                   if (node.classList.contains('z-controls')) {
-                     flusher.props.controlsDupeObserver.disconnect();
+                     flusherObject.props.controlsDupeObserver.disconnect();
                      addBtn(node);
                   }
                });
             });
          });
-
-         flusher.props.controlsDupeObserver.observe(flusher.video.parentNode, {
+         flusherObject.props.controlsDupeObserver.observe(flusherObject.video.parentNode, {
             childList: true,
             subtree: true
          });
       }
    }
 
-   flusher.props.controlsObserver = new MutationObserver(function (mutations) {
+   let lastRun = 0;
+   const throttleDelay = 1000;
+
+   /* remove old first */
+   /* flusherObject.video.parentNode.removeEventListener('mousemove', throttledMove); */
+
+   flusherObject.video.parentNode.addEventListener('mousemove', (event) => {
+      if (!window.isDragging) throttledMove();
+   });
+
+   function throttledMove() {
+      const now = Date.now();
+
+      if (now - lastRun >= throttleDelay) {
+         let node = flusherObject.video.parentNode.querySelector('.z-controls');
+         if (node) dupeBtn(node);
+         lastRun = now;
+      }
+   }
+
+   /* flusherObject.props.controlsObserver = new MutationObserver(function (mutations) {
       mutations.forEach(function (mutation) {
          if (mutation.addedNodes.length > 0) {
             mutation.addedNodes.forEach(function (node) {
@@ -169,19 +189,19 @@ export async function createChat(flusher) {
       });
    });
 
-   flusher.props.controlsObserver.observe(flusher.video.parentNode, {
+   flusherObject.props.controlsObserver.observe(flusherObject.video.parentNode, {
       childList: true,
       subtree: true
-   });
+   }); */
 
    /* temp fix */
-   flusher.props.isAeroKick ? flusher.video.append(chatFlusher) : flusher.video.parentNode.append(chatFlusher);
-   flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
-   checkResize(flusher);
+   flusherObject.props.isAeroKick ? flusherObject.video.append(chatflusherObject) : flusherObject.video.parentNode.append(chatflusherObject);
+   flusherObject.props.external ? shadowRoot.appendChild(flusherObjectDiv) : chatflusherObject.append(flusherObjectDiv);
+   checkResize(flusherObject);
    /* - */
 
-   if (flusher.props.isAeroKick) {
-      const videoHolder = flusher.video.closest('#video-holder');
+   if (flusherObject.props.isAeroKick) {
+      const videoHolder = flusherObject.video.closest('#video-holder');
       const bkVideoPlayer = document.getElementById('bk-video-player');
 
       const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
@@ -194,7 +214,7 @@ export async function createChat(flusher) {
       } else {
          largestElement = bkVideoPlayer;
       }
-      flusher.video = largestElement;
+      flusherObject.video = largestElement;
    }
 
    function getExtensionStorageItem(key, defaultValue) {

@@ -47,8 +47,8 @@ export function appendVertical(message, flusher) {
 			}
 		}
 
-		if (!flusher.states.spamState && entryId) {
-			flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+		if (flusher.states.spamState && entryId) {
+			flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
 		}
 
 		oldest.remove();

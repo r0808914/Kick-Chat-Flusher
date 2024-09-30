@@ -8,7 +8,7 @@ export function getMessageKey(key, value, messageId, flusher) {
     return obj.key === keyValue;
   });
   const ignore =
-    !flusher.states.spamState && dupe && flusher.lastRow > 1 ? true : false;
+    flusher.states.spamState && dupe && flusher.lastRow > 1 ? true : false;
   if (!ignore)
     flusher.props.displayedMessages.push({ id: messageId, key: keyValue });
   return { key: keyValue, ignore: ignore };
@@ -97,10 +97,8 @@ export function processElementQueue(flusher) {
         processElementQueue(flusher);
       }, wait);
     } else {
-      /* flusher.props.isProcessingElements = false;
-      processElementQueue(flusher); */
-      const queueLength = flusher.props.elementQueue.length;
-      let wait = Math.trunc(1200 / queueLength);
+      let count = flusher.props.elementQueue.length;
+      let wait = count > 0 ? Math.trunc(window.flusherInterval / count) : 0;
       setTimeout(function () {
         flusher.props.isProcessingElements = false;
         processElementQueue(flusher);
@@ -129,7 +127,7 @@ async function createMessage(message, flusher) {
     ? reduceRepeatedSentences(content)
     : content;
 
-  if (!flusher.states.spamState) {
+  if (flusher.states.spamState) {
     const messageKeyData = getMessageKey(
       sender.id,
       reduced,

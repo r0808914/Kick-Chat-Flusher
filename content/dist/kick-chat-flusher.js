@@ -36,13 +36,13 @@ class FlusherProps {
     this.clickOutsideHandlerFunction = null;
     this.domain = null;
     this.displayedMessages = [];
-    this.elementQueue = [];
     this.external = false;
     this.isFullscreen = false;
     this.isProcessingElements = false;
     this.isProcessingMessages = false;
     this.isVod = false;
     this.loading = false;
+    this.elementQueue = [];
     this.messageQueue = [];
     this.badgeCache = [];
     this.lastPositionPerRow = [];
@@ -194,9 +194,9 @@ function prepareAnimation(data, flusher) {
   data.container.addEventListener("animationend", function () {
     try {
       const oldest = flusher.container.firstElementChild;
-      if (!flusher.states.spamState) {
+      if (flusher.states.spamState) {
         const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-index');
-        if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+        if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
       }
       oldest.remove();
     } catch {}
@@ -249,24 +249,30 @@ function appendVertical(message, flusher) {
         flusher.props.messageObservers.delete(entryId);
       }
     }
-    if (!flusher.states.spamState && entryId) {
-      flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+    if (flusher.states.spamState && entryId) {
+      flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
     }
     oldest.remove();
   }
 }
 ;// CONCATENATED MODULE: ./modules/utils/utils.js
 function visibilityChange(flusher) {
-  /* logToConsole(`Add visibilityChange`); */
-
   document.addEventListener('visibilitychange', function handleVisibilityChange() {
-    if (!flusher || !flusher.states.flushState) return;
+    if (!flusher) return;
     if (document.hidden) {
-      flusher.props.chatEnabledVisible = flusher.states.chatEnabled;
-      flusher.states.chatEnabled = false;
       flusher.clear();
+      if (flusher.states.flushState) {
+        flusher.props.chatEnabledVisible = flusher.states.chatEnabled;
+        flusher.states.chatEnabled = false;
+      } else {
+        flusher.provider.unbindRequests(flusher);
+      }
     } else {
-      flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
+      if (flusher.states.flushState) {
+        flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
+      } else {
+        flusher.provider.bindRequests(flusher);
+      }
     }
   });
 }
@@ -296,7 +302,7 @@ function getMessageKey(key, value, messageId, flusher) {
   const dupe = flusher.props.displayedMessages.find(obj => {
     return obj.key === keyValue;
   });
-  const ignore = !flusher.states.spamState && dupe && flusher.lastRow > 1 ? true : false;
+  const ignore = flusher.states.spamState && dupe && flusher.lastRow > 1 ? true : false;
   if (!ignore) flusher.props.displayedMessages.push({
     id: messageId,
     key: keyValue
@@ -371,10 +377,8 @@ function processElementQueue(flusher) {
         processElementQueue(flusher);
       }, wait);
     } else {
-      /* flusher.props.isProcessingElements = false;
-      processElementQueue(flusher); */
-      const queueLength = flusher.props.elementQueue.length;
-      let wait = Math.trunc(1200 / queueLength);
+      let count = flusher.props.elementQueue.length;
+      let wait = count > 0 ? Math.trunc(window.flusherInterval / count) : 0;
       setTimeout(function () {
         flusher.props.isProcessingElements = false;
         processElementQueue(flusher);
@@ -397,7 +401,7 @@ async function createMessage(message, flusher) {
   const username = sender.username;
   const content = message.content;
   const reduced = !flusher.props.spamState ? reduceRepeatedSentences(content) : content;
-  if (!flusher.states.spamState) {
+  if (flusher.states.spamState) {
     const messageKeyData = getMessageKey(sender.id, reduced, message.id, flusher);
     if (messageKeyData.ignore === true) {
       flusher.props.isProcessingMessages = false;
@@ -860,9 +864,15 @@ class FlusherMessages {
         prepareMessage(addedNode, false);
       });
     }, 500);
+    let lastMutationTime = new Date().getTime();
+    window.flusherInterval = 1000;
     this.nativeChatObserver = new MutationObserver(mutations => {
       mutations.forEach(mutation => {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+          const currentMutationTime = new Date().getTime();
+          const interval = currentMutationTime - lastMutationTime;
+          window.flusherInterval = interval > 500 ? interval + 100 : window.flusherInterval;
+          lastMutationTime = currentMutationTime;
           mutation.addedNodes.forEach(addedNode => {
             prepareMessage(addedNode, false);
           });
@@ -888,7 +898,10 @@ class FlusherMessages {
       if (AeroKick && !flusher.props.isVod) {
         const button = addedNode.querySelector("button");
         if (!button) {
-          console.log("Kick Chat Flusher - Button does not exist in the added node:", addedNode);
+          /* console.log(
+            "Kick Chat Flusher - Button does not exist in the added node:",
+            addedNode
+          ); */
           return;
         }
       }
@@ -897,10 +910,13 @@ class FlusherMessages {
         AeroKick && flusher.props.isAeroKick
           ? addedNode.querySelector("button").getAttribute("data-radial-id")
           : addedNode.getAttribute("data-chat-entry"); */
-      if (id === "history_breaker" || flusher.states.flushState && (!id || id === "") /* fix also remove history_breaker */) return;
+
+      if (flusher.states.flushState && (!id || id === "")) return;
       const clonedNode = addedNode.cloneNode(true);
+
+      /* history_breaker */
       if (clonedNode.classList.contains('items-center')) {
-        console.log('message rejected', clonedNode);
+        /* console.log('message rejected', clonedNode); */
         return;
       }
       clonedNode.classList.remove("relative", "group");
@@ -932,11 +948,8 @@ class FlusherMessages {
           };
         }
       }
-
-      /* temp */
-      const disableCondition = true;
-      if (!disableCondition && (id || id === "")) {
-        if ((!flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
+      if (id || id === "") {
+        if ((flusher.states.spamState || flusher.states.flushState) && !flusher.props.isVod) {
           let lastText;
           let textDupe = false;
           let lastEmoji;
@@ -1161,7 +1174,12 @@ class FlusherMessages {
       }
       function checkDupe() {
         if (id || id === "") {
-          const userId = AeroKick && flusher.props.isAeroKick ? clonedNode.querySelector("button").getAttribute("data-radial-username") : clonedNode.querySelector("[data-chat-entry-user-id]")?.getAttribute("data-chat-entry-user-id");
+          const userId = AeroKick && flusher.props.isAeroKick ? clonedNode.querySelector("button").getAttribute("data-radial-username") : clonedNode.querySelector('button[title]')?.getAttribute('title');
+          if (!userId) {
+            console.log('no username in node');
+            console.log(clonedNode);
+            return false;
+          }
           if (self.flusher.props.isKickTools) {
             if (clonedNode.style.opacity ?? 1 < 1) {
               const isUserBanned = self.flusher.props.bannedUsers.some(user => user.id === userId);
@@ -1172,15 +1190,14 @@ class FlusherMessages {
               }
             }
           }
-          if (!flusher.states.spamState || flusher.states.flushState) {
+          if (flusher.states.spamState || flusher.states.flushState) {
             let emoteElements;
             let uniqueString = "";
-            const divTextContent = AeroKick && flusher.props.isAeroKick ? clonedNode.querySelector("span.bk-inline").textContent : clonedNode.querySelector(".chat-entry-content")?.textContent;
+            const divTextContent = AeroKick && flusher.props.isAeroKick ? clonedNode.querySelector("span.bk-inline").textContent : clonedNode.querySelector('span.font-normal')?.textContent;
 
             /* set text content */
             if (divTextContent) {
               uniqueString += divTextContent + " ";
-
               /* Remove duplicate consecutive characters */
               uniqueString = uniqueString.replace(/([\p{Emoji}]|[\p{L}])(\1{2,})/gu, '$1');
             }
@@ -1201,7 +1218,7 @@ class FlusherMessages {
                 uniqueString = uniqueString.replace(regex, "").trim();
               }
             } else {
-              emoteElements = clonedNode.querySelectorAll("[data-emote-name]");
+              emoteElements = clonedNode.querySelectorAll('span.font-normal img');
               if (emoteElements.length > 0) {
                 emoteElements.forEach(emoteElement => {
                   const emoteValue = emoteElement.getAttribute("alt");
@@ -1221,6 +1238,7 @@ class FlusherMessages {
 
             /* remove spaces */
             uniqueString = uniqueString.replace(/\s/g, '');
+            uniqueString = uniqueString.toLowerCase();
             const exist = flusher.props.displayedMessages.find(obj => {
               return obj.key === uniqueString;
             });
@@ -1336,7 +1354,7 @@ class FlusherMessages {
   }
   unbindRequests(flusher) {
     this.disposeChannel(flusher);
-    if (!flusher?.props?.external) {
+    if (!flusher?.props?.external || flusher.states.flushState) {
       if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
       this.nativeChatObserver = null;
       clearTimeout(flusher.props.bindTimeout);
@@ -1425,7 +1443,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
     </div>
     <div class="chat-actions-content">
       <div class="flusher-spam flusher-actions-item">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Show Spam</div>
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Hide Spam</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
@@ -1596,7 +1614,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.5</div>
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.0.7</div>
         </div>
       </div>
     </div>
@@ -1901,6 +1919,7 @@ function dragElement(flusher) {
     }
   };
   function dragElement(e) {
+    window.isDragging = true;
     e = e || window.event;
     e.preventDefault();
     pos1 = pos3 - e.clientX;
@@ -1911,6 +1930,7 @@ function dragElement(flusher) {
     flusher.container.style.left = flusher.container.offsetLeft - pos1 + "px";
   }
   function resizeElement(e) {
+    window.isDragging = true;
     e = e || window.event;
     e.preventDefault();
     flusher.container.style.width = flusher.container.offsetWidth - (pos3 - e.clientX) + "px";
@@ -1919,11 +1939,13 @@ function dragElement(flusher) {
     pos4 = e.clientY;
   }
   function closeDragElement() {
+    window.isDragging = false;
     document.onmouseup = null;
     document.onmousemove = null;
     setPosition(flusher, false);
   }
   function closeResize() {
+    window.isDragging = false;
     document.onmouseup = null;
     document.onmousemove = null;
     setPosition(flusher, false);
@@ -2652,15 +2674,17 @@ class KeybindListener {
 
 
 
+let flusherObject;
 async function createChat(flusher) {
-  if (flusher.video.hasAttribute('flusher')) return;
-  flusher.video.setAttribute('flusher', "");
-  const chatFlusher = document.createElement("div");
-  chatFlusher.classList.add("flusher");
-  if (flusher.props.isAeroKick) chatFlusher.style.cssText = 'position: absolute !important; z-index: 1010;';
-  const flusherDiv = document.createElement("div");
-  flusherDiv.classList.add("flusher-messages");
-  const shadowRoot = flusher.props.external ? chatFlusher.attachShadow({
+  flusherObject = flusher;
+  if (flusherObject.video.hasAttribute('flusher')) return;
+  flusherObject.video.setAttribute('flusher', "");
+  const chatflusherObject = document.createElement("div");
+  chatflusherObject.classList.add("flusher");
+  if (flusherObject.props.isAeroKick) chatflusherObject.style.cssText = 'position: absolute !important; z-index: 1010;';
+  const flusherObjectDiv = document.createElement("div");
+  flusherObjectDiv.classList.add("flusher-messages");
+  const shadowRoot = flusherObject.props.external ? chatflusherObject.attachShadow({
     mode: 'open'
   }) : null;
   const b = typeof browser !== 'undefined' ? browser : chrome;
@@ -2675,14 +2699,14 @@ async function createChat(flusher) {
     document.head.appendChild(font);
   }
   const menuStylesDom = document.getElementById('flusher-css');
-  if (!menuStylesDom || flusher.props.external) {
+  if (!menuStylesDom || flusherObject.props.external) {
     const menuStyle = document.createElement('link');
     menuStyle.href = b.runtime.getURL('lib/flusher/overlay.css');
     menuStyle.rel = 'stylesheet';
     menuStyle.id = 'flusher-css';
-    flusher.props.external ? shadowRoot.appendChild(menuStyle) : document.head.append(menuStyle);
+    flusherObject.props.external ? shadowRoot.appendChild(menuStyle) : document.head.append(menuStyle);
   }
-  flusher.container = flusherDiv;
+  flusherObject.container = flusherObjectDiv;
   function setExtensionStorageItem(key, value) {
     const data = {
       [key]: value
@@ -2690,52 +2714,49 @@ async function createChat(flusher) {
     chrome.storage.local.set(data, () => {});
   }
   async function initializeDefaultSettings() {
-    const currentVersion = '1.0.6';
+    const currentVersion = '1.0.7';
     const storedVersion = await getExtensionStorageItem('flusher-version', null);
     if (storedVersion !== currentVersion) {
-      console.log('New update detected. Resetting settings to default.');
-      setExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-      setExtensionStorageItem('flusher-position', flusher.states.positionState);
-      setExtensionStorageItem('flusher-size', flusher.states.sizeState);
-      setExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-      setExtensionStorageItem('flusher-flush', flusher.states.flushState);
-      setExtensionStorageItem('flusher-shadow', flusher.states.shadow);
-      setExtensionStorageItem('flusher-slide', flusher.states.slide);
-      setExtensionStorageItem('flusher-reply', flusher.states.reply);
-      setExtensionStorageItem('flusher-spam', flusher.states.spamState);
-      setExtensionStorageItem('flusher-font', flusher.states.fontState);
-      setExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
-      setExtensionStorageItem('flusher-event-bans', flusher.states.bans);
-      setExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
-      logToConsole(`Updated kick Chat Flusher`);
+      logToConsole('New update detected. Resetting settings to default.');
+      setExtensionStorageItem('flusher-background', flusherObject.states.backgroundState);
+      setExtensionStorageItem('flusher-position', flusherObject.states.positionState);
+      setExtensionStorageItem('flusher-size', flusherObject.states.sizeState);
+      setExtensionStorageItem('flusher-enable', flusherObject.states.chatEnabled);
+      setExtensionStorageItem('flusher-flush', flusherObject.states.flushState);
+      setExtensionStorageItem('flusher-shadow', flusherObject.states.shadow);
+      setExtensionStorageItem('flusher-slide', flusherObject.states.slide);
+      setExtensionStorageItem('flusher-reply', flusherObject.states.reply);
+      setExtensionStorageItem('flusher-spam', flusherObject.states.spamState);
+      setExtensionStorageItem('flusher-font', flusherObject.states.fontState);
+      setExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
+      setExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
+      setExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
       setExtensionStorageItem('flusher-version', currentVersion);
+      chrome.storage.local.remove("positionsPerChannel", function () {
+        console.log("customPositions have been removed from the db.");
+      });
       await loadSetting();
     } else {
-      logToConsole(`Kick Chat Flusher is up to date`);
       await loadSetting();
     }
     async function loadSetting() {
-      flusher.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusher.states.chatEnabled);
-      flusher.states.flushState = await getExtensionStorageItem('flusher-flush', flusher.states.flushState);
-      flusher.states.reply = await getExtensionStorageItem('flusher-reply', flusher.states.reply);
-      flusher.states.spamState = await getExtensionStorageItem('flusher-spam', flusher.states.spamState);
-      flusher.states.fontState = await getExtensionStorageItem('flusher-font', flusher.states.fontState);
-      flusher.states.backgroundState = await getExtensionStorageItem('flusher-background', flusher.states.backgroundState);
-      flusher.states.timeState = await getExtensionStorageItem('flusher-time', flusher.states.timeState);
-      flusher.states.shadow = await getExtensionStorageItem('flusher-shadow', flusher.states.shadow);
-      flusher.states.slide = await getExtensionStorageItem('flusher-slide', flusher.states.slide);
-      flusher.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusher.states.keybinds);
-      flusher.states.bans = await getExtensionStorageItem('flusher-event-bans', flusher.states.bans);
-      flusher.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusher.states.deleted);
-      flusher.props.intro = await getExtensionStorageItem('flusher-intro', false);
+      flusherObject.states.chatEnabled = await getExtensionStorageItem('flusher-enable', flusherObject.states.chatEnabled);
+      flusherObject.states.flushState = await getExtensionStorageItem('flusher-flush', flusherObject.states.flushState);
+      flusherObject.states.reply = await getExtensionStorageItem('flusher-reply', flusherObject.states.reply);
+      flusherObject.states.spamState = await getExtensionStorageItem('flusher-spam', flusherObject.states.spamState);
+      flusherObject.states.fontState = await getExtensionStorageItem('flusher-font', flusherObject.states.fontState);
+      flusherObject.states.backgroundState = await getExtensionStorageItem('flusher-background', flusherObject.states.backgroundState);
+      flusherObject.states.timeState = await getExtensionStorageItem('flusher-time', flusherObject.states.timeState);
+      flusherObject.states.shadow = await getExtensionStorageItem('flusher-shadow', flusherObject.states.shadow);
+      flusherObject.states.slide = await getExtensionStorageItem('flusher-slide', flusherObject.states.slide);
+      flusherObject.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
+      flusherObject.states.bans = await getExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
+      flusherObject.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
+      flusherObject.props.intro = await getExtensionStorageItem('flusher-intro', false);
     }
   }
   initializeDefaultSettings();
-  setCustomPosition(flusher);
-
-  /* important */
-  /* doing this fix cause z-controls is dynamic */
-
+  setCustomPosition(flusherObject);
   function addBtn(node) {
     const buttons = node.querySelectorAll('button');
     const existingButton = Array.from(buttons).find(button => button.hasAttribute('data-flusher'));
@@ -2752,59 +2773,77 @@ async function createChat(flusher) {
       const newSVG = doc.documentElement;
       clone.replaceChildren(newSVG);
       lastButton.parentNode.insertBefore(clone, lastButton.nextSibling);
-      flusher.controls = node;
+      flusherObject.controls = node;
 
       /* temp fix */
-      flusher.toggleNative = clone;
-      flusher.toggle = createMenu(flusher);
+      flusherObject.toggleNative = clone;
+      flusherObject.toggle = createMenu(flusherObject);
     }
-    checkResize(flusher);
+    checkResize(flusherObject);
   }
   function dupeBtn(node) {
     const btn = node.querySelector('button');
     if (btn) {
       addBtn(node);
     } else {
-      flusher.props.controlsDupeObserver = new MutationObserver(function (mutations) {
+      flusherObject.props.controlsDupeObserver = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
           mutation.addedNodes.forEach(function (node) {
             if (node.classList.contains('z-controls')) {
-              flusher.props.controlsDupeObserver.disconnect();
+              flusherObject.props.controlsDupeObserver.disconnect();
               addBtn(node);
             }
           });
         });
       });
-      flusher.props.controlsDupeObserver.observe(flusher.video.parentNode, {
+      flusherObject.props.controlsDupeObserver.observe(flusherObject.video.parentNode, {
         childList: true,
         subtree: true
       });
     }
   }
-  flusher.props.controlsObserver = new MutationObserver(function (mutations) {
-    mutations.forEach(function (mutation) {
-      if (mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach(function (node) {
-          if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('z-controls')) {
-            dupeBtn(node);
-          }
-        });
-      }
-    });
+  let lastRun = 0;
+  const throttleDelay = 1000;
+
+  /* remove old first */
+  /* flusherObject.video.parentNode.removeEventListener('mousemove', throttledMove); */
+
+  flusherObject.video.parentNode.addEventListener('mousemove', event => {
+    if (!window.isDragging) throttledMove();
   });
-  flusher.props.controlsObserver.observe(flusher.video.parentNode, {
-    childList: true,
-    subtree: true
+  function throttledMove() {
+    const now = Date.now();
+    if (now - lastRun >= throttleDelay) {
+      let node = flusherObject.video.parentNode.querySelector('.z-controls');
+      if (node) dupeBtn(node);
+      lastRun = now;
+    }
+  }
+
+  /* flusherObject.props.controlsObserver = new MutationObserver(function (mutations) {
+     mutations.forEach(function (mutation) {
+        if (mutation.addedNodes.length > 0) {
+           mutation.addedNodes.forEach(function (node) {
+              if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('z-controls')) {
+                 dupeBtn(node);
+              }
+           });
+        }
+     });
   });
+   flusherObject.props.controlsObserver.observe(flusherObject.video.parentNode, {
+     childList: true,
+     subtree: true
+  }); */
 
   /* temp fix */
-  flusher.props.isAeroKick ? flusher.video.append(chatFlusher) : flusher.video.parentNode.append(chatFlusher);
-  flusher.props.external ? shadowRoot.appendChild(flusherDiv) : chatFlusher.append(flusherDiv);
-  checkResize(flusher);
+  flusherObject.props.isAeroKick ? flusherObject.video.append(chatflusherObject) : flusherObject.video.parentNode.append(chatflusherObject);
+  flusherObject.props.external ? shadowRoot.appendChild(flusherObjectDiv) : chatflusherObject.append(flusherObjectDiv);
+  checkResize(flusherObject);
   /* - */
 
-  if (flusher.props.isAeroKick) {
-    const videoHolder = flusher.video.closest('#video-holder');
+  if (flusherObject.props.isAeroKick) {
+    const videoHolder = flusherObject.video.closest('#video-holder');
     const bkVideoPlayer = document.getElementById('bk-video-player');
     const videoHolderWidth = videoHolder?.offsetWidth ?? 0;
     const bkVideoPlayerWidth = bkVideoPlayer?.offsetWidth ?? 0;
@@ -2814,7 +2853,7 @@ async function createChat(flusher) {
     } else {
       largestElement = bkVideoPlayer;
     }
-    flusher.video = largestElement;
+    flusherObject.video = largestElement;
   }
   function getExtensionStorageItem(key, defaultValue) {
     return new Promise(resolve => {
@@ -2919,7 +2958,7 @@ function checkResize(flusher) {
           const isUrlEqual = window.currentUrl === undefined || window.currentUrl === window.location.href;
           window.currentUrl = window.location.href;
           const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
-          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged || !isUrlEqual) {
+          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged || !isUrlEqual || !flusher?.container) {
             if (flusher !== null) resize_reset(flusher);
             return;
           }
@@ -2957,8 +2996,9 @@ function checkResize(flusher) {
             window.currentUrl = window.location.href;
 
             /* temp fix toggle btn not clickable in theater */
-            const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
-            if (element) element.classList.remove("z-[500]");
+            /* const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
+            if (element) element.classList.remove("z-[500]"); */
+
             flusher.props.keydownListener = new KeybindListener(flusher);
             logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
           } else {
@@ -3044,6 +3084,7 @@ function checkResize(flusher) {
     flusher.setVerticalWidth();
   }
   function setAttributes() {
+    if (!flusher?.container) return;
     flusher.container.style.setProperty("--flusher-width", `-${flusher.props.parentWidth}px`);
     if (flusher.toggle) flusher.toggle.setAttribute("domain", flusher.props.domain);
     const newFlushState = flusher.states.flushState !== undefined ? flusher.states.flushState ? "horizontal" : "vertical" : flusher.states.flushState ? "horizontal" : "vertical";
@@ -3317,58 +3358,64 @@ class Flusher {
     visibilityChange(this);
   }
   resetConnection() {
-    /* logToConsole('Reset Connection'); */
-
+    logToConsole('Reset Connection');
     if (!this.props.flusher) return;
-    clearChat(this.props.flusher);
+    /* clearChat(this.props.flusher); */
     isVod = false;
     if (this.props.flusher && this.props.resizeObserver) {
       this.props.resizeObserver.disconnect();
     }
   }
   clear() {
-    /* temp fix */
-    if (this.props.controlsDupeObserver) this.props.controlsDupeObserver.disconnect();
-    if (this.props.controlsObserver) this.props.controlsObserver.disconnect();
-    /* - */
+    if (this.states.flushState) {
+      /* temp fix */
+      if (this.props.controlsDupeObserver) this.props.controlsDupeObserver.disconnect();
+      if (this.props.controlsObserver) this.props.controlsObserver.disconnect();
+      /* - */
 
-    if (this.container) this.container.style.display = 'none';
-    const isEnabled = this.states.chatEnabled;
-    this.states.chatEnabled = false;
-    this.props.elementQueue.length = 0;
-    this.props.messageQueue.length = 0;
-    this.props.lastRow = 0;
-    for (const id of this.props.timeoutIds) {
-      clearTimeout(id);
+      if (this.container) this.container.style.display = 'none';
+      const isEnabled = this.states.chatEnabled;
+      this.states.chatEnabled = false;
+      this.props.elementQueue.length = 0;
+      this.props.messageQueue.length = 0;
+      this.props.lastRow = 0;
+      for (const id of this.props.timeoutIds) {
+        clearTimeout(id);
+      }
+      stopScrollingInterval(this);
+      removeItems(this);
+      if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
+      this.props.isCaptureKeybind = false;
+      this.props.displayedMessages = [];
+      this.props.messageObservers.forEach((observer, entryId) => {
+        observer.disconnect();
+        this.props.messageObservers.delete(entryId);
+      });
+      if (this.props.lastPositionPerRow) {
+        this.props.lastPositionPerRow.length = 0;
+      } else {
+        this.props.lastPositionPerRow = [];
+      }
+      if (this.props.rowQueue) {
+        this.props.rowQueue.length = 0;
+      } else {
+        this.props.rowQueue = [];
+      }
+      this.props.timeoutIds.length = 0;
+      if (this.container !== null) this.container.style.display = 'flex';
+      this.states.chatEnabled = isEnabled;
+      this.props.isProcessingElements = false;
+      this.props.isProcessingMessages = false;
+    } else {
+      removeItems(this);
     }
-    stopScrollingInterval(this);
-    if (this.container !== null) {
-      while (this.container.firstChild) {
-        this.container.removeChild(this.container.firstChild);
+    function removeItems(flusher) {
+      if (flusher.container !== null) {
+        while (flusher.container.firstChild) {
+          flusher.container.removeChild(flusher.container.firstChild);
+        }
       }
     }
-    if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
-    this.props.isCaptureKeybind = false;
-    this.props.displayedMessages = [];
-    this.props.messageObservers.forEach((observer, entryId) => {
-      observer.disconnect();
-      this.props.messageObservers.delete(entryId);
-    });
-    if (this.props.lastPositionPerRow) {
-      this.props.lastPositionPerRow.length = 0;
-    } else {
-      this.props.lastPositionPerRow = [];
-    }
-    if (this.props.rowQueue) {
-      this.props.rowQueue.length = 0;
-    } else {
-      this.props.rowQueue = [];
-    }
-    this.props.timeoutIds.length = 0;
-    if (this.container !== null) this.container.style.display = 'flex';
-    this.states.chatEnabled = isEnabled;
-    this.props.isProcessingElements = false;
-    this.props.isProcessingMessages = false;
   }
   setVerticalWidth() {
     const elementHeight = this.props.elementHeight;
@@ -3393,8 +3440,7 @@ class Flusher {
 
 class Kick {
   static init() {
-    /* logToConsole(`Initialize`); */
-
+    logToConsole(`Initialize`);
     let stopObserver = false;
     const observeVideo = () => {
       const videoObserver = new MutationObserver(() => {

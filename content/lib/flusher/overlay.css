@@ -504,8 +504,10 @@
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-messages[shadow="true"].flusher-messages[layout="vertical"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
   /* text-shadow: -1px 0px 1px black, 0px -1px 0.5px black, 0px 1px 0.5px black, 0px 0px 1px black; */
-  text-shadow: 0px -1px .5px #000000e8, 0px 1px .5px #000000eb, 1px 0px .5px #000000eb,
-    -1px 0px .5px #000000eb;
+  /*text-shadow: 0px -1px .5px #000000e8, 0px 1px .5px #000000eb, 1px 0px .5px #000000eb,
+    -1px 0px .5px #000000eb;*/
+  text-shadow: 0px -1px .7px #262626, 0px 1px .7px #262626, 1px 0px .7px #131313,
+    -1px 0px .7px #262626;
   /* text-shadow: 0px -1px 1.5px #1d1d1d, 0px 1px 1.5px #1d1d1d, 1px 0px 1.5px #181818,
     -1px 0px 1.5px #1d1d1d, 1.5px 1.5px 1.5px #1d1d1d; */
   filter: brightness(1.1) contrast(.9);
@@ -662,12 +664,12 @@
 
 @keyframes slide-in-vertical {
   0% {
-    transform: translateY(25%);
-    opacity: 0.3;
+    /* transform: translateY(10%); */
+    opacity: 0.8;
   }
 
   100% {
-    transform: translateY(0);
+    /* transform: translateY(0); */
     opacity: 1;
   }
 }

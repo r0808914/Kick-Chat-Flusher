@@ -4,7 +4,7 @@ import { logToConsole } from '../utils/utils.js';
 
 class Kick {
   static init() {
-    /* logToConsole(`Initialize`); */
+    logToConsole(`Initialize`);
 
     let stopObserver = false;
 

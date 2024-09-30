@@ -24,10 +24,10 @@ export class Flusher {
 	}
 
 	resetConnection() {
-		/* logToConsole('Reset Connection'); */
+		logToConsole('Reset Connection');
 
 		if (!this.props.flusher) return;
-		clearChat(this.props.flusher);
+		/* clearChat(this.props.flusher); */
 		isVod = false;
 		if (this.props.flusher && this.props.resizeObserver) {
 			this.props.resizeObserver.disconnect();
@@ -35,61 +35,69 @@ export class Flusher {
 	}
 
 	clear() {
-		/* temp fix */
-		if (this.props.controlsDupeObserver) this.props.controlsDupeObserver.disconnect();
-		if (this.props.controlsObserver) this.props.controlsObserver.disconnect();
-		/* - */
+		if (this.states.flushState) {
+			/* temp fix */
+			if (this.props.controlsDupeObserver) this.props.controlsDupeObserver.disconnect();
+			if (this.props.controlsObserver) this.props.controlsObserver.disconnect();
+			/* - */
 
-		if (this.container) this.container.style.display = 'none';
+			if (this.container) this.container.style.display = 'none';
 
-		const isEnabled = this.states.chatEnabled;
-		this.states.chatEnabled = false;
+			const isEnabled = this.states.chatEnabled;
+			this.states.chatEnabled = false;
 
-		this.props.elementQueue.length = 0;
-		this.props.messageQueue.length = 0;
-		this.props.lastRow = 0;
-		for (const id of this.props.timeoutIds) {
-			clearTimeout(id);
+			this.props.elementQueue.length = 0;
+			this.props.messageQueue.length = 0;
+			this.props.lastRow = 0;
+			for (const id of this.props.timeoutIds) {
+				clearTimeout(id);
+			}
+
+			stopScrollingInterval(this);
+
+			removeItems(this);
+
+			if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
+			this.props.isCaptureKeybind = false;
+
+			this.props.displayedMessages = [];
+
+			this.props.messageObservers.forEach((observer, entryId) => {
+				observer.disconnect();
+				this.props.messageObservers.delete(entryId);
+			});
+
+			if (this.props.lastPositionPerRow) {
+				this.props.lastPositionPerRow.length = 0;
+			} else {
+				this.props.lastPositionPerRow = [];
+			}
+
+			if (this.props.rowQueue) {
+				this.props.rowQueue.length = 0;
+			} else {
+				this.props.rowQueue = [];
+			}
+
+			this.props.timeoutIds.length = 0;
+
+			if (this.container !== null) this.container.style.display = 'flex';
+
+			this.states.chatEnabled = isEnabled;
+
+			this.props.isProcessingElements = false;
+			this.props.isProcessingMessages = false;
+		} else {
+			removeItems(this);
 		}
 
-		stopScrollingInterval(this);
-
-		if (this.container !== null) {
-			while (this.container.firstChild) {
-				this.container.removeChild(this.container.firstChild);
+		function removeItems(flusher) {
+			if (flusher.container !== null) {
+				while (flusher.container.firstChild) {
+					flusher.container.removeChild(flusher.container.firstChild);
+				}
 			}
 		}
-
-		if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
-		this.props.isCaptureKeybind = false;
-
-		this.props.displayedMessages = [];
-
-		this.props.messageObservers.forEach((observer, entryId) => {
-			observer.disconnect();
-			this.props.messageObservers.delete(entryId);
-		});
-
-		if (this.props.lastPositionPerRow) {
-			this.props.lastPositionPerRow.length = 0;
-		} else {
-			this.props.lastPositionPerRow = [];
-		}
-
-		if (this.props.rowQueue) {
-			this.props.rowQueue.length = 0;
-		} else {
-			this.props.rowQueue = [];
-		}
-
-		this.props.timeoutIds.length = 0;
-
-		if (this.container !== null) this.container.style.display = 'flex';
-
-		this.states.chatEnabled = isEnabled;
-
-		this.props.isProcessingElements = false;
-		this.props.isProcessingMessages = false;
 	}
 
 	setVerticalWidth() {

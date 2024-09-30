@@ -153,10 +153,10 @@ function prepareAnimation(data, flusher) {
 	data.container.addEventListener("animationend", function () {
 		try {
 			const oldest = flusher.container.firstElementChild;
-			if (!flusher.states.spamState) {
+			if (flusher.states.spamState) {
 				const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-index');
 				if (entryId)
-					flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+					flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
 			}
 			oldest.remove();
 		} catch { }

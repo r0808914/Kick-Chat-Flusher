@@ -124,9 +124,19 @@ export class FlusherMessages {
         });
       }, 500);
 
+    let lastMutationTime = new Date().getTime();
+    window.flusherInterval = 1000;
+
     this.nativeChatObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+          const currentMutationTime = new Date().getTime();
+
+          const interval = currentMutationTime - lastMutationTime;
+          window.flusherInterval = interval > 500 ? (interval + 100) : window.flusherInterval;
+
+          lastMutationTime = currentMutationTime;
+
           mutation.addedNodes.forEach((addedNode) => {
             prepareMessage(addedNode, false);
           });
@@ -155,10 +165,10 @@ export class FlusherMessages {
       if (AeroKick && !flusher.props.isVod) {
         const button = addedNode.querySelector("button");
         if (!button) {
-          console.log(
+          /* console.log(
             "Kick Chat Flusher - Button does not exist in the added node:",
             addedNode
-          );
+          ); */
           return;
         }
       }
@@ -167,18 +177,17 @@ export class FlusherMessages {
         AeroKick && flusher.props.isAeroKick
           ? addedNode.querySelector("button").getAttribute("data-radial-id")
           : addedNode.getAttribute("data-chat-entry"); */
-      if (
-        id === "history_breaker" ||
-        (flusher.states.flushState && (!id || id === "")) /* fix also remove history_breaker */
-      )
-        return;
+
+      if (flusher.states.flushState && (!id || id === "")) return;
 
       const clonedNode = addedNode.cloneNode(true);
 
+      /* history_breaker */
       if (clonedNode.classList.contains('items-center')) {
-        console.log('message rejected', clonedNode);
+        /* console.log('message rejected', clonedNode); */
         return;
       }
+
       clonedNode.classList.remove("relative", "group");
 
       if (self.flusher.props.isAeroKick) {
@@ -228,11 +237,9 @@ export class FlusherMessages {
         }
       }
 
-      /* temp */
-      const disableCondition = true;
-      if (!disableCondition && (id || id === "")) {
+      if (id || id === "") {
         if (
-          (!flusher.states.spamState || flusher.states.flushState) &&
+          (flusher.states.spamState || flusher.states.flushState) &&
           !flusher.props.isVod
         ) {
 
@@ -504,15 +511,18 @@ export class FlusherMessages {
 
       function checkDupe() {
         if (id || id === "") {
-
           const userId =
             AeroKick && flusher.props.isAeroKick
               ? clonedNode
                 .querySelector("button")
                 .getAttribute("data-radial-username")
-              : clonedNode
-                .querySelector("[data-chat-entry-user-id]")
-                ?.getAttribute("data-chat-entry-user-id");
+              : clonedNode.querySelector('button[title]')?.getAttribute('title');
+
+          if (!userId) {
+            console.log('no username in node');
+            console.log(clonedNode);
+            return false;
+          }
 
           if (self.flusher.props.isKickTools) {
             if (clonedNode.style.opacity ?? 1 < 1) {
@@ -523,19 +533,18 @@ export class FlusherMessages {
             }
           }
 
-          if (!flusher.states.spamState || flusher.states.flushState) {
+          if (flusher.states.spamState || flusher.states.flushState) {
             let emoteElements;
             let uniqueString = "";
 
             const divTextContent =
               AeroKick && flusher.props.isAeroKick
                 ? clonedNode.querySelector("span.bk-inline").textContent
-                : clonedNode.querySelector(".chat-entry-content")?.textContent;
+                : clonedNode.querySelector('span.font-normal')?.textContent
 
             /* set text content */
             if (divTextContent) {
               uniqueString += divTextContent + " ";
-
               /* Remove duplicate consecutive characters */
               uniqueString = uniqueString.replace(/([\p{Emoji}]|[\p{L}])(\1{2,})/gu, '$1');
 
@@ -557,7 +566,7 @@ export class FlusherMessages {
                 uniqueString = uniqueString.replace(regex, "").trim();
               }
             } else {
-              emoteElements = clonedNode.querySelectorAll("[data-emote-name]");
+              emoteElements = clonedNode.querySelectorAll('span.font-normal img');
               if (emoteElements.length > 0) {
                 emoteElements.forEach((emoteElement) => {
                   const emoteValue = emoteElement.getAttribute("alt");
@@ -577,6 +586,8 @@ export class FlusherMessages {
 
             /* remove spaces */
             uniqueString = uniqueString.replace(/\s/g, '');
+
+            uniqueString = uniqueString.toLowerCase();
 
             const exist = flusher.props.displayedMessages.find((obj) => {
               return obj.key === uniqueString;
@@ -724,7 +735,7 @@ export class FlusherMessages {
 
   unbindRequests(flusher) {
     this.disposeChannel(flusher);
-    if (!flusher?.props?.external) {
+    if (!flusher?.props?.external || flusher.states.flushState) {
       if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
       this.nativeChatObserver = null;
       clearTimeout(flusher.props.bindTimeout);

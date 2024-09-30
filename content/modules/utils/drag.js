@@ -21,6 +21,7 @@ export function dragElement(flusher) {
 	};
 
 	function dragElement(e) {
+		window.isDragging = true;
 		e = e || window.event;
 		e.preventDefault();
 		pos1 = pos3 - e.clientX;
@@ -33,6 +34,7 @@ export function dragElement(flusher) {
 	}
 
 	function resizeElement(e) {
+		window.isDragging = true;
 		e = e || window.event;
 		e.preventDefault();
 		flusher.container.style.width = (flusher.container.offsetWidth - (pos3 - e.clientX)) + "px";
@@ -42,12 +44,14 @@ export function dragElement(flusher) {
 	}
 
 	function closeDragElement() {
+		window.isDragging = false;
 		document.onmouseup = null;
 		document.onmousemove = null;
 		setPosition(flusher, false);
 	}
 
 	function closeResize() {
+		window.isDragging = false;
 		document.onmouseup = null;
 		document.onmousemove = null;
 		setPosition(flusher, false);

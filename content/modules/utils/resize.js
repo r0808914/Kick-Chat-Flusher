@@ -5,7 +5,7 @@ import { logToConsole } from "./utils.js";
 import { KeybindListener } from "./keybind.js";
 import { setCustomPosition } from "../interface/overlay.js";
 
-function reset(flusher) {
+export function reset(flusher) {
   const init = !flusher.props.external;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = null;
@@ -69,7 +69,8 @@ export function checkResize(flusher) {
           window.currentUrl = window.location.href;
 
           const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
-          if (((width === null || width === 0) && (!height || height === 0) && !videoChanged) || !isUrlEqual) {
+
+          if (((width === null || width === 0) && (!height || height === 0) && !videoChanged) || !isUrlEqual || !flusher?.container) {
             if (flusher !== null) reset(flusher);
             return;
           }
@@ -114,8 +115,8 @@ export function checkResize(flusher) {
             window.currentUrl = window.location.href;
 
             /* temp fix toggle btn not clickable in theater */
-            const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
-            if (element) element.classList.remove("z-[500]");
+            /* const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
+            if (element) element.classList.remove("z-[500]"); */
 
             flusher.props.keydownListener = new KeybindListener(flusher);
 
@@ -240,6 +241,8 @@ export function checkResize(flusher) {
   }
 
   function setAttributes() {
+    if (!flusher?.container) return;
+
     flusher.container.style.setProperty(
       "--flusher-width",
       `-${flusher.props.parentWidth}px`

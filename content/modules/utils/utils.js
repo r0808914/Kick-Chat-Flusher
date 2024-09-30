@@ -1,14 +1,21 @@
 export function visibilityChange(flusher) {
-	/* logToConsole(`Add visibilityChange`); */
-
 	document.addEventListener('visibilitychange', function handleVisibilityChange() {
-		if (!flusher || !flusher.states.flushState) return;
+		if (!flusher) return;
 		if (document.hidden) {
-			flusher.props.chatEnabledVisible = flusher.states.chatEnabled;
-			flusher.states.chatEnabled = false;
 			flusher.clear();
+
+			if (flusher.states.flushState) {
+				flusher.props.chatEnabledVisible = flusher.states.chatEnabled;
+				flusher.states.chatEnabled = false;
+			} else {
+				flusher.provider.unbindRequests(flusher);
+			}
 		} else {
-			flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
+			if (flusher.states.flushState) {
+				flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
+			} else {
+				flusher.provider.bindRequests(flusher);
+			}
 		}
 	});
 }
