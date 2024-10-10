@@ -97,6 +97,7 @@ export class FlusherMessages {
   }
 
   async interceptNative(flusher) {
+    let id = 0;
     const self = this;
     self.flusher = flusher;
 
@@ -127,13 +128,36 @@ export class FlusherMessages {
     let lastMutationTime = new Date().getTime();
     window.flusherInterval = 1000;
 
+    let isScrolling = false;
+    const targetElement = document.querySelector("#chatroom-messages")?.nextSibling;
+
+    if (targetElement) {
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          if (mutation.type === "childList") {
+            if (mutation.addedNodes.length > 0) {
+              isScrolling = true;
+            }
+
+            if (targetElement.children.length === 0) {
+              isScrolling = false;
+            }
+          }
+        });
+      });
+
+      observer.observe(targetElement, { childList: true });
+    }
+
     this.nativeChatObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+          if (isScrolling) return;
+
           const currentMutationTime = new Date().getTime();
 
-          const interval = currentMutationTime - lastMutationTime;
-          window.flusherInterval = interval > 500 ? (interval + 100) : window.flusherInterval;
+          const interval = ((currentMutationTime - lastMutationTime) + window.flusherInterval / 2) / 2;
+          window.flusherInterval = interval * 2 > 750 ? (interval * 2) : 750;
 
           lastMutationTime = currentMutationTime;
 
@@ -147,20 +171,17 @@ export class FlusherMessages {
     const observerConfig = { childList: true, subtree: false };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
 
-    let currentId;
-
     function prepareMessage(addedNode, update) {
       if (!addedNode || addedNode.nodeName !== "DIV") return;
 
-      /* hotfix */
-      let id = parseInt(addedNode.getAttribute("data-index"), 10);
 
-      let reset = (currentId > 300) && id < 300;
-      if (id <= currentId && !reset) return;
-      currentId = id === 299 || reset ? undefined : id;
+      if (!update) {
+        /* console.log(id); */
+        id++;
 
-      addedNode = addedNode.firstElementChild;
-      addedNode.setAttribute('data-index', id);
+        addedNode = addedNode.firstElementChild;
+        addedNode.setAttribute('flusher-id', id);
+      }
 
       if (AeroKick && !flusher.props.isVod) {
         const button = addedNode.querySelector("button");
@@ -615,7 +636,11 @@ export class FlusherMessages {
               if (flusher.states.deleted && parentNode.querySelector('.chat-entry-content-deleted')) {
                 clonedNode.classList.add('flusher-deleted');
               } else {
-                clonedNode.replaceWith(prepareMessage(parentNode, true));
+                let currentTextElement = clonedNode.querySelector('span.font-normal');
+                if (currentTextElement) {
+                  let newTextElement = prepareMessage(parentNode, true)?.querySelector('span.font-normal');
+                  if (newTextElement) currentTextElement.replaceWith(newTextElement);
+                }
               }
             }
           });

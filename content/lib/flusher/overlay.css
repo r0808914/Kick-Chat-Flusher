@@ -652,6 +652,10 @@
   margin-bottom: 1rem;
 }
 
+.flusher-messages div[data-radix-popper-content-wrapper] {
+  display: none;
+}
+
 @keyframes slide-in {
   0% {
     transform: translateX(0px);

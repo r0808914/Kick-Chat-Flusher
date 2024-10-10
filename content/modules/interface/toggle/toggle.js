@@ -35,10 +35,52 @@ export function createToggle(flusher) {
 	});
 
 	function showMenu() {
+		flusher.clickOutsideHandlerFunction = (event) => clickOutsideHandler(event, flusher);
+
+		const parentElement = flusher.video.parentElement;
+		const config = { childList: true, subtree: true };
+		const callback = (mutationsList) => {
+			for (let mutation of mutationsList) {
+				if (mutation.type === 'childList') {
+					const shadowbox = parentElement.querySelector('#shadowbox');
+					if (!shadowbox) {
+						observer.disconnect();
+						hideMenu(flusher);
+					}
+				}
+			}
+		};
+
+		const observer = new MutationObserver(callback);
+		observer.observe(parentElement, config);
+
 		baseMenu.style.display = 'block';
 		popupMenu.style.display = 'block';
+
+
+		function alignPopupMenu() {
+			document.querySelector('#shadowbox').style.left = `${50}px`;
+
+			const popupMenuRect = popupMenu.getBoundingClientRect();
+			const toggleRect = flusher.toggle.getBoundingClientRect();
+			const videoRect = flusher.video.parentElement.getBoundingClientRect();
+
+			const toggleCenterX = toggleRect.left + (toggleRect.width / 2);
+			const popupCenterX = popupMenuRect.left + (popupMenuRect.width / 2);
+
+			let newLeftPosition = toggleCenterX - popupCenterX;
+
+			const minLeft = videoRect.left;
+			const maxLeft = videoRect.left + videoRect.width - popupMenuRect.width + 40;
+			console.log(maxLeft);
+			newLeftPosition = Math.max(minLeft, Math.min(newLeftPosition, maxLeft));
+
+			document.querySelector('#shadowbox').style.left = `${newLeftPosition}px`;
+		}
+
+		alignPopupMenu();
+
 		svgToggle(flusher);
-		flusher.clickOutsideHandlerFunction = (event) => clickOutsideHandler(event, flusher);
 		document.addEventListener('mousedown', flusher.clickOutsideHandlerFunction);
 		flusher.container.classList.add('flusher-hover');
 

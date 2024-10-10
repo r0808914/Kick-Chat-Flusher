@@ -1,4 +1,4 @@
-export function appendVertical(message, flusher) {
+export async function appendVertical(message, flusher) {
 	if (!message) return;
 	const lastItem = flusher.container.firstChild;
 
@@ -38,7 +38,7 @@ export function appendVertical(message, flusher) {
 
 	while (flusher.container.children.length > flusher.props.maxRows) {
 		const oldest = flusher.container.lastElementChild;
-		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : oldest.getAttribute('data-index');
+		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
 		if (entryId) {
 			const observer = flusher.props.messageObservers.get(entryId);
 			if (observer) {

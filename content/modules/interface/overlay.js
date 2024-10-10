@@ -1,6 +1,7 @@
 import { createMenu } from './menu/menu.js';
 import { checkResize } from '../utils/resize.js';
 import { getFont, logToConsole, toTitleCase } from '../utils/utils.js';
+import { createToggle } from './toggle/toggle.js';
 
 let flusherObject;
 
@@ -159,40 +160,65 @@ export async function createChat(flusher) {
 
    let lastRun = 0;
    const throttleDelay = 1000;
+   window.isDragging = false;
 
    /* remove old first */
    /* flusherObject.video.parentNode.removeEventListener('mousemove', throttledMove); */
 
-   flusherObject.video.parentNode.addEventListener('mousemove', (event) => {
+   flusherObject.props.mouseMoveHandler = (event) => {
       if (!window.isDragging) throttledMove();
+   };
+
+   flusherObject.video.addEventListener('mousemove', flusherObject.props.mouseMoveHandler);
+
+   flusherObject.video.addEventListener('mouseleave', () => {
+      lastRun = 1000;
+   });
+
+   flusherObject.container.addEventListener('mouseenter', () => {
+      window.isDragging = true;
+      flusherObject.video.removeEventListener('mousemove', flusherObject.props.mouseMoveHandler);
+      lastRun = 1000;
+      throttledMove();
+   });
+
+   flusherObject.container.addEventListener('mouseleave', () => {
+      window.isDragging = false;
+      flusherObject.video.addEventListener('mousemove', flusherObject.props.mouseMoveHandler);
+      lastRun = 1000;
    });
 
    function throttledMove() {
       const now = Date.now();
-
       if (now - lastRun >= throttleDelay) {
          let node = flusherObject.video.parentNode.querySelector('.z-controls');
-         if (node) dupeBtn(node);
+         if (node) { dupeBtn(node); }
+         else {
+            function attemptToDupeButton(maxAttempts = 5, initialWaitTime = 50) {
+               let attempts = 0;
+               let currentWaitTime = initialWaitTime;
+
+               const tryDuplication = () => {
+                  attempts++;
+
+                  let node = flusherObject.video.parentNode.querySelector('.z-controls');
+                  if (node) {
+                     dupeBtn(node);
+                  } else if (attempts < maxAttempts) {
+                     setTimeout(tryDuplication, currentWaitTime);
+                     currentWaitTime += initialWaitTime;
+                  }
+               };
+
+               setTimeout(tryDuplication, currentWaitTime);
+            }
+
+            attemptToDupeButton(); // Call the function
+
+         }
          lastRun = now;
       }
    }
-
-   /* flusherObject.props.controlsObserver = new MutationObserver(function (mutations) {
-      mutations.forEach(function (mutation) {
-         if (mutation.addedNodes.length > 0) {
-            mutation.addedNodes.forEach(function (node) {
-               if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('z-controls')) {
-                  dupeBtn(node);
-               }
-            });
-         }
-      });
-   });
-
-   flusherObject.props.controlsObserver.observe(flusherObject.video.parentNode, {
-      childList: true,
-      subtree: true
-   }); */
 
    /* temp fix */
    flusherObject.props.isAeroKick ? flusherObject.video.append(chatflusherObject) : flusherObject.video.parentNode.append(chatflusherObject);
