@@ -156,7 +156,7 @@ function prepareAnimation(data, flusher) {
 			if (flusher.states.spamState) {
 				const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
 				if (entryId)
-					flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
+					flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
 			}
 			oldest.remove();
 		} catch { }

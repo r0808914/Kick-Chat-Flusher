@@ -1,6 +1,8 @@
+import { reset } from "../utils/resize.js";
+
 export async function appendVertical(message, flusher) {
 	if (!message) return;
-	const lastItem = flusher.container.firstChild;
+	const lastItem = flusher.container?.firstChild;
 
 	if (flusher.props.external) {
 		if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
@@ -32,26 +34,36 @@ export async function appendVertical(message, flusher) {
 			flusher.container['insertBefore'](message.container, lastItem);
 		} else {
 			if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
-			flusher.container['insertBefore'](message, lastItem);
+			try {
+				flusher.container['insertBefore'](message, lastItem);
+			} catch (error) {
+				if (!flusher.container) {
+					reset(flusher);
+				}
+			}
 		}
 	}
 
-	while (flusher.container.children.length > flusher.props.maxRows) {
-		const oldest = flusher.container.lastElementChild;
-		const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
-		if (entryId) {
-			const observer = flusher.props.messageObservers.get(entryId);
-			if (observer) {
-				observer.disconnect();
-				flusher.props.messageObservers.delete(entryId);
+	try {
+		while (flusher.container.children.length > flusher.props.maxRows) {
+			const oldest = flusher.container.lastElementChild;
+			const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
+			if (entryId) {
+				const observer = flusher.props.messageObservers.get(entryId);
+				if (observer) {
+					observer.disconnect();
+					flusher.props.messageObservers.delete(entryId);
+				}
 			}
-		}
 
-		if (flusher.states.spamState && entryId) {
-			flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
-		}
+			if (flusher.states.spamState && entryId) {
+				flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+			}
 
-		oldest.remove();
+			oldest.remove();
+		}
+	} catch (error) {
+
 	}
 }
 

@@ -93,7 +93,7 @@ export class Flusher {
 
 		function removeItems(flusher) {
 			if (flusher.container !== null) {
-				while (flusher.container.firstChild) {
+				while (flusher.container?.firstChild) {
 					flusher.container.removeChild(flusher.container.firstChild);
 				}
 			}

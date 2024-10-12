@@ -1,27 +1,40 @@
 export class FlusherProps {
   constructor() {
+    // General configuration and state
     this.chatroomId = null;
-    this.clickOutsideHandlerFunction = null;
     this.domain = null;
-    this.displayedMessages = [];
+    this.video = null;
+    this.videoSize = null;
+    this.isVod = false;
+    this.isKickTools = false;
     this.external = false;
-    this.isFullscreen = false;
+    this.loading = false;
+
+    // Processing states
     this.isProcessingElements = false;
     this.isProcessingMessages = false;
-    this.isVod = false;
-    this.loading = false;
-    this.elementQueue = [];
+
+    // Message-related properties
+    this.displayedMessages = [];
     this.messageQueue = [];
     this.badgeCache = [];
+    this.messageObservers = new Map();
+
+    // Row and positioning related properties
     this.lastPositionPerRow = [];
     this.rowQueue = [];
-    this.timeoutIds = [];
-    this.bannedUsers = [];
-    this.video = null;
     this.lastRow = 0;
     this.maxRows = 99;
-    this.isKickTools = false;
-    this.messageObservers = new Map();
+
+    // Element queue and timeouts
+    this.elementQueue = [];
+    this.timeoutIds = [];
+
+    // User and interaction related
+    this.bannedUsers = [];
+    this.clickOutsideHandlerFunction = null;
+
+    // Keyboard input and keybinds
     this.keydownListener = null;
     this.keydownSetListener = null;
     this.isCaptureKeybind = false;

@@ -3,9 +3,12 @@ import { createChat } from '../interface/overlay.js';
 import { logToConsole } from '../utils/utils.js';
 
 class Kick {
-  static init() {
-    logToConsole(`Initialize`);
 
+  static init() {
+    if (window.isObserving) return;
+    window.isObserving = true;
+
+    logToConsole(`Initialize`);
     let stopObserver = false;
 
     const observeVideo = () => {
@@ -30,8 +33,10 @@ class Kick {
               const flusher = new Flusher(video, "KICK", channelName, AeroKick);
               try {
                 createChat(flusher);
+                window.isObserving = false;
                 return;
               } catch (error) {
+                window.isObserving = false;
                 logToConsole(`Failed to create chat`);
               }
             }
@@ -53,8 +58,10 @@ class Kick {
                       const flusher = new Flusher(video, "KICK", channelName, AeroKick);
                       try {
                         createChat(flusher);
+                        window.isObserving = false;
                       } catch (error) {
                         stopObserver = false;
+                        window.isObserving = false;
                         logToConsole(`Failed to create chat`);
                       }
 

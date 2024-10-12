@@ -287,13 +287,12 @@ export function checkResize(flusher) {
   function detectViewMode() {
     const documentWidth = document.documentElement.clientWidth;
     if (documentWidth < flusher.props.parentWidth / 2 + 10) {
-      flusher.props.isFullscreen = true;
-      startScrollingInterval(flusher);
       flusher.props.videoSize = "fullscreen";
+      startScrollingInterval(flusher);
     } else {
-      flusher.props.isFullscreen = false;
       stopScrollingInterval(flusher);
-      if (document.querySelector('.sidebar')) {
+      const sidebar = document.querySelector('#sidebar-wrapper');
+      if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
         flusher.props.videoSize = "default";
       } else {
         flusher.props.videoSize = "theater";
@@ -397,18 +396,39 @@ export function checkPosition(flusher, height, width) {
   }
 }
 
-function scrollChat(flusher) {
-  const chatBtn = document.querySelector("#chatroom .justify-center.absolute");
-  const chatContainer = document.querySelector("#chatroom [data-chat-entry]");
-  if (flusher.props.isFullscreen && !flusher.props.isVod) {
-    if (chatBtn !== null) {
-      chatBtn.click();
+async function scrollChat(flusher) {
+  const buttons = document.querySelectorAll('button.bg-surface-base');
+
+  const chatBtn = Array.from(buttons).find(
+    (button) => button.innerText.trim() === "Chat paused for scrolling"
+  );
+
+  const chatContainer = document.querySelector('#chatroom-messages');
+
+  if (flusher.props.videoSize === "fullscreen" && !flusher.props.isVod) {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = 500;
+
+    if (chatContainer === null) return;
+
+    while (attempts < maxAttempts) {
+      if (chatBtn) chatBtn.click();
+
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      if (isScrolledToBottom(chatContainer)) break;
+
+      attempts++;
+      await new Promise((resolve) => setTimeout(resolve, interval));
     }
-    if (chatContainer !== null) {
-      const chatContainerParent = chatContainer.closest(".overflow-y-scroll");
-      if (chatContainerParent !== null) {
-        chatContainerParent.scrollTop = chatContainerParent.scrollHeight;
-      }
+
+    if (attempts === maxAttempts) {
+      console.log("Reached max attempts without scrolling to the bottom.");
+    }
+
+    function isScrolledToBottom(chatContainer) {
+      return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight;
     }
   }
 }

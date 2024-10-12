@@ -1,4 +1,5 @@
 import { processMessageQueue, processElementQueue, createUserBanMessage } from "../queue/queue.js";
+import { reset } from "../utils/resize.js";
 import { logToConsole } from "../utils/utils.js";
 
 export class FlusherMessages {
@@ -125,8 +126,7 @@ export class FlusherMessages {
         });
       }, 500);
 
-    let lastMutationTime = new Date().getTime();
-    window.flusherInterval = 1000;
+
 
     let isScrolling = false;
     const targetElement = document.querySelector("#chatroom-messages")?.nextSibling;
@@ -149,24 +149,48 @@ export class FlusherMessages {
       observer.observe(targetElement, { childList: true });
     }
 
+    const pageParent = document.querySelector('nav').nextSibling;
+
+    const pageObserver = new MutationObserver((mutations) => {
+      if (mutations[0].type === "childList" && mutations[0].removedNodes.length > 0) {
+        if (!document.querySelector('#chatroom-messages') || (window.currentUrl !== window.location.href)) {
+          reset(flusher);
+          pageObserver.disconnect();
+        }
+      }
+    });
+
+    pageObserver.observe(pageParent, { childList: true, subtree: false });
+
     this.nativeChatObserver = new MutationObserver((mutations) => {
+
+      interval(mutations.length);
+
+      if (isScrolling) return;
+
       mutations.forEach((mutation) => {
-        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-          if (isScrolling) return;
-
-          const currentMutationTime = new Date().getTime();
-
-          const interval = ((currentMutationTime - lastMutationTime) + window.flusherInterval / 2) / 2;
-          window.flusherInterval = interval * 2 > 750 ? (interval * 2) : 750;
-
-          lastMutationTime = currentMutationTime;
-
-          mutation.addedNodes.forEach((addedNode) => {
-            prepareMessage(addedNode, false);
-          });
+        if (mutation.addedNodes.length > 0) {
+          prepareMessage(mutation.addedNodes[0], false);
         }
       });
     });
+
+    let lastMutationTime = new Date().getTime();
+    window.flusherInterval = 1000;
+
+    async function interval(count) {
+      const currentMutationTime = new Date().getTime();
+
+      if (count == 1) {
+        lastMutationTime = currentMutationTime;
+        return;
+      }
+
+      const interval = ((currentMutationTime - lastMutationTime) + window.flusherInterval / 2) / 2;
+      window.flusherInterval = interval * 2 > 500 ? (interval * 2) : 500;
+
+      lastMutationTime = currentMutationTime;
+    }
 
     const observerConfig = { childList: true, subtree: false };
     this.nativeChatObserver.observe(nativeChat, observerConfig);
@@ -540,8 +564,7 @@ export class FlusherMessages {
               : clonedNode.querySelector('button[title]')?.getAttribute('title');
 
           if (!userId) {
-            console.log('no username in node');
-            console.log(clonedNode);
+            console.log('event', clonedNode);
             return false;
           }
 

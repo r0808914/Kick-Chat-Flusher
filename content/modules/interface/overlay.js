@@ -51,7 +51,7 @@ export async function createChat(flusher) {
    }
 
    async function initializeDefaultSettings() {
-      const currentVersion = '1.0.7';
+      const currentVersion = '1.0.8';
       const storedVersion = await getExtensionStorageItem('flusher-version', null);
 
       if (storedVersion !== currentVersion) {
@@ -133,7 +133,7 @@ export async function createChat(flusher) {
          flusherObject.toggle = createMenu(flusherObject);
       }
 
-      checkResize(flusherObject);
+      /* checkResize(flusherObject); */
    }
 
    function dupeBtn(node) {

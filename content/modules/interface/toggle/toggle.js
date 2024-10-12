@@ -72,9 +72,8 @@ export function createToggle(flusher) {
 
 			const minLeft = videoRect.left;
 			const maxLeft = videoRect.left + videoRect.width - popupMenuRect.width + 40;
-			console.log(maxLeft);
-			newLeftPosition = Math.max(minLeft, Math.min(newLeftPosition, maxLeft));
 
+			newLeftPosition = Math.max(minLeft, Math.min(newLeftPosition, maxLeft));
 			document.querySelector('#shadowbox').style.left = `${newLeftPosition}px`;
 		}
 

@@ -279,7 +279,7 @@ class Flusher {
     }
     function removeItems(flusher) {
       if (flusher.container !== null) {
-        while (flusher.container.firstChild) {
+        while (flusher.container?.firstChild) {
           flusher.container.removeChild(flusher.container.firstChild);
         }
       }
@@ -317,7 +317,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   FlusherMessages: () => (/* binding */ FlusherMessages)
 /* harmony export */ });
 /* harmony import */ var _queue_queue_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../queue/queue.js */ "./modules/queue/queue.js");
-/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
+/* harmony import */ var _utils_resize_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/resize.js */ "./modules/utils/resize.js");
+/* harmony import */ var _utils_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/utils.js */ "./modules/utils/utils.js");
+
 
 
 class FlusherMessages {
@@ -340,7 +342,7 @@ class FlusherMessages {
       this.setupWebSocket(flusher, subscriptionMessage, id);
       return;
     }
-    (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_1__.logToConsole)(`WebSocket Connection Opened: ${flusher.props.channelName} (${id})`);
+    (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`WebSocket Connection Opened: ${flusher.props.channelName} (${id})`);
     this.socket.send(JSON.stringify(subscriptionMessage));
     this.channels.add(id);
     if (flusher.props.external) this.getHistory(flusher);
@@ -375,7 +377,7 @@ class FlusherMessages {
       this.subscribeChannel(flusher);
     });
     this.socket.addEventListener("close", event => {
-      (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_1__.logToConsole)(`WebSocket Connection Closed: ${flusher.props.channelName} (${flusher.props.chatroomId})`);
+      (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`WebSocket Connection Closed: ${flusher.props.channelName} (${flusher.props.chatroomId})`);
       this.channels.clear();
     });
     this.socket.addEventListener("error", event => {
@@ -399,7 +401,7 @@ class FlusherMessages {
     const self = this;
     self.flusher = flusher;
     const AeroKick = document.body.classList.contains("aerokick-customization");
-    if (AeroKick) (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_1__.logToConsole)(`AeroKick Detected`);
+    if (AeroKick) (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`AeroKick Detected`);
     const nativeChat = await waitForChat(document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages"), AeroKick);
     flusher.props.nativeChat = nativeChat;
     const b = typeof browser !== "undefined" ? browser : chrome;
@@ -409,8 +411,6 @@ class FlusherMessages {
         prepareMessage(addedNode, false);
       });
     }, 500);
-    let lastMutationTime = new Date().getTime();
-    window.flusherInterval = 1000;
     let isScrolling = false;
     const targetElement = document.querySelector("#chatroom-messages")?.nextSibling;
     if (targetElement) {
@@ -430,20 +430,40 @@ class FlusherMessages {
         childList: true
       });
     }
+    const pageParent = document.querySelector('nav').nextSibling;
+    const pageObserver = new MutationObserver(mutations => {
+      if (mutations[0].type === "childList" && mutations[0].removedNodes.length > 0) {
+        if (!document.querySelector('#chatroom-messages') || window.currentUrl !== window.location.href) {
+          (0,_utils_resize_js__WEBPACK_IMPORTED_MODULE_1__.reset)(flusher);
+          pageObserver.disconnect();
+        }
+      }
+    });
+    pageObserver.observe(pageParent, {
+      childList: true,
+      subtree: false
+    });
     this.nativeChatObserver = new MutationObserver(mutations => {
+      interval(mutations.length);
+      if (isScrolling) return;
       mutations.forEach(mutation => {
-        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-          if (isScrolling) return;
-          const currentMutationTime = new Date().getTime();
-          const interval = (currentMutationTime - lastMutationTime + window.flusherInterval / 2) / 2;
-          window.flusherInterval = interval * 2 > 750 ? interval * 2 : 750;
-          lastMutationTime = currentMutationTime;
-          mutation.addedNodes.forEach(addedNode => {
-            prepareMessage(addedNode, false);
-          });
+        if (mutation.addedNodes.length > 0) {
+          prepareMessage(mutation.addedNodes[0], false);
         }
       });
     });
+    let lastMutationTime = new Date().getTime();
+    window.flusherInterval = 1000;
+    async function interval(count) {
+      const currentMutationTime = new Date().getTime();
+      if (count == 1) {
+        lastMutationTime = currentMutationTime;
+        return;
+      }
+      const interval = (currentMutationTime - lastMutationTime + window.flusherInterval / 2) / 2;
+      window.flusherInterval = interval * 2 > 500 ? interval * 2 : 500;
+      lastMutationTime = currentMutationTime;
+    }
     const observerConfig = {
       childList: true,
       subtree: false
@@ -738,8 +758,7 @@ class FlusherMessages {
         if (id || id === "") {
           const userId = AeroKick && flusher.props.isAeroKick ? clonedNode.querySelector("button").getAttribute("data-radial-username") : clonedNode.querySelector('button[title]')?.getAttribute('title');
           if (!userId) {
-            console.log('no username in node');
-            console.log(clonedNode);
+            console.log('event', clonedNode);
             return false;
           }
           if (self.flusher.props.isKickTools) {
@@ -943,28 +962,41 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 class FlusherProps {
   constructor() {
+    // General configuration and state
     this.chatroomId = null;
-    this.clickOutsideHandlerFunction = null;
     this.domain = null;
-    this.displayedMessages = [];
+    this.video = null;
+    this.videoSize = null;
+    this.isVod = false;
+    this.isKickTools = false;
     this.external = false;
-    this.isFullscreen = false;
+    this.loading = false;
+
+    // Processing states
     this.isProcessingElements = false;
     this.isProcessingMessages = false;
-    this.isVod = false;
-    this.loading = false;
-    this.elementQueue = [];
+
+    // Message-related properties
+    this.displayedMessages = [];
     this.messageQueue = [];
     this.badgeCache = [];
+    this.messageObservers = new Map();
+
+    // Row and positioning related properties
     this.lastPositionPerRow = [];
     this.rowQueue = [];
-    this.timeoutIds = [];
-    this.bannedUsers = [];
-    this.video = null;
     this.lastRow = 0;
     this.maxRows = 99;
-    this.isKickTools = false;
-    this.messageObservers = new Map();
+
+    // Element queue and timeouts
+    this.elementQueue = [];
+    this.timeoutIds = [];
+
+    // User and interaction related
+    this.bannedUsers = [];
+    this.clickOutsideHandlerFunction = null;
+
+    // Keyboard input and keybinds
     this.keydownListener = null;
     this.keydownSetListener = null;
     this.isCaptureKeybind = false;
@@ -1513,7 +1545,6 @@ function safeTextContent(element, content) {
 }
 function createMenu(flusher) {
   const toggledClass = 'toggled-on';
-  console.log('create menu');
   const domMenu = flusher.video.querySelector('.flusher-menu');
   if (domMenu === null) {
     const b = typeof browser !== 'undefined' ? browser : chrome;
@@ -2134,7 +2165,7 @@ async function createChat(flusher) {
     chrome.storage.local.set(data, () => {});
   }
   async function initializeDefaultSettings() {
-    const currentVersion = '1.0.7';
+    const currentVersion = '1.0.8';
     const storedVersion = await getExtensionStorageItem('flusher-version', null);
     if (storedVersion !== currentVersion) {
       (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)('New update detected. Resetting settings to default.');
@@ -2199,7 +2230,8 @@ async function createChat(flusher) {
       flusherObject.toggleNative = clone;
       flusherObject.toggle = (0,_menu_menu_js__WEBPACK_IMPORTED_MODULE_0__.createMenu)(flusherObject);
     }
-    (0,_utils_resize_js__WEBPACK_IMPORTED_MODULE_1__.checkResize)(flusherObject);
+
+    /* checkResize(flusherObject); */
   }
   function dupeBtn(node) {
     const btn = node.querySelector('button');
@@ -2434,7 +2466,6 @@ function createToggle(flusher) {
       let newLeftPosition = toggleCenterX - popupCenterX;
       const minLeft = videoRect.left;
       const maxLeft = videoRect.left + videoRect.width - popupMenuRect.width + 40;
-      console.log(maxLeft);
       newLeftPosition = Math.max(minLeft, Math.min(newLeftPosition, maxLeft));
       document.querySelector('#shadowbox').style.left = `${newLeftPosition}px`;
     }
@@ -2629,7 +2660,7 @@ function prepareAnimation(data, flusher) {
       const oldest = flusher.container.firstElementChild;
       if (flusher.states.spamState) {
         const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
-        if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
+        if (entryId) flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
       }
       oldest.remove();
     } catch {}
@@ -2650,9 +2681,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   appendVertical: () => (/* binding */ appendVertical)
 /* harmony export */ });
+/* harmony import */ var _utils_resize_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/resize.js */ "./modules/utils/resize.js");
+
 async function appendVertical(message, flusher) {
   if (!message) return;
-  const lastItem = flusher.container.firstChild;
+  const lastItem = flusher.container?.firstChild;
   if (flusher.props.external) {
     if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
     const timestamp = new Date(message.created_at);
@@ -2682,24 +2715,32 @@ async function appendVertical(message, flusher) {
       flusher.container['insertBefore'](message.container, lastItem);
     } else {
       if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
-      flusher.container['insertBefore'](message, lastItem);
-    }
-  }
-  while (flusher.container.children.length > flusher.props.maxRows) {
-    const oldest = flusher.container.lastElementChild;
-    const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
-    if (entryId) {
-      const observer = flusher.props.messageObservers.get(entryId);
-      if (observer) {
-        observer.disconnect();
-        flusher.props.messageObservers.delete(entryId);
+      try {
+        flusher.container['insertBefore'](message, lastItem);
+      } catch (error) {
+        if (!flusher.container) {
+          (0,_utils_resize_js__WEBPACK_IMPORTED_MODULE_0__.reset)(flusher);
+        }
       }
     }
-    if (flusher.states.spamState && entryId) {
-      flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id.toString() !== entryId);
-    }
-    oldest.remove();
   }
+  try {
+    while (flusher.container.children.length > flusher.props.maxRows) {
+      const oldest = flusher.container.lastElementChild;
+      const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
+      if (entryId) {
+        const observer = flusher.props.messageObservers.get(entryId);
+        if (observer) {
+          observer.disconnect();
+          flusher.props.messageObservers.delete(entryId);
+        }
+      }
+      if (flusher.states.spamState && entryId) {
+        flusher.props.displayedMessages = flusher.props.displayedMessages.filter(message => message.id !== entryId);
+      }
+      oldest.remove();
+    }
+  } catch (error) {}
 }
 
 /***/ }),
@@ -3310,6 +3351,8 @@ __webpack_require__.r(__webpack_exports__);
 
 class Kick {
   static init() {
+    if (window.isObserving) return;
+    window.isObserving = true;
     (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Initialize`);
     let stopObserver = false;
     const observeVideo = () => {
@@ -3330,8 +3373,10 @@ class Kick {
               const flusher = new _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__.Flusher(video, "KICK", channelName, AeroKick);
               try {
                 (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__.createChat)(flusher);
+                window.isObserving = false;
                 return;
               } catch (error) {
+                window.isObserving = false;
                 (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Failed to create chat`);
               }
             }
@@ -3353,8 +3398,10 @@ class Kick {
                       const flusher = new _flusher_flusher_js__WEBPACK_IMPORTED_MODULE_0__.Flusher(video, "KICK", channelName, AeroKick);
                       try {
                         (0,_interface_overlay_js__WEBPACK_IMPORTED_MODULE_1__.createChat)(flusher);
+                        window.isObserving = false;
                       } catch (error) {
                         stopObserver = false;
+                        window.isObserving = false;
                         (0,_utils_utils_js__WEBPACK_IMPORTED_MODULE_2__.logToConsole)(`Failed to create chat`);
                       }
                       if (stopObserver) observer.disconnect();
@@ -3542,14 +3589,35 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   dragElement: () => (/* binding */ dragElement)
 /* harmony export */ });
+function throttle(fn, videoRect, wait) {
+  let lastTime = 0;
+  return function (...args) {
+    const now = new Date().getTime();
+    if (now - lastTime >= wait) {
+      lastTime = now;
+      fn(...args, videoRect);
+    }
+  };
+}
 function dragElement(flusher) {
   var pos1 = 0,
     pos2 = 0,
     pos3 = 0,
     pos4 = 0;
+  var offsetX = 0,
+    offsetY = 0;
+  var lastValidX = 0,
+    lastValidY = 0;
+
+  // Event listener for starting the drag or resize process
   flusher.container.onmousedown = function (e) {
     e = e || window.event;
     e.preventDefault();
+    const videoRect = flusher.video.getBoundingClientRect();
+
+    // Calculate initial offset between click position and container's position
+    offsetX = e.clientX - flusher.container.getBoundingClientRect().left;
+    offsetY = e.clientY - flusher.container.getBoundingClientRect().top;
     setPosition(flusher, true);
     if (isInResizeHandle(e)) {
       pos3 = e.clientX;
@@ -3560,61 +3628,82 @@ function dragElement(flusher) {
       pos3 = e.clientX;
       pos4 = e.clientY;
       document.onmouseup = closeDragElement;
-      document.onmousemove = dragElement;
+      document.onmousemove = throttle(dragElement, videoRect, 16);
     }
   };
-  function dragElement(e) {
-    e = e || window.event;
-    e.preventDefault();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    flusher.container.style.top = flusher.container.offsetTop - pos2 + "px";
-    flusher.container.style.left = flusher.container.offsetLeft - pos1 + "px";
-  }
-  function resizeElement(e) {
-    e = e || window.event;
-    e.preventDefault();
-    flusher.container.style.width = flusher.container.offsetWidth - (pos3 - e.clientX) + "px";
-    flusher.container.style.height = flusher.container.offsetHeight - (pos4 - e.clientY) + "px";
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-  }
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-    setPosition(flusher, false);
-  }
   function closeResize() {
     document.onmouseup = null;
     document.onmousemove = null;
     setPosition(flusher, false);
   }
-  async function setPosition(flusher, event) {
-    var scaleFactor = window.innerWidth / window.outerWidth;
+
+  // Function to handle dragging of the container
+  function dragElement(e, videoRect) {
+    e = e || window.event;
+    e.preventDefault();
+
+    // Calculate new mouse position deltas
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+
+    // Update the position based on the offset and videoRect
+    lastValidX = pos3 - offsetX - videoRect.left;
+    lastValidY = pos4 - offsetY - videoRect.top;
+    requestAnimationFrame(() => {
+      flusher.container.style.top = lastValidY + "px";
+      flusher.container.style.left = lastValidX + "px";
+    });
+  }
+  function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+
+    // Make sure the element is set to the last valid position
+    requestAnimationFrame(() => {
+      flusher.container.style.top = lastValidY + "px";
+      flusher.container.style.left = lastValidX + "px";
+    });
+    setPosition(flusher, false);
+  }
+  function resizeElement(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // Update the width and height of the container based on mouse movement
+    flusher.container.style.width = flusher.container.offsetWidth - (pos3 - e.clientX) + "px";
+    flusher.container.style.height = flusher.container.offsetHeight - (pos4 - e.clientY) + "px";
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+  }
+  function isInResizeHandle(e) {
     var rect = flusher.container.getBoundingClientRect();
-    var rectVideo = flusher.video.getBoundingClientRect();
-    var newPosition = {
+    var handleSize = 25;
+    // Check if the click is within the bottom-right corner of the container
+    return e.clientX >= rect.right - handleSize && e.clientY >= rect.bottom - handleSize;
+  }
+  async function setPosition(flusher, event) {
+    const scaleFactor = window.innerWidth / window.outerWidth;
+    const rect = flusher.container.getBoundingClientRect();
+    const rectVideo = flusher.video.getBoundingClientRect();
+
+    // Calculate new position values relative to the video element
+    const newPosition = {
       top: Math.round(rect.top - rectVideo.top) / scaleFactor,
       left: Math.round(rect.left - rectVideo.left) / scaleFactor,
       width: Math.round(rect.width) / scaleFactor,
       height: Math.round(rect.height) / scaleFactor
     };
-    if (event) {
-      flusher.container.style.top = Math.round(newPosition.top * scaleFactor) + "px";
-      flusher.container.style.left = Math.round(newPosition.left * scaleFactor) + "px";
-      flusher.container.removeAttribute("position");
-      flusher.container.style.width = Math.round(newPosition.width * scaleFactor) + "px";
-      flusher.container.style.height = Math.round(newPosition.height * scaleFactor) + "px";
-      flusher.container.removeAttribute("size");
-    }
     chrome.storage.local.get("positionsPerChannel", function (result) {
-      var positionsPerChannel = result.positionsPerChannel || {};
-      var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
-      var existingPositionIndex = positionsArray.findIndex(function (item) {
+      const positionsPerChannel = result.positionsPerChannel || {};
+      const positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+
+      // Check if a position for the current video size already exists
+      const existingPositionIndex = positionsArray.findIndex(function (item) {
         return item.videoSize === flusher.props.videoSize;
       });
+
+      // Update or add the new position data
       if (existingPositionIndex !== -1) {
         positionsArray[existingPositionIndex].position.top = newPosition.top;
         positionsArray[existingPositionIndex].position.left = newPosition.left;
@@ -3623,26 +3712,16 @@ function dragElement(flusher) {
       } else {
         positionsArray.push({
           videoSize: flusher.props.videoSize,
-          position: {
-            top: newPosition.top,
-            left: newPosition.left,
-            width: newPosition.width,
-            height: newPosition.height
-          }
+          position: newPosition
         });
       }
+
+      // Save the updated positions back to local storage
       positionsPerChannel[flusher.props.channelName] = positionsArray;
       chrome.storage.local.set({
         "positionsPerChannel": positionsPerChannel
-      }, function () {
-        /* console.log("positionsPerChannel:", positionsPerChannel); */
       });
     });
-  }
-  function isInResizeHandle(e) {
-    var rect = flusher.container.getBoundingClientRect();
-    var handleSize = 25;
-    return e.clientX >= rect.right - handleSize && e.clientY >= rect.bottom - handleSize;
   }
 }
 
@@ -3979,13 +4058,12 @@ function checkResize(flusher) {
   function detectViewMode() {
     const documentWidth = document.documentElement.clientWidth;
     if (documentWidth < flusher.props.parentWidth / 2 + 10) {
-      flusher.props.isFullscreen = true;
-      startScrollingInterval(flusher);
       flusher.props.videoSize = "fullscreen";
+      startScrollingInterval(flusher);
     } else {
-      flusher.props.isFullscreen = false;
       stopScrollingInterval(flusher);
-      if (document.querySelector('.sidebar')) {
+      const sidebar = document.querySelector('#sidebar-wrapper');
+      if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
         flusher.props.videoSize = "default";
       } else {
         flusher.props.videoSize = "theater";
@@ -4063,18 +4141,27 @@ function checkPosition(flusher, height, width) {
     });
   }
 }
-function scrollChat(flusher) {
-  const chatBtn = document.querySelector("#chatroom .justify-center.absolute");
-  const chatContainer = document.querySelector("#chatroom [data-chat-entry]");
-  if (flusher.props.isFullscreen && !flusher.props.isVod) {
-    if (chatBtn !== null) {
-      chatBtn.click();
+async function scrollChat(flusher) {
+  const buttons = document.querySelectorAll('button.bg-surface-base');
+  const chatBtn = Array.from(buttons).find(button => button.innerText.trim() === "Chat paused for scrolling");
+  const chatContainer = document.querySelector('#chatroom-messages');
+  if (flusher.props.videoSize === "fullscreen" && !flusher.props.isVod) {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = 500;
+    if (chatContainer === null) return;
+    while (attempts < maxAttempts) {
+      if (chatBtn) chatBtn.click();
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      if (isScrolledToBottom(chatContainer)) break;
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, interval));
     }
-    if (chatContainer !== null) {
-      const chatContainerParent = chatContainer.closest(".overflow-y-scroll");
-      if (chatContainerParent !== null) {
-        chatContainerParent.scrollTop = chatContainerParent.scrollHeight;
-      }
+    if (attempts === maxAttempts) {
+      console.log("Reached max attempts without scrolling to the bottom.");
+    }
+    function isScrolledToBottom(chatContainer) {
+      return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight;
     }
   }
 }
@@ -6978,7 +7065,7 @@ module.exports.formatError = function (err) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("87ba9176062384fb7754")
+/******/ 		__webpack_require__.h = () => ("1cbc022d661838219bce")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/hasOwnProperty shorthand */
