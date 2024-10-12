@@ -8,7 +8,7 @@ class Kick {
     if (window.isObserving) return;
     window.isObserving = true;
 
-    logToConsole(`Initialize`);
+    /* logToConsole(`Initialize`); */
     let stopObserver = false;
 
     const observeVideo = () => {
@@ -37,7 +37,6 @@ class Kick {
                 return;
               } catch (error) {
                 window.isObserving = false;
-                logToConsole(`Failed to create chat`);
               }
             }
 
@@ -62,7 +61,6 @@ class Kick {
                       } catch (error) {
                         stopObserver = false;
                         window.isObserving = false;
-                        logToConsole(`Failed to create chat`);
                       }
 
                       if (stopObserver) observer.disconnect();

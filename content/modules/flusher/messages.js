@@ -126,8 +126,6 @@ export class FlusherMessages {
         });
       }, 500);
 
-
-
     let isScrolling = false;
     const targetElement = document.querySelector("#chatroom-messages")?.nextSibling;
 
@@ -186,8 +184,8 @@ export class FlusherMessages {
         return;
       }
 
-      const interval = ((currentMutationTime - lastMutationTime) + window.flusherInterval / 2) / 2;
-      window.flusherInterval = interval * 2 > 500 ? (interval * 2) : 500;
+      const interval = Math.round((currentMutationTime - lastMutationTime) * (1 + 0.6667) + (window.flusherInterval / 1.5));
+      window.flusherInterval = Math.max(interval, 500);
 
       lastMutationTime = currentMutationTime;
     }
@@ -200,9 +198,7 @@ export class FlusherMessages {
 
 
       if (!update) {
-        /* console.log(id); */
         id++;
-
         addedNode = addedNode.firstElementChild;
         addedNode.setAttribute('flusher-id', id);
       }
@@ -228,10 +224,7 @@ export class FlusherMessages {
       const clonedNode = addedNode.cloneNode(true);
 
       /* history_breaker */
-      if (clonedNode.classList.contains('items-center')) {
-        /* console.log('message rejected', clonedNode); */
-        return;
-      }
+      if (clonedNode.classList.contains('items-center')) return;
 
       clonedNode.classList.remove("relative", "group");
 
@@ -564,7 +557,7 @@ export class FlusherMessages {
               : clonedNode.querySelector('button[title]')?.getAttribute('title');
 
           if (!userId) {
-            console.log('event', clonedNode);
+            /* console.log('event', clonedNode); */
             return false;
           }
 
@@ -725,7 +718,6 @@ export class FlusherMessages {
 
         const intervalId = setInterval(() => {
           if (!document.body.contains(parent)) {
-            console.log('Parent element is no longer in the DOM, restarting...');
             found = false;
             parent = document.querySelector('#chatroom-messages');
           } else {

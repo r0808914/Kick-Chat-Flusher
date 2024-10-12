@@ -66,6 +66,3 @@ export async function appendVertical(message, flusher) {
 
 	}
 }
-
-
-

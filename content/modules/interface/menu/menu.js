@@ -14,7 +14,6 @@ function safeTextContent(element, content) {
    }
 }
 
-
 export function createMenu(flusher) {
    const toggledClass = 'toggled-on';
    const domMenu = flusher.video.querySelector('.flusher-menu');

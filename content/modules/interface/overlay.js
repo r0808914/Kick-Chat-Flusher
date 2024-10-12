@@ -1,7 +1,7 @@
 import { createMenu } from './menu/menu.js';
 import { checkResize } from '../utils/resize.js';
 import { getFont, logToConsole, toTitleCase } from '../utils/utils.js';
-import { createToggle } from './toggle/toggle.js';
+import { svgToggle } from '../interface/toggle/toggle.js';
 
 let flusherObject;
 
@@ -55,7 +55,6 @@ export async function createChat(flusher) {
       const storedVersion = await getExtensionStorageItem('flusher-version', null);
 
       if (storedVersion !== currentVersion) {
-         logToConsole('New update detected. Resetting settings to default.');
          setExtensionStorageItem('flusher-background', flusherObject.states.backgroundState);
          setExtensionStorageItem('flusher-position', flusherObject.states.positionState);
          setExtensionStorageItem('flusher-size', flusherObject.states.sizeState);
@@ -72,7 +71,7 @@ export async function createChat(flusher) {
          setExtensionStorageItem('flusher-version', currentVersion);
 
          chrome.storage.local.remove("positionsPerChannel", function () {
-            console.log("customPositions have been removed from the db.");
+            logToConsole('New update detected. Resetting settings to default.');
          });
 
          await loadSetting();
@@ -113,9 +112,9 @@ export async function createChat(flusher) {
          clone.setAttribute('data-flusher', 'true');
 
          const svgString = `
-          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="margin-top: 1px;">
-            <rect x="4" y="4" width="24" height="24" rx="5" fill="none" stroke="rgba(83,252,24,1)" stroke-width="4" />
-          </svg>`;
+         <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="margin-top: 1.5px;">
+           <rect x="4" y="4" width="24" height="24" rx="5" fill="none" stroke="white" stroke-width="4" />
+         </svg>`;
 
          const parser = new DOMParser();
          const doc = parser.parseFromString(svgString, 'image/svg+xml');
@@ -131,6 +130,8 @@ export async function createChat(flusher) {
          flusherObject.toggleNative = clone;
 
          flusherObject.toggle = createMenu(flusherObject);
+
+         svgToggle(flusherObject);
       }
 
       /* checkResize(flusherObject); */

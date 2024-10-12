@@ -27,7 +27,7 @@ export function createToggle(flusher) {
 		flusher.props.external ? existingButton.parentNode.append(toggleBtn) : existingButton.parentElement.insertBefore(toggleBtn, flusher.props.isAeroKick ? existingButton : existingButton.nextSibling);
 	} else { toggleBtn = flusher.toggleNative; }
 
-	svgToggle(flusher);
+	/* svgToggle(flusher); */
 
 	toggleBtn.addEventListener('mousedown', function (event) {
 		event.stopPropagation();
@@ -80,6 +80,7 @@ export function createToggle(flusher) {
 		alignPopupMenu();
 
 		svgToggle(flusher);
+
 		document.addEventListener('mousedown', flusher.clickOutsideHandlerFunction);
 		flusher.container.classList.add('flusher-hover');
 
@@ -115,11 +116,9 @@ export function createToggle(flusher) {
 }
 
 export function svgToggle(flusher) {
-	const parent = flusher.props.external ? flusher.video.closest('.item-box') : document;
-	const toggle = parent.querySelector('.toggle-icon');
-	if (toggle === null) return;
-	const menu = parent.querySelector('#shadowbox').shadowRoot.querySelector('.flusher-menu');
-	const visible = menu.style.display === "block" ? true : false;
+	const toggle = flusher?.toggle?.querySelector('rect');
+	if (!toggle) return;
+	const visible = flusher.menu.style.display === "block" ? true : false;
 	if (flusher.states.chatEnabled || visible) {
 		toggle.classList.add('svg-toggle');
 	} else {

@@ -5,10 +5,9 @@ import { logToConsole } from '../utils/utils.js';
 class Ip2 {
 
 	static async init() {
-		logToConsole(`Initialize`)
+		/* logToConsole(`Initialize`) */
 
 		const targetNode = await waitForCondition(() => document.getElementById('streamViewerContainer'));
-		logToConsole(`Container found`)
 
 		const callback = async function (mutationsList, observer) {
 			for (const mutation of mutationsList) {
@@ -20,7 +19,6 @@ class Ip2 {
 									const hasFlusherAttribute = node.hasAttribute('flusher');
 									if (hasFlusherAttribute) return;
 									const iframe = await waitForCondition(() => node.querySelector('iframe'));
-									logToConsole(`New video found`)
 									node.setAttribute('flusher', '');
 									createChannel(iframe);
 								}
@@ -39,7 +37,6 @@ class Ip2 {
 			const src = iframe.getAttribute('src');
 			if (src && src.includes('kick.com')) {
 				const channelName = new URL(src).pathname.slice(1);
-				logToConsole(`Fetch Channel Data`)
 				const flusher = new Flusher(iframe, "IP2", channelName);
 				createChat(flusher);
 			}

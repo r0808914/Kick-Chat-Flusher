@@ -14,9 +14,7 @@
 }
 
 .svg-toggle {
-	color: rgb(83, 252, 24) !important;
-	fill: rgb(83, 252, 24) !important;
-	z-index: 2;
+	stroke: rgb(83, 252, 24, 1) !important;
 }
 
 .toggle-icon {

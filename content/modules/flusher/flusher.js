@@ -20,12 +20,12 @@ export class Flusher {
 
 		this.provider = new FlusherMessages();
 
+		window.currentUrl = window.location.href;
+
 		visibilityChange(this);
 	}
 
 	resetConnection() {
-		logToConsole('Reset Connection');
-
 		if (!this.props.flusher) return;
 		/* clearChat(this.props.flusher); */
 		isVod = false;

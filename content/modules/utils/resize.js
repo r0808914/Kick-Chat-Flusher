@@ -33,15 +33,6 @@ export function reset(flusher) {
 }
 
 export function checkResize(flusher) {
-  /* temp fix */
-  const isUrlEqual = (window.currentUrl === undefined || window.currentUrl === window.location.href);
-  if (!isUrlEqual) {
-    window.currentUrl = window.location.href;
-    reset(flusher);
-    return;
-  }
-  /* - */
-
   const videoElement = flusher.video.querySelector("video");
   let target;
   if (!flusher.props.isAeroKick && videoElement) {
@@ -52,14 +43,12 @@ export function checkResize(flusher) {
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver((entries) => {
 
-    /* temp disable testing */
-    /* if (flusher.container !== null) flusher.container.style.display = "none"; */
+    if (flusher.container !== null) flusher.container.style.display = "none";
 
     for (let entry of entries) {
       if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
       flusher.resizeTimer = setTimeout(() => {
         for (let entry of entries) {
-
           const rect = target.getBoundingClientRect();
           let width = rect.width;
           let height = rect.height;
@@ -347,8 +336,8 @@ export function checkPosition(flusher, height, width) {
         if (position.top) {
           flusher.container.removeAttribute("position");
           var scaleFactor = window.innerWidth / window.outerWidth;
-          flusher.container.style.top = position.top > height ? height - 50 + "px" : Math.round(position.top * scaleFactor) + "px";
-          flusher.container.style.left = position.left > width ? width - 20 + "px" : Math.round(position.left * scaleFactor) + "px";
+          flusher.container.style.top = position.top > height ? height - 70 + "px" : Math.round(position.top * scaleFactor) + "px";
+          flusher.container.style.left = position.left > width ? width - 70 + "px" : Math.round(position.left * scaleFactor) + "px";
         } else {
           flusher.container.style.top = "";
           flusher.container.style.left = "";
@@ -423,9 +412,9 @@ async function scrollChat(flusher) {
       await new Promise((resolve) => setTimeout(resolve, interval));
     }
 
-    if (attempts === maxAttempts) {
+    /* if (attempts === maxAttempts) {
       console.log("Reached max attempts without scrolling to the bottom.");
-    }
+    } */
 
     function isScrolledToBottom(chatContainer) {
       return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight;

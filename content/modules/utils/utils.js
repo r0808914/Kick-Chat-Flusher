@@ -2,6 +2,8 @@ export function visibilityChange(flusher) {
 	document.addEventListener('visibilitychange', function handleVisibilityChange() {
 		if (!flusher) return;
 		if (document.hidden) {
+			if (flusher.container !== null) flusher.container.style.display = "none";
+
 			flusher.clear();
 
 			if (flusher.states.flushState) {
@@ -11,6 +13,8 @@ export function visibilityChange(flusher) {
 				flusher.provider.unbindRequests(flusher);
 			}
 		} else {
+			if (flusher.container !== null) flusher.container.style.display = "flex";
+
 			if (flusher.states.flushState) {
 				flusher.states.chatEnabled = flusher.props.chatEnabledVisible;
 			} else {
