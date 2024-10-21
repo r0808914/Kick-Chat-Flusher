@@ -236,7 +236,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-debug flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
+      <div style="display: none;" class="flusher-debug flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">Debug </div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div style="width: 16px; height: 16px;" class="flusher-icon">

@@ -491,8 +491,8 @@
 .flusher-messages .text-xs.truncate button,
 .flusher-messages .font-semibold {
   color: white;
-  text-shadow: 0px -1px 1.5px #000000e8, 0px 1px 1.5px #000000eb, 1px 0px 1.5px #000000eb,
-    -1px 0px 1.5px #000000eb;
+  text-shadow: 0px -1px 2.5px #222222f0, 0px 1px 2.5px #222222b8, 1px 0px 2.5px #222222b8,
+    -1px 0px 2px #1d1d1d, 1px 1px 2px #222222f0, -1px -1px 2px #222222f0;
   opacity: .85;
 }
 
@@ -529,7 +529,7 @@
 .flusher-container[shadow="true"].flusher-container[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower button.font-bold {
-  text-shadow: -1px -1px 1.5px #000000c7, 1px 1px 1.5px #000000c7, 0px 0px 1px #000000c7, -1px 0px 1px #000000c7, 1px 0px 1px #000000c7;
+  text-shadow: -1px -1px 1px #171717c7, 1px 1px 1.5px #171717c7, 0px 0px 1px #171717c7, -1px 0px 1.5px #000000c7, 1px 0px 1px #171717c7;
   filter: brightness(1.1) contrast(.9);
   font-weight: 700;
   /* font-size: 13px; */

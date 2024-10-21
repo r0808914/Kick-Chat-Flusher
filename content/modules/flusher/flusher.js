@@ -19,7 +19,7 @@ export class Flusher {
 
 		this.provider = new FlusherMessages();
 
-		window.currentUrl = window.location.href;
+		/* window.currentUrl = window.location.href; */
 
 		visibilityChange(this);
 	}
@@ -58,8 +58,7 @@ export class Flusher {
 
 		this.props.displayedMessages = [];
 
-		/* console.log('clear timeout')
-		clearTimeout(this.props.taskInterval); */
+		if (this.provider.taskInterval) clearTimeout(this.provider.taskInterval);
 
 		this.props.messageObservers.forEach((observer, entryId) => {
 			observer.disconnect();

@@ -17,6 +17,7 @@ export class FlusherMessages {
     this.isScrolling = false;
     this.scrollObserver;
     this.pageObserver;
+    this.vodObserver;
     this.taskInterval;
   }
 
@@ -108,81 +109,68 @@ export class FlusherMessages {
     }
   }
 
-  async interceptNative() {
-    console.log('interceptNative');
-    /* time between messages */
+  interceptNative() {
     this.lastMutationTime = new Date().getTime();
     window.flusherInterval = 1000;
 
-    /* check if this.AeroKick present */
     this.AeroKick = document.body.classList.contains("aerokick-customization");
     if (this.AeroKick) logToConsole(`AeroKick Detected`);
 
     const b = typeof browser !== "undefined" ? browser : chrome;
     const defaultAvatar = b.runtime.getURL("lib/kick/user-profile-pic.png");
 
-    /* wait for native chat */
-    this.flusher.nativeChat = await waitForChat(
-      document.querySelector(
-        this.AeroKick
-          ? ".chat-container .bk-overflow-y-auto"
-          : "#chatroom-messages"
-      ),
-      this.AeroKick
-    );
+    waitForChat(this.AeroKick).then(chatElement => {
+      this.flusher.nativeChat = chatElement;
+      this.parseNativeChat();
+      this.observeScrolling();
+      this.observeNativechatState();
+      this.observeNativechatMessages();
+      if (!this.flusher.props.isVod) this.observePinned();
+      this.runTasks();
+    });
 
-    /* parse existing items in native chat */
-    this.parseNativeChat();
+    function waitForChat(AeroKick) {
+      let parent = AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages";
+      let parentElement = document.querySelector(parent);
 
-    /* block old messages in observeNativechatMessages if chat scrolling */
-    this.observeScrolling();
+      if (parentElement) {
+        const chatEntry =
+          parentElement.querySelector(".rounded-md.bk-block") ??
+          parentElement.querySelector(".group.relative");
 
-    /* handle pinned messages */
-    if (!this.flusher.props.isVod) this.observePinned();
+        if (chatEntry) {
+          return Promise.resolve(chatEntry.closest('.no-scrollbar.relative'));
+        }
+      }
 
-    /* native chat exists else reset  */
-    this.observeNativechatState();
-
-    /* handle native chat messages */
-    this.observeNativechatMessages();
-
-    /* auto scroll chat in fullscreen etc */
-    this.runTasks();
-
-    function waitForChat(parent) {
-      if (!parent) parent = document.body;
-
-      const chatEntry =
-        parent.querySelector(".rounded-md.bk-block") ??
-        parent.querySelector(".group.relative");
-
-      /* hotfix */
-      /* if (chatEntry) return chatEntry.parentElement; */
-      if (chatEntry) return chatEntry.closest('.no-scrollbar.relative');
-
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const config = { attributes: true, childList: true, subtree: true };
-        let found = false;
-        let parent = document.querySelector('#chatroom-messages');
+        let foundChat = false;
+        let observer;
+        const checkParentInterval = setInterval(() => {
+          parentElement = document.querySelector(
+            AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages"
+          );
+
+          if (parentElement) {
+            clearInterval(checkParentInterval);
+            startObserver();
+          }
+        }, 1000);
 
         const startObserver = () => {
-          if (!parent) return;
-
-          const mutationCallback = function (mutationsList, observer) {
+          const mutationCallback = function (mutationsList) {
             for (const mutation of mutationsList) {
               if (mutation.type === "childList") {
                 mutation.addedNodes.forEach((node) => {
                   if (
                     node.nodeType === 1 &&
                     (node.classList.contains("bk-block.rounded-md") ||
-                      !!node.querySelector(".group.relative"))
+                      node.querySelector(".group.relative"))
                   ) {
-                    if (found) {
-                      return;
-                    }
-                    found = true;
-                    observer.disconnect();
-                    clearInterval(intervalId);
+                    if (foundChat) return;
+                    foundChat = true;
+                    cleanup();
                     resolve(node.closest('.no-scrollbar.relative'));
                   }
                 });
@@ -190,45 +178,53 @@ export class FlusherMessages {
             }
           };
 
-          const observer = new MutationObserver(mutationCallback);
-          observer.observe(parent, config);
+          observer = new MutationObserver(mutationCallback);
+          observer.observe(parentElement, config);
         };
-
-        startObserver();
 
         const intervalId = setInterval(() => {
-          if (!document.body.contains(parent)) {
-            found = false;
-            parent = document.querySelector('#chatroom-messages');
-          } else {
-          }
-        }, 2000);
+          foundChat = false;
+          parentElement = document.querySelector(
+            AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages"
+          );
+        }, 1000);
 
-        const originalResolve = resolve;
-        resolve = (result) => {
+        const cleanup = () => {
+          if (observer) observer.disconnect();
+          clearInterval(checkParentInterval);
           clearInterval(intervalId);
-          originalResolve(result);
         };
       });
-
-
     }
   }
 
   observeNativechatState() {
     const pageParent = document.querySelector('nav').nextSibling;
     if (!pageParent) return;
-    if (this.pageObserver) this.pageObserver.disconnect();
-    this.pageObserver = new MutationObserver((mutations) => {
+
+    const vodObserver = this.flusher.props.isVod
+      ? document.getElementById('channel-chatroom')?.querySelector('div.overflow-hidden').parentElement
+      : null;
+
+    const handleMutations = (mutations, observer) => {
       if (mutations[0].type === "childList" && mutations[0].removedNodes.length > 0) {
         if (!document.querySelector('#chatroom-messages') || (window.currentUrl !== window.location.href)) {
           reset(this.flusher);
-          this.pageObserver.disconnect();
+          observer.disconnect();
         }
       }
-    });
+    };
 
+    if (this.pageObserver) this.pageObserver.disconnect();
+
+    this.pageObserver = new MutationObserver((mutations) => handleMutations(mutations, this.pageObserver));
     this.pageObserver.observe(pageParent, { childList: true, subtree: false });
+
+    if (vodObserver) {
+      if (this.vodObserver) this.vodObserver.disconnect();
+      this.vodObserver = new MutationObserver((mutations) => handleMutations(mutations, this.vodObserver));
+      this.vodObserver.observe(vodObserver, { childList: true, subtree: false });
+    }
   }
 
   observePinned() {
@@ -274,6 +270,10 @@ export class FlusherMessages {
     let isPin = pinElementObject.querySelector('button.inline.font-bold');
     if (isPin) pinElementObject.querySelector('div.flex-nowrap.justify-between button').remove();
     isPin ? pinnedFlusher.classList.add('pinned') : pinnedFlusher.classList.remove('pinned');
+
+    if (isPin) pinElementObject.querySelectorAll('.line-clamp-2').forEach(element => {
+      element.classList.remove('line-clamp-2');
+    });
 
     let hideBtn = pinElementObject.querySelector('button.box-border.flex');
 
@@ -388,29 +388,12 @@ export class FlusherMessages {
   runTasks() {
     if (this.taskInterval) clearInterval(this.taskInterval);
     this.taskInterval = setInterval(() => {
-      console.log('do tasks');
       if (this.flusher.props.videoSize === "fullscreen" && !this.flusher.props.isVod) scrollChat();
     }, 10000);
   }
 
   prepareMessage(addedNode, update) {
     if (!addedNode || addedNode.nodeName !== "DIV") return;
-
-
-    /* temp testing */
-    const userId =
-      this.AeroKick && this.flusher.props.isAeroKick
-        ? addedNode
-          .querySelector("button")
-          .getAttribute("data-radial-username")
-        : addedNode.querySelector('button[title]')?.getAttribute('title');
-
-    if (!userId) {
-      /* console.log('event', clonedNode); */
-      console.log('event');
-      return false;
-    }
-    /* end testing */
 
     if (!update) {
       this.id++;
@@ -901,11 +884,9 @@ export class FlusherMessages {
 
   async bindRequests(flusher) {
     if (!flusher) return;
-
     this.flusher = flusher;
 
-    if (!this.flusher.props.external && !this.nativeChatObserver)
-      this.interceptNative();
+    if (!this.flusher.props.external) this.interceptNative();
 
     this.flusher.props.bindTimeout = setTimeout(
       async () => {
@@ -945,9 +926,10 @@ export class FlusherMessages {
       if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
       if (this.scrollObserver) this.scrollObserver.disconnect();
       if (this.pageObserver) this.pageObserver.disconnect();
+      if (this.vodObserver) this.vodObserver.disconnect();
       if (this.pinnedObserver) this.pinnedObserver.disconnect();
       if (this.taskInterval) clearInterval(this.taskInterval);
-      clearTimeout(this.flusher.props.bindTimeout);
+      if (this.flusher?.props?.bindTimeout) clearTimeout(this.flusher.props.bindTimeout);
     }
   }
 }

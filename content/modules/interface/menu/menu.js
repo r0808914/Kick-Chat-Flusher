@@ -83,8 +83,6 @@ export async function createMenu(flusher) {
 
       const positionBtn = overlayMenu.querySelector('.flusher-position');
       const divInsidePosition = positionBtn.querySelector('div:empty');
-      console.log(flusher.states.positionStates[flusher.states.positionState]);
-      console.log(flusher.states.positionState + ' videoSize: ' + flusher.props.videoSize);
       safeTextContent(divInsidePosition, toTitleCase(flusher.states.positionStates[flusher.states.positionState]));
 
       positionBtn.addEventListener('mousedown', function (event) {
@@ -122,12 +120,6 @@ export async function createMenu(flusher) {
                         location: flusher.states.positionState
                      }
                   });
-                  console.log({
-                     videoSize: flusher.props.videoSize,
-                     position: {
-                        location: flusher.states.positionState
-                     }
-                  });
                }
             }
 
@@ -152,12 +144,9 @@ export async function createMenu(flusher) {
 
          if (flusher.states.sizeState === 2) {
             let position = flusher.states.positionStates[flusher.states.positionState].split(' ').pop();
-            console.log(position);
-
             let positionId = flusher.states.positionStates.indexOf(position);
 
             flusher.states.positionState = positionId;
-            console.log('position id; ' + positionId);
 
             divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
             flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
@@ -178,15 +167,8 @@ export async function createMenu(flusher) {
                } else {
                   if (positionsArray[existingPositionIndex]?.position) {
                      positionsArray[existingPositionIndex].position.location = flusher.states.positionState;
-                     console.log('set ' + flusher.states.positionState + ' videoSize: ' + flusher.props.videoSize);
                   } else {
                      positionsArray.push({
-                        videoSize: flusher.props.videoSize,
-                        position: {
-                           location: flusher.states.positionState
-                        }
-                     });
-                     console.log({
                         videoSize: flusher.props.videoSize,
                         position: {
                            location: flusher.states.positionState
@@ -225,12 +207,6 @@ export async function createMenu(flusher) {
                      videoSize: flusher.props.videoSize,
                      position: {
                         size: flusher.states.sizeState
-                     }
-                  });
-                  console.log({
-                     videoSize: flusher.props.videoSize,
-                     position: {
-                        location: flusher.states.positionState
                      }
                   });
                }
@@ -557,6 +533,11 @@ export async function createMenu(flusher) {
 
          const newTimeEnabled = toggleElement.classList.contains(toggledClass);
          flusher.states.timeState = newTimeEnabled;
+
+         flusher.props.elementQueue.forEach(element => {
+            const chatEntry = element.querySelector('span.text-neutral.pr-1.font-semibold');
+            if (chatEntry) chatEntry.style.display = flusher.states.timeState ? 'inline-block' : 'none';
+         });
 
          flusher.messages.childNodes.forEach(childNode => {
             const chatEntry = childNode.querySelector('span.text-neutral.pr-1.font-semibold');

@@ -25,9 +25,8 @@ export function reset(flusher) {
   if (flusher.video) flusher.video.removeAttribute('flusher')
   /* - */
 
-  console.log('reset resize');
-  flusher.clear();
   flusher.provider.unbindRequests(flusher);
+  flusher.clear();
   flusher = null;
 
   if (init) Kick.init();
@@ -55,6 +54,7 @@ export function checkResize(flusher) {
 
           /* temp fix */
           const isUrlEqual = (window.currentUrl === undefined || window.currentUrl === window.location.href);
+          const isurlEqualLog = window.currentUrl === window.location.href;
           window.currentUrl = window.location.href;
 
           const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
@@ -100,19 +100,18 @@ export function checkResize(flusher) {
 
             checkAddons(flusher);
 
-            /* temp fix moved */
-            window.currentUrl = window.location.href;
+            if (!isurlEqualLog) {
+              logToConsole(
+                `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"
+                }): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`
+              );
+            }
 
             /* temp fix toggle btn not clickable in theater */
             /* const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
             if (element) element.classList.remove("z-[500]"); */
 
             flusher.props.keydownListener = new KeybindListener(flusher);
-
-            logToConsole(
-              `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"
-              }): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`
-            );
           } else {
             flusher.states.flushState
               ? flusher.clear()
@@ -385,7 +384,6 @@ export async function scrollChat(flusher) {
   if (chatContainer === null) return;
 
   while (attempts < maxAttempts) {
-    console.log('scrolling chat');
     if (chatBtn) chatBtn.click();
 
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -395,10 +393,6 @@ export async function scrollChat(flusher) {
     attempts++;
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
-
-  /* if (attempts === maxAttempts) {
-    console.log("Reached max attempts without scrolling to the bottom.");
-  } */
 
   function isScrolledToBottom(chatContainer) {
     return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight;
