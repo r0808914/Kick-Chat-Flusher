@@ -25,6 +25,7 @@ export function reset(flusher) {
   if (flusher.video) flusher.video.removeAttribute('flusher')
   /* - */
 
+  console.log('reset resize');
   flusher.clear();
   flusher.provider.unbindRequests(flusher);
   flusher = null;
@@ -42,13 +43,12 @@ export function checkResize(flusher) {
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver((entries) => {
-
-    if (flusher.container !== null) flusher.container.style.display = "none";
-
     for (let entry of entries) {
       if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
       flusher.resizeTimer = setTimeout(() => {
         for (let entry of entries) {
+          if (flusher.container !== null) flusher.container.style.display = "none";
+
           const rect = target.getBoundingClientRect();
           let width = rect.width;
           let height = rect.height;
@@ -119,7 +119,7 @@ export function checkResize(flusher) {
               : null;
           }
         }
-      }, 750);
+      }, 500);
     }
   });
 
@@ -277,9 +277,7 @@ export function checkResize(flusher) {
     const documentWidth = document.documentElement.clientWidth;
     if (documentWidth < flusher.props.parentWidth / 2 + 10) {
       flusher.props.videoSize = "fullscreen";
-      startScrollingInterval(flusher);
     } else {
-      stopScrollingInterval(flusher);
       const sidebar = document.querySelector('#sidebar-wrapper');
       if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
         flusher.props.videoSize = "default";
@@ -290,24 +288,10 @@ export function checkResize(flusher) {
   }
 }
 
-function startScrollingInterval(flusher) {
-  if (flusher.props.scrollIntervalId) return;
-  scrollChat(flusher);
-  flusher.props.scrollIntervalId = setInterval(function () {
-    scrollChat(flusher);
-  }, 10000);
-}
-
 function setAttribute(element, attribute, states, stateKey) {
   const state = states[stateKey];
   const value = state.replace(/\s/g, "");
   element.setAttribute(attribute, value);
-}
-
-export function stopScrollingInterval(flusher) {
-  if (!flusher.props.scrollIntervalId) return;
-  clearInterval(flusher.props.scrollIntervalId);
-  flusher.props.scrollIntervalId = null;
 }
 
 export function checkPosition(flusher, height, width) {
@@ -385,7 +369,7 @@ export function checkPosition(flusher, height, width) {
   }
 }
 
-async function scrollChat(flusher) {
+export async function scrollChat(flusher) {
   const buttons = document.querySelectorAll('button.bg-surface-base');
 
   const chatBtn = Array.from(buttons).find(
@@ -394,30 +378,29 @@ async function scrollChat(flusher) {
 
   const chatContainer = document.querySelector('#chatroom-messages');
 
-  if (flusher.props.videoSize === "fullscreen" && !flusher.props.isVod) {
-    let attempts = 0;
-    const maxAttempts = 10;
-    const interval = 500;
+  let attempts = 0;
+  const maxAttempts = 10;
+  const interval = 500;
 
-    if (chatContainer === null) return;
+  if (chatContainer === null) return;
 
-    while (attempts < maxAttempts) {
-      if (chatBtn) chatBtn.click();
+  while (attempts < maxAttempts) {
+    console.log('scrolling chat');
+    if (chatBtn) chatBtn.click();
 
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 
-      if (isScrolledToBottom(chatContainer)) break;
+    if (isScrolledToBottom(chatContainer)) break;
 
-      attempts++;
-      await new Promise((resolve) => setTimeout(resolve, interval));
-    }
+    attempts++;
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
 
-    /* if (attempts === maxAttempts) {
-      console.log("Reached max attempts without scrolling to the bottom.");
-    } */
+  /* if (attempts === maxAttempts) {
+    console.log("Reached max attempts without scrolling to the bottom.");
+  } */
 
-    function isScrolledToBottom(chatContainer) {
-      return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight;
-    }
+  function isScrolledToBottom(chatContainer) {
+    return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight;
   }
 }

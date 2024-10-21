@@ -4,7 +4,7 @@ export function visibilityChange(flusher) {
 		if (document.hidden) {
 			if (flusher.container !== null) flusher.container.style.display = "none";
 
-			flusher.clear();
+			flusher.removeItems();
 
 			if (flusher.states.flushState) {
 				flusher.props.chatEnabledVisible = flusher.states.chatEnabled;

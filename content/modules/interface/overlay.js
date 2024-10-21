@@ -14,8 +14,17 @@ export async function createChat(flusher) {
    chatflusherObject.classList.add("flusher");
    if (flusherObject.props.isAeroKick) chatflusherObject.style.cssText = 'position: absolute !important; z-index: 1010;';
 
+   const flusherObjectContainer = document.createElement("div");
+   flusherObjectContainer.classList.add("flusher-container");
+
+   const flusherObjectPinned = document.createElement("div");
+   flusherObjectPinned.classList.add("flusher-pinned");
+
    const flusherObjectDiv = document.createElement("div");
    flusherObjectDiv.classList.add("flusher-messages");
+
+   flusherObjectContainer.append(flusherObjectPinned);
+   flusherObjectContainer.append(flusherObjectDiv);
 
    const shadowRoot = flusherObject.props.external ? chatflusherObject.attachShadow({ mode: 'open' }) : null;
    const b = typeof browser !== 'undefined' ? browser : chrome;
@@ -41,7 +50,8 @@ export async function createChat(flusher) {
       flusherObject.props.external ? shadowRoot.appendChild(menuStyle) : document.head.append(menuStyle);
    }
 
-   flusherObject.container = flusherObjectDiv;
+   flusherObject.container = flusherObjectContainer;
+   flusherObject.messages = flusherObjectDiv;
 
    function setExtensionStorageItem(key, value) {
       const data = { [key]: value };
@@ -100,7 +110,7 @@ export async function createChat(flusher) {
 
    setCustomPosition(flusherObject);
 
-   function addBtn(node) {
+   async function addBtn(node) {
       const buttons = node.querySelectorAll('button');
 
       const existingButton = Array.from(buttons).find(button => button.hasAttribute('data-flusher'));
@@ -129,7 +139,7 @@ export async function createChat(flusher) {
          /* temp fix */
          flusherObject.toggleNative = clone;
 
-         flusherObject.toggle = createMenu(flusherObject);
+         flusherObject.toggle = await createMenu(flusherObject);
 
          svgToggle(flusherObject);
       }
@@ -223,7 +233,7 @@ export async function createChat(flusher) {
 
    /* temp fix */
    flusherObject.props.isAeroKick ? flusherObject.video.append(chatflusherObject) : flusherObject.video.parentNode.append(chatflusherObject);
-   flusherObject.props.external ? shadowRoot.appendChild(flusherObjectDiv) : chatflusherObject.append(flusherObjectDiv);
+   flusherObject.props.external ? shadowRoot.appendChild(flusherObjectDiv) : chatflusherObject.append(flusherObjectContainer);
    checkResize(flusherObject);
    /* - */
 

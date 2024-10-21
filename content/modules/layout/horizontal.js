@@ -46,7 +46,7 @@ async function startAnimation(messageData, flusher) {
 	if (lastContainer !== undefined) {
 
 		requestAnimationFrame(() => {
-			flusher.container.appendChild(message);
+			flusher.messages.appendChild(message);
 			messageWidth = message.offsetWidth;
 
 			const rect2 = lastContainer.getBoundingClientRect();
@@ -77,7 +77,7 @@ async function startAnimation(messageData, flusher) {
 
 	/* new row */
 	else {
-		flusher.container.appendChild(message);
+		flusher.messages.appendChild(message);
 		messageWidth = message.offsetWidth;
 		message.style.marginRight = `-${(messageWidth + space)}px`;
 		message.classList.add('flusher-animation');
@@ -152,7 +152,7 @@ function prepareAnimation(data, flusher) {
 	data.container.style.setProperty('--row', data.row);
 	data.container.addEventListener("animationend", function () {
 		try {
-			const oldest = flusher.container.firstElementChild;
+			const oldest = flusher.messages.firstElementChild;
 			if (flusher.states.spamState) {
 				const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
 				if (entryId)

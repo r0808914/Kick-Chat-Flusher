@@ -2,7 +2,7 @@ import { reset } from "../utils/resize.js";
 
 export async function appendVertical(message, flusher) {
 	if (!message) return;
-	const lastItem = flusher.container?.firstChild;
+	const lastItem = flusher.messages?.firstChild;
 
 	if (flusher.props.external) {
 		if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
@@ -12,32 +12,32 @@ export async function appendVertical(message, flusher) {
 		if (lastItem) {
 			const lastTimestamp = new Date(lastItem.dataset.timestamp ?? 0);
 			if (timestamp < lastTimestamp) {
-				flusher.container.append(message.container);
+				flusher.messages.append(message.container);
 			} else {
 				let current = lastItem;
 				while (current) {
 					const currentTimestamp = new Date(current.dataset.timestamp);
 					if (timestamp > currentTimestamp) {
-						flusher.container.insertBefore(message.container, current);
+						flusher.messages.insertBefore(message.container, current);
 						break;
 					}
 					current = current.previousSibling;
 				}
-				if (!current) flusher.container.insertBefore(message.container, lastItem);
+				if (!current) flusher.messages.insertBefore(message.container, lastItem);
 			}
 		} else {
-			flusher.container.append(message.container);
+			flusher.messages.append(message.container);
 		}
 	} else {
 		if (message.container) {
 			if (flusher.states.slide) message.container.classList.add("flusher-animation-vertical");
-			flusher.container['insertBefore'](message.container, lastItem);
+			flusher.messages['insertBefore'](message.container, lastItem);
 		} else {
 			if (flusher.states.slide) message.classList.add("flusher-animation-vertical");
 			try {
-				flusher.container['insertBefore'](message, lastItem);
+				flusher.messages['insertBefore'](message, lastItem);
 			} catch (error) {
-				if (!flusher.container) {
+				if (!flusher.messages) {
 					reset(flusher);
 				}
 			}
@@ -45,8 +45,8 @@ export async function appendVertical(message, flusher) {
 	}
 
 	try {
-		while (flusher.container.children.length > flusher.props.maxRows) {
-			const oldest = flusher.container.lastElementChild;
+		while (flusher.messages.children.length > flusher.props.maxRows) {
+			const oldest = flusher.messages.lastElementChild;
 			const entryId = flusher.props.isAeroKick ? oldest.querySelector('button')?.getAttribute('data-radial-id') : parseInt(oldest.getAttribute('flusher-id'), 10);
 			if (entryId) {
 				const observer = flusher.props.messageObservers.get(entryId);

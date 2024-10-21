@@ -15,6 +15,8 @@ export function dragElement(flusher) {
 	let lastValidX = 0, lastValidY = 0;
 
 	flusher.container.onmousedown = function (e) {
+		if (e.target.closest('div')?.classList.contains('flusher-close-btn')) return;
+
 		e = e || window.event;
 		e.preventDefault();
 

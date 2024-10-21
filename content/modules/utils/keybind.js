@@ -20,7 +20,7 @@ export class KeybindListener {
 
    handleKeyDown(event) {
       if (this.flusher.props.isCaptureKeybind) return;
-      const key = event.key.toLowerCase();
+      const key = event.key?.toLowerCase();
       if (key === 'alt' || key === 'control' || key === 'shift') {
          this.modifierKeys[key] = true;
       } else if (this.anyModifierKeyPressed()) {

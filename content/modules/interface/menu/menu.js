@@ -14,7 +14,7 @@ function safeTextContent(element, content) {
    }
 }
 
-export function createMenu(flusher) {
+export async function createMenu(flusher) {
    const toggledClass = 'toggled-on';
    const domMenu = flusher.video.querySelector('.flusher-menu');
    if (domMenu === null) {
@@ -83,10 +83,19 @@ export function createMenu(flusher) {
 
       const positionBtn = overlayMenu.querySelector('.flusher-position');
       const divInsidePosition = positionBtn.querySelector('div:empty');
+      console.log(flusher.states.positionStates[flusher.states.positionState]);
+      console.log(flusher.states.positionState + ' videoSize: ' + flusher.props.videoSize);
       safeTextContent(divInsidePosition, toTitleCase(flusher.states.positionStates[flusher.states.positionState]));
 
       positionBtn.addEventListener('mousedown', function (event) {
-         flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
+         if (flusher.states.sizeState === 2) {
+            do {
+               flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
+            } while (flusher.states.positionState === 0 || flusher.states.positionState === 2 || flusher.states.positionState === 3 || flusher.states.positionState === 5);
+         } else {
+            flusher.states.positionState = (flusher.states.positionState + 1) % flusher.states.positionStates.length;
+         }
+
          divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
          flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
          chrome.storage.local.get("positionsPerChannel", function (result) {
@@ -113,6 +122,12 @@ export function createMenu(flusher) {
                         location: flusher.states.positionState
                      }
                   });
+                  console.log({
+                     videoSize: flusher.props.videoSize,
+                     position: {
+                        location: flusher.states.positionState
+                     }
+                  });
                }
             }
 
@@ -134,6 +149,60 @@ export function createMenu(flusher) {
          divInsideSize.textContent = toTitleCase(flusher.states.sizeStates[flusher.states.sizeState]);
          flusher.container.setAttribute('size', flusher.states.sizeStates[flusher.states.sizeState].replace(/\s/g, ""));
          flusher.setVerticalWidth();
+
+         if (flusher.states.sizeState === 2) {
+            let position = flusher.states.positionStates[flusher.states.positionState].split(' ').pop();
+            console.log(position);
+
+            let positionId = flusher.states.positionStates.indexOf(position);
+
+            flusher.states.positionState = positionId;
+            console.log('position id; ' + positionId);
+
+            divInsidePosition.textContent = toTitleCase(flusher.states.positionStates[flusher.states.positionState]);
+            flusher.container.setAttribute('position', flusher.states.positionStates[flusher.states.positionState].replace(/\s/g, ""));
+            chrome.storage.local.get("positionsPerChannel", function (result) {
+               flusher.container.style.top = "";
+               flusher.container.style.left = "";
+               flusher.container.style.alignItems = "";
+
+               var positionsPerChannel = result.positionsPerChannel || {};
+               var positionsArray = positionsPerChannel[flusher.props.channelName] || [];
+               var existingPositionIndex = positionsArray.findIndex(function (item) {
+                  return item.videoSize === flusher.props.videoSize;
+               });
+
+               if (existingPositionIndex !== -1 && positionsArray[existingPositionIndex]?.position?.top !== undefined) {
+                  delete positionsArray[existingPositionIndex].position.top;
+                  delete positionsArray[existingPositionIndex].position.left;
+               } else {
+                  if (positionsArray[existingPositionIndex]?.position) {
+                     positionsArray[existingPositionIndex].position.location = flusher.states.positionState;
+                     console.log('set ' + flusher.states.positionState + ' videoSize: ' + flusher.props.videoSize);
+                  } else {
+                     positionsArray.push({
+                        videoSize: flusher.props.videoSize,
+                        position: {
+                           location: flusher.states.positionState
+                        }
+                     });
+                     console.log({
+                        videoSize: flusher.props.videoSize,
+                        position: {
+                           location: flusher.states.positionState
+                        }
+                     });
+                  }
+               }
+
+               positionsPerChannel[flusher.props.channelName] = positionsArray;
+
+               chrome.storage.local.set({ "positionsPerChannel": positionsPerChannel }, function () {
+                  /* console.log("positionsPerChannel:", positionsPerChannel); */
+               });
+            });
+         }
+
          chrome.storage.local.get("positionsPerChannel", function (result) {
             flusher.container.style.width = "";
             flusher.container.style.height = "";
@@ -156,6 +225,12 @@ export function createMenu(flusher) {
                      videoSize: flusher.props.videoSize,
                      position: {
                         size: flusher.states.sizeState
+                     }
+                  });
+                  console.log({
+                     videoSize: flusher.props.videoSize,
+                     position: {
+                        location: flusher.states.positionState
                      }
                   });
                }
@@ -483,9 +558,9 @@ export function createMenu(flusher) {
          const newTimeEnabled = toggleElement.classList.contains(toggledClass);
          flusher.states.timeState = newTimeEnabled;
 
-         flusher.container.childNodes.forEach(childNode => {
-            const chatEntry = childNode.querySelector('.chat-entry div');
-            chatEntry.firstElementChild.style.display = flusher.states.timeState ? 'initial' : 'none';
+         flusher.messages.childNodes.forEach(childNode => {
+            const chatEntry = childNode.querySelector('span.text-neutral.pr-1.font-semibold');
+            if (chatEntry) chatEntry.style.display = flusher.states.timeState ? 'inline-block' : 'none';
          });
 
          flusher.container.setAttribute('time', newTimeEnabled);

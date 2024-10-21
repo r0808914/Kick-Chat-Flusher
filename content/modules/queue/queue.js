@@ -97,12 +97,15 @@ export function processElementQueue(flusher) {
         processElementQueue(flusher);
       }, wait);
     } else {
-      let count = flusher.props.elementQueue.length;
-      let wait = count > 0 ? Math.trunc(window.flusherInterval / count) : 0;
-      setTimeout(function () {
-        flusher.props.isProcessingElements = false;
-        processElementQueue(flusher);
-      }, wait);
+      let interval = window.flusherInterval;
+      if (interval > 0) {
+        let count = flusher.props.elementQueue.length;
+        let wait = count > 0 ? Math.trunc(window.flusherInterval / count) : 0;
+        setTimeout(function () {
+          flusher.props.isProcessingElements = false;
+          processElementQueue(flusher);
+        }, wait);
+      }
     }
   } catch (error) {
     flusher.props.isProcessingElements = false;
