@@ -126,7 +126,6 @@ export class FlusherMessages {
       this.observeNativechatState();
       this.observeNativechatMessages();
       if (!this.flusher.props.isVod) this.observePinned();
-      this.runTasks();
     });
 
     function waitForChat(AeroKick) {
@@ -359,7 +358,7 @@ export class FlusherMessages {
     }
 
     const interval = Math.round((currentMutationTime - this.lastMutationTime) + (window.flusherInterval / 1.5));
-    window.flusherInterval = Math.max(interval, 1000);
+    window.flusherInterval = Math.max(interval, 1500);
     this.lastMutationTime = currentMutationTime;
   }
 
@@ -385,13 +384,6 @@ export class FlusherMessages {
     }
   }
 
-  runTasks() {
-    if (this.taskInterval) clearInterval(this.taskInterval);
-    this.taskInterval = setInterval(() => {
-      if (this.flusher.props.videoSize === "fullscreen" && !this.flusher.props.isVod) scrollChat();
-    }, 10000);
-  }
-
   prepareMessage(addedNode, update) {
     if (!addedNode || addedNode.nodeName !== "DIV") return;
 
@@ -412,14 +404,18 @@ export class FlusherMessages {
       }
     }
 
-    /* const id =
-      this.AeroKick && this.flusher.props.isAeroKick
-        ? addedNode.querySelector("button").getAttribute("data-radial-id")
-        : addedNode.getAttribute("data-chat-entry"); */
-
-    if (this.flusher.states.flushState && (!this.id || this.id === "")) return;
-
     const clonedNode = addedNode.cloneNode(true);
+
+    const userId =
+      this.AeroKick && this.flusher.props.isAeroKick
+        ? clonedNode
+          .querySelector("button")
+          .getAttribute("data-radial-username")
+        : clonedNode.querySelector('button[title]')?.getAttribute('title');
+
+    if (!userId) clonedNode.style.padding = '0';
+
+    if (this.flusher.states.flushState && !userId) return;
 
     /* history_breaker */
     if (clonedNode.classList.contains('items-center')) return;
@@ -923,13 +919,34 @@ export class FlusherMessages {
   unbindRequests() {
     this.disposeChannel();
     if (!this.flusher?.props?.external || this.flusher.states.flushState) {
-      if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
-      if (this.scrollObserver) this.scrollObserver.disconnect();
-      if (this.pageObserver) this.pageObserver.disconnect();
-      if (this.vodObserver) this.vodObserver.disconnect();
-      if (this.pinnedObserver) this.pinnedObserver.disconnect();
-      if (this.taskInterval) clearInterval(this.taskInterval);
-      if (this.flusher?.props?.bindTimeout) clearTimeout(this.flusher.props.bindTimeout);
+      if (this.nativeChatObserver) {
+        this.nativeChatObserver.disconnect();
+        this.nativeChatObserver = null;
+      }
+      if (this.scrollObserver) {
+        this.scrollObserver.disconnect();
+        this.scrollObserver = null;
+      }
+      if (this.pageObserver) {
+        this.pageObserver.disconnect();
+        this.pageObserver = null;
+      }
+      if (this.vodObserver) {
+        this.vodObserver.disconnect();
+        this.vodObserver = null;
+      }
+      if (this.pinnedObserver) {
+        this.pinnedObserver.disconnect();
+        this.pinnedObserver = null;
+      }
+      if (this.taskInterval) {
+        clearInterval(this.taskInterval);
+        this.taskInterval = null;
+      }
+      if (this.flusher?.props?.bindTimeout) {
+        clearTimeout(this.flusher.props.bindTimeout);
+        this.flusher.props.bindTimeout = null;
+      }
     }
   }
 }

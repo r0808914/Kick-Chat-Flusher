@@ -276,7 +276,9 @@ export function checkResize(flusher) {
     const documentWidth = document.documentElement.clientWidth;
     if (documentWidth < flusher.props.parentWidth / 2 + 10) {
       flusher.props.videoSize = "fullscreen";
+      startScrollingInterval(flusher);
     } else {
+      stopScrollingInterval(flusher);
       const sidebar = document.querySelector('#sidebar-wrapper');
       if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
         flusher.props.videoSize = "default";
@@ -291,6 +293,20 @@ function setAttribute(element, attribute, states, stateKey) {
   const state = states[stateKey];
   const value = state.replace(/\s/g, "");
   element.setAttribute(attribute, value);
+}
+
+function startScrollingInterval(flusher) {
+  if (flusher.props.scrollIntervalId) return;
+  scrollChat(flusher);
+  flusher.props.scrollIntervalId = setInterval(function () {
+    scrollChat(flusher);
+  }, 10000);
+}
+
+export function stopScrollingInterval(flusher) {
+  if (!flusher.props.scrollIntervalId) return;
+  clearInterval(flusher.props.scrollIntervalId);
+  flusher.props.scrollIntervalId = null;
 }
 
 export function checkPosition(flusher, height, width) {

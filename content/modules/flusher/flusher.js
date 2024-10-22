@@ -2,7 +2,7 @@ import { FlusherStates } from './states.js';
 import { FlusherProps } from './props.js';
 import { FlusherMessages } from './messages.js';
 import { visibilityChange, logToConsole } from "../utils/utils.js";
-
+import { stopScrollingInterval } from '../utils/resize.js';
 import Badges from '../utils/badges.js';
 
 export class Flusher {
@@ -50,6 +50,8 @@ export class Flusher {
 		for (const id of this.props.timeoutIds) {
 			clearTimeout(id);
 		}
+
+		stopScrollingInterval(this);
 
 		this.removeItems();
 

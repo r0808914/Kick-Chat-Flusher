@@ -1,5 +1,6 @@
 export function visibilityChange(flusher) {
-	document.addEventListener('visibilitychange', function handleVisibilityChange() {
+	if (window.handleVisibility) return;
+	window.handleVisibility = document.addEventListener('visibilitychange', function handleVisibilityChange() {
 		if (!flusher) return;
 		if (document.hidden) {
 			if (flusher.container !== null) flusher.container.style.display = "none";

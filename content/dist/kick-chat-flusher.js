@@ -912,7 +912,8 @@ function dragElement(flusher) {
 }
 ;// CONCATENATED MODULE: ./modules/utils/utils.js
 function visibilityChange(flusher) {
-  document.addEventListener('visibilitychange', function handleVisibilityChange() {
+  if (window.handleVisibility) return;
+  window.handleVisibility = document.addEventListener('visibilitychange', function handleVisibilityChange() {
     if (!flusher) return;
     if (document.hidden) {
       if (flusher.container !== null) flusher.container.style.display = "none";
@@ -2113,7 +2114,9 @@ function checkResize(flusher) {
     const documentWidth = document.documentElement.clientWidth;
     if (documentWidth < flusher.props.parentWidth / 2 + 10) {
       flusher.props.videoSize = "fullscreen";
+      startScrollingInterval(flusher);
     } else {
+      stopScrollingInterval(flusher);
       const sidebar = document.querySelector('#sidebar-wrapper');
       if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
         flusher.props.videoSize = "default";
@@ -2127,6 +2130,18 @@ function setAttribute(element, attribute, states, stateKey) {
   const state = states[stateKey];
   const value = state.replace(/\s/g, "");
   element.setAttribute(attribute, value);
+}
+function startScrollingInterval(flusher) {
+  if (flusher.props.scrollIntervalId) return;
+  scrollChat(flusher);
+  flusher.props.scrollIntervalId = setInterval(function () {
+    scrollChat(flusher);
+  }, 10000);
+}
+function stopScrollingInterval(flusher) {
+  if (!flusher.props.scrollIntervalId) return;
+  clearInterval(flusher.props.scrollIntervalId);
+  flusher.props.scrollIntervalId = null;
 }
 function checkPosition(flusher, height, width) {
   if (!height || !width) {
@@ -2848,7 +2863,6 @@ class FlusherMessages {
       this.observeNativechatState();
       this.observeNativechatMessages();
       if (!this.flusher.props.isVod) this.observePinned();
-      this.runTasks();
     });
     function waitForChat(AeroKick) {
       let parent = AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages";
@@ -3039,7 +3053,7 @@ class FlusherMessages {
       return;
     }
     const interval = Math.round(currentMutationTime - this.lastMutationTime + window.flusherInterval / 1.5);
-    window.flusherInterval = Math.max(interval, 1000);
+    window.flusherInterval = Math.max(interval, 1500);
     this.lastMutationTime = currentMutationTime;
   }
   observeScrolling() {
@@ -3063,12 +3077,6 @@ class FlusherMessages {
       });
     }
   }
-  runTasks() {
-    if (this.taskInterval) clearInterval(this.taskInterval);
-    this.taskInterval = setInterval(() => {
-      if (this.flusher.props.videoSize === "fullscreen" && !this.flusher.props.isVod) scrollChat();
-    }, 10000);
-  }
   prepareMessage(addedNode, update) {
     if (!addedNode || addedNode.nodeName !== "DIV") return;
     if (!update) {
@@ -3086,14 +3094,10 @@ class FlusherMessages {
         return;
       }
     }
-
-    /* const id =
-      this.AeroKick && this.flusher.props.isAeroKick
-        ? addedNode.querySelector("button").getAttribute("data-radial-id")
-        : addedNode.getAttribute("data-chat-entry"); */
-
-    if (this.flusher.states.flushState && (!this.id || this.id === "")) return;
     const clonedNode = addedNode.cloneNode(true);
+    const userId = this.AeroKick && this.flusher.props.isAeroKick ? clonedNode.querySelector("button").getAttribute("data-radial-username") : clonedNode.querySelector('button[title]')?.getAttribute('title');
+    if (!userId) clonedNode.style.padding = '0';
+    if (this.flusher.states.flushState && !userId) return;
 
     /* history_breaker */
     if (clonedNode.classList.contains('items-center')) return;
@@ -3497,13 +3501,34 @@ class FlusherMessages {
   unbindRequests() {
     this.disposeChannel();
     if (!this.flusher?.props?.external || this.flusher.states.flushState) {
-      if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
-      if (this.scrollObserver) this.scrollObserver.disconnect();
-      if (this.pageObserver) this.pageObserver.disconnect();
-      if (this.vodObserver) this.vodObserver.disconnect();
-      if (this.pinnedObserver) this.pinnedObserver.disconnect();
-      if (this.taskInterval) clearInterval(this.taskInterval);
-      if (this.flusher?.props?.bindTimeout) clearTimeout(this.flusher.props.bindTimeout);
+      if (this.nativeChatObserver) {
+        this.nativeChatObserver.disconnect();
+        this.nativeChatObserver = null;
+      }
+      if (this.scrollObserver) {
+        this.scrollObserver.disconnect();
+        this.scrollObserver = null;
+      }
+      if (this.pageObserver) {
+        this.pageObserver.disconnect();
+        this.pageObserver = null;
+      }
+      if (this.vodObserver) {
+        this.vodObserver.disconnect();
+        this.vodObserver = null;
+      }
+      if (this.pinnedObserver) {
+        this.pinnedObserver.disconnect();
+        this.pinnedObserver = null;
+      }
+      if (this.taskInterval) {
+        clearInterval(this.taskInterval);
+        this.taskInterval = null;
+      }
+      if (this.flusher?.props?.bindTimeout) {
+        clearTimeout(this.flusher.props.bindTimeout);
+        this.flusher.props.bindTimeout = null;
+      }
     }
   }
 }
@@ -3649,6 +3674,7 @@ V5.2h1V4.1h1v-1h3.4V12.9z" style="fill-rule: evenodd; clip-rule: evenodd; fill: 
 
 
 
+
 class Flusher {
   constructor(video, domain, channelName, aeroKick) {
     this.video = video;
@@ -3689,6 +3715,7 @@ class Flusher {
     for (const id of this.props.timeoutIds) {
       clearTimeout(id);
     }
+    stopScrollingInterval(this);
     this.removeItems();
     if (this.props.keydownSetListener) window.removeEventListener('keydown', this.props.keydownSetListener);
     this.props.isCaptureKeybind = false;
