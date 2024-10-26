@@ -67,7 +67,6 @@
 }
 
 .chat-message-identity #mifu-supporter-badge:nth-of-type(2),
-.chat-message-identity seventv-container #mifu-supporter-badge,
 .flusher-container .mifu-timedout-message #mifu-event-from {
   display: none;
 }
@@ -112,6 +111,7 @@
   letter-spacing: .1px;
 }
 
+.flusher-container .seventv-text-token,
 .flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
 .flusher-container[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-container[layout="vertical"][aerokick] .bk-inline,
@@ -119,6 +119,17 @@
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower>span {
   font-weight: 700 !important;
+}
+
+.flusher-container .seventv-text-token,
+.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
+.flusher-container[shadow="true"].flusher-container[layout="horizontal"][aerokick] .bk-text-transparent,
+.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower span.font-normal {
+  font-weight: 600;
+}
+
+.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
+  font-weight: 700;
 }
 
 .flusher-container[shadow="true"].flusher-container[aerokick] div.bk-text-sm,
@@ -529,6 +540,7 @@
   padding-right: 5px;
 }
 
+.flusher-container .seventv-text-token,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
 .flusher-container[shadow="true"].flusher-container[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
@@ -544,17 +556,6 @@
 
 .flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal {
   word-break: break-word;
-}
-
-.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower div>span:nth-child(n + 3),
-.flusher-container[shadow="true"].flusher-container[layout="horizontal"][aerokick] .bk-text-transparent,
-.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower span.font-normal,
-.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
-  font-weight: 600;
-}
-
-.flusher-container[shadow="true"].flusher-container[layout="horizontal"] .betterhover\:group-hover\:bg-shade-lower button.font-bold {
-  font-weight: 700;
 }
 
 .flusher-container[font="NORMAL"][layout="vertical"] .betterhover\:group-hover\:bg-shade-lower {

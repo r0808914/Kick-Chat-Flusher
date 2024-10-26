@@ -333,9 +333,9 @@ export class FlusherMessages {
     if (this.nativeChatObserver) this.nativeChatObserver.disconnect();
     this.nativeChatObserver = new MutationObserver((mutations) => {
 
-      this.interval(mutations.length);
-
       if (this.isScrolling) return;
+
+      this.interval(mutations.length);
 
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length > 0) {
@@ -369,13 +369,8 @@ export class FlusherMessages {
       this.scrollObserver = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
           if (mutation.type === "childList") {
-            if (mutation.addedNodes.length > 0) {
-              this.isScrolling = true;
-            }
-
-            if (targetElement.children.length === 0) {
-              this.isScrolling = false;
-            }
+            if (mutation.addedNodes.length > 0) this.isScrolling = true;
+            if (targetElement.children.length === 0) this.isScrolling = false;
           }
         });
       });
@@ -395,13 +390,7 @@ export class FlusherMessages {
 
     if (this.AeroKick && !this.flusher.props.isVod) {
       const button = addedNode.querySelector("button");
-      if (!button) {
-        /* console.log(
-          "Kick Chat this.flusher - Button does not exist in the added node:",
-          addedNode
-        ); */
-        return;
-      }
+      if (!button) return;
     }
 
     const clonedNode = addedNode.cloneNode(true);
@@ -843,14 +832,16 @@ export class FlusherMessages {
   observeNestedChildren(parentNode, id, clonedNode) {
     const observer = new MutationObserver(() => {
       if (clonedNode) {
+        /* check when changing that 7TV still works */
         if (this.flusher.states.deleted && parentNode.querySelector('.chat-entry-content-deleted')) {
           clonedNode.classList.add('flusher-deleted');
         } else {
-          let currentTextElement = clonedNode.querySelector('span.font-normal');
+          clonedNode.replaceWith(this.prepareMessage(parentNode, true));
+          /* let currentTextElement = clonedNode.querySelector('span.font-normal');
           if (currentTextElement) {
-            let newTextElement = this.prepareMessage(parentNode, true)?.querySelector('span.font-normal');
-            if (newTextElement) currentTextElement.replaceWith(newTextElement);
-          }
+          let newTextElement = this.prepareMessage(parentNode, true)?.querySelector('span.font-normal');
+          if (newTextElement) currentTextElement.replaceWith(newTextElement);
+          } */
         }
       }
     });
