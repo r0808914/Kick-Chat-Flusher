@@ -1,8 +1,8 @@
 .flusher-menu[domain="KICK"] {
-	background-color: rgb(23 28 30 / var(--tw-bg-opacity));
+	background-color: rgb(15, 18, 20);
 	border-radius: 5px;
 	bottom: 45px;
-	color: white;
+	color: #fff;
 	display: flex;
 	flex-direction: column;
 	font-family: 'Inter';
@@ -10,7 +10,7 @@
 	height: fit-content;
 	padding: .5rem;
 	position: absolute;
-	--tw-bg-opacity: 1;
+	opacity: .95;
 	width: auto;
 	z-index: 2;
 	user-select: none;

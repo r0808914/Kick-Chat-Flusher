@@ -37,10 +37,7 @@ export async function processMessageQueue(flusher) {
 
     const eventType = queueItem.event ?? queueItem.eventName;
 
-    if (
-      eventType === "App\\Events\\ChatMessageEvent" &&
-      flusher.props.external
-    ) {
+    if (eventType === "App\\Events\\ChatMessageEvent" && flusher.props.external) {
       createMessage(JSON.parse(queueItem.data), flusher);
     } else if (queueItem.type === "message" && flusher.props.external) {
       createMessage(queueItem, flusher);
@@ -50,10 +47,19 @@ export async function processMessageQueue(flusher) {
       createGiftedMessage(JSON.parse(queueItem.data), flusher);
     } else if (eventType === "App\\Events\\FollowersUpdated") {
       createFollowersMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\StreamHostEvent") {
+    } else if (eventType === "App\\Events\\StreamHostEvent" && flusher.props.external) {
       createHostMessage(JSON.parse(queueItem.data), flusher);
     } else if (eventType === "App\\Events\\SubscriptionEvent") {
       createSubMessage(JSON.parse(queueItem.data), flusher);
+    } else if (eventType !== "App\\Events\\ChatMessageEvent") {
+      /* debug */
+      /* console.log('uknown type: ', queueItem);
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
+      audio.volume = 0.2;
+      audio.play().catch(error => console.error("Audio playback failed:", error)); */
+      /* debug */
+      flusher.props.isProcessingMessages = false;
+      processMessageQueue(flusher);
     } else {
       flusher.props.isProcessingMessages = false;
       processMessageQueue(flusher);
@@ -115,6 +121,11 @@ export function processElementQueue(flusher) {
 }
 
 function appendMessage(queueItem, flusher) {
+  /* debug delete */
+  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
+  audio.volume = 0.2;
+  audio.play().catch(error => console.error("Audio playback failed:", error));
+  /* debug delete */
   flusher.props.elementQueue.push(queueItem);
   processElementQueue(flusher);
   flusher.props.isProcessingMessages = false;

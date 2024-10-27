@@ -94,8 +94,8 @@ export function dragElement(flusher) {
 	function resizeElement(e) {
 		e = e || window.event;
 		e.preventDefault();
-		flusher.container.style.width = (flusher.container.offsetWidth - (pos3 - e.clientX)) + "px";
-		flusher.container.style.height = (flusher.container.offsetHeight - (pos4 - e.clientY)) + "px";
+		flusher.container.style.width = Math.max(100, flusher.container.offsetWidth - (pos3 - e.clientX)) + "px";
+		flusher.container.style.height = Math.max(100, flusher.container.offsetHeight - (pos4 - e.clientY)) + "px";
 		pos3 = e.clientX;
 		pos4 = e.clientY;
 	}

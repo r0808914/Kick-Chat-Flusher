@@ -124,7 +124,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div style="display: none;" class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+      <div class="flusher-event flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Events</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div style="width: 16px; height: 16px;" class="flusher-icon">

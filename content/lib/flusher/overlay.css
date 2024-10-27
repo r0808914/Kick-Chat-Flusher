@@ -101,6 +101,14 @@
   z-index: 20;
 }
 
+.flusher-container[layout="vertical"] .flusher-pinned .flex-nowrap.justify-between {
+  margin-right: 6px;
+}
+
+.flusher-container[layout="vertical"] .flusher-pinned.flusher-top {
+  margin-top: 0px !important;
+}
+
 .flusher-container[layout="vertical"][aerokick] .flusher-messages>div,
 .flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower {
   align-content: center;
@@ -323,12 +331,12 @@
 
 .flusher-container[layout="vertical"][enabled="true"]:hover {
   border-radius: 1px;
-  outline: 2px solid var(--flusher-green);
+  outline: 2px ridge var(--flusher-green);
 }
 
 .flusher-hover {
   border-radius: 1px;
-  outline: 2px solid var(--flusher-green);
+  outline: 2px ridge var(--flusher-green);
 }
 
 .flusher-container.flusher-grab:hover::after {

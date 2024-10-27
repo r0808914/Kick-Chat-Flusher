@@ -1,7 +1,9 @@
 export function visibilityChange(flusher) {
-	if (window.handleVisibility) return;
-	window.handleVisibility = document.addEventListener('visibilitychange', function handleVisibilityChange() {
+	if (window.handleVisibility) document.removeEventListener('visibilitychange', window.handleVisibility);
+
+	window.handleVisibility = function handleVisibilityChange() {
 		if (!flusher) return;
+
 		if (document.hidden) {
 			if (flusher.container !== null) flusher.container.style.display = "none";
 
@@ -22,7 +24,9 @@ export function visibilityChange(flusher) {
 				flusher.provider.bindRequests(flusher);
 			}
 		}
-	});
+	};
+
+	document.addEventListener('visibilitychange', window.handleVisibility);
 }
 
 export function getFont() {
