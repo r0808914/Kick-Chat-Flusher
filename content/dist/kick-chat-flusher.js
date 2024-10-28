@@ -17,6 +17,7 @@ class FlusherStates {
     this.slide = true;
     this.reply = true;
     this.timeState = false;
+    this.eventAudioState = false;
     this.spamState = false;
     this.fontState = 1;
     this.keybinds = {
@@ -299,6 +300,16 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
     <div class="chat-actions-content">
       <div class="flusher-spam flusher-actions-item">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Hide Spam</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-eventAudio flusher-actions-item">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Event Alert</div>
         <div class="flex h-10 w-fit items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
@@ -1281,6 +1292,16 @@ async function createMenu(flusher) {
     });
     flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
     if (flusher.states.spamState) spamBtn.classList.toggle(toggledClass);
+    const eventAudioBtnContainer = parent.querySelector('.flusher-eventAudio');
+    const eventAudioBtn = eventAudioBtnContainer.querySelector('.flusher-toggle');
+    eventAudioBtn.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newEventAudioEnabled = toggleElement.classList.contains(toggledClass);
+      flusher.states.eventAudioState = newEventAudioEnabled;
+      setExtensionStorageItem('flusher-event-audio', newEventAudioEnabled);
+    });
+    if (flusher.states.eventAudioState) eventAudioBtn.classList.toggle(toggledClass);
     const fontBtn = settingsMenu.querySelector('.flusher-font');
     const divInsideFont = fontBtn.querySelector('div:empty');
     safeTextContent(divInsideFont, toTitleCase(flusher.states.sizeStates[flusher.states.fontState]));
@@ -1734,6 +1755,7 @@ async function createChat(flusher) {
       setExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
       setExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
       setExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
+      setExtensionStorageItem('flusher-event-audio', flusherObject.states.eventAudioState);
       setExtensionStorageItem('flusher-version', currentVersion);
       chrome.storage.local.remove("positionsPerChannel", function () {
         logToConsole('New update detected. Resetting settings to default.');
@@ -1755,6 +1777,7 @@ async function createChat(flusher) {
       flusherObject.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
       flusherObject.states.bans = await getExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
       flusherObject.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
+      flusherObject.states.eventAudioState = await getExtensionStorageItem('flusher-event-audio', flusherObject.states.eventAudioState);
       flusherObject.props.intro = await getExtensionStorageItem('flusher-intro', false);
     }
   }
@@ -1949,79 +1972,50 @@ function resize_reset(flusher) {
 }
 function checkResize(flusher) {
   const videoElement = flusher.video.querySelector("video");
-  let target;
-  if (!flusher.props.isAeroKick && videoElement) {
-    target = videoElement;
-  } else {
-    target = flusher.video;
-  }
+  const target = !flusher.props.isAeroKick && videoElement ? videoElement : flusher.video;
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
   flusher.resizeObserver = new ResizeObserver(entries => {
-    for (let entry of entries) {
-      if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
-      flusher.resizeTimer = setTimeout(() => {
-        for (let entry of entries) {
-          if (flusher.container !== null) flusher.container.style.display = "none";
-          const rect = target.getBoundingClientRect();
-          let width = rect.width;
-          let height = rect.height;
-
-          /* temp fix */
-          const isUrlEqual = window.currentUrl === undefined || window.currentUrl === window.location.href;
-          const isurlEqualLog = window.currentUrl === window.location.href;
-          window.currentUrl = window.location.href;
-          const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
-          if ((width === null || width === 0) && (!height || height === 0) && !videoChanged || !isUrlEqual || !flusher?.container) {
-            if (flusher !== null) resize_reset(flusher);
-            return;
-          }
-          if (flusher.props.isAeroKick) checkAeroKick();
-          const oldWidth = flusher.props.parentWidth;
-          flusher.props.parentWidth = Math.trunc(width) * 2;
-          flusher.props.parentHeight = Math.trunc(height);
-          flusher.props.parentRight = rect.right;
-
-          /* set data for css */
-          setAttributes();
-
-          /* toggleEnableMenu(); */
-
-          /* set overlay data within menu */
-          setCustomPosition(flusher);
-
-          /* check if fullscreen, theater, etc. */
-          detectViewMode();
-
-          /* set custom overlay position */
-          checkPosition(flusher, height, width);
-          flusher.props.elementHeight = null;
-          flusher.container.style.display = "flex";
-          createIntroMessage(flusher);
-          if (oldWidth == null || oldWidth == 0) {
-            if (flusher.container === null) return;
-            if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
-            flusher.props.loading = false;
-            processMessageQueue(flusher);
-            togglePointerEvents(flusher);
-            checkAddons(flusher);
-            if (!isurlEqualLog) {
-              logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
-            }
-
-            /* temp fix toggle btn not clickable in theater */
-            /* const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
-            if (element) element.classList.remove("z-[500]"); */
-
-            flusher.props.keydownListener = new KeybindListener(flusher);
-          } else {
-            flusher.states.flushState ? flusher.clear() : null;
-          }
-        }
-      }, 500);
-    }
+    if (flusher.resizeTimer) cancelAnimationFrame(flusher.resizeTimer);
+    flusher.resizeTimer = requestAnimationFrame(() => {
+      if (flusher.container !== null) flusher.container.style.display = "none";
+      const rect = target.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const isUrlEqual = window.currentUrl === undefined || window.currentUrl === window.location.href;
+      window.currentUrl = window.location.href;
+      const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
+      if ((width === null || width === 0) && (!height || height === 0) && !videoChanged || !isUrlEqual || !flusher?.container) {
+        resize_reset(flusher);
+        return;
+      }
+      if (flusher.props.isAeroKick) checkAeroKick();
+      const oldWidth = flusher.props.parentWidth;
+      flusher.props.parentWidth = Math.trunc(width) * 2;
+      flusher.props.parentHeight = Math.trunc(height);
+      flusher.props.parentRight = rect.right;
+      setAttributes();
+      setCustomPosition(flusher);
+      detectViewMode();
+      checkPosition(flusher, height, width);
+      flusher.props.elementHeight = null;
+      flusher.container.style.display = "flex";
+      createIntroMessage(flusher);
+      if (oldWidth == null || oldWidth === 0) {
+        if (flusher.container === null) return;
+        if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
+        flusher.props.loading = false;
+        processMessageQueue(flusher);
+        togglePointerEvents(flusher);
+        checkAddons(flusher);
+        logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
+        flusher.props.keydownListener = new KeybindListener(flusher);
+      } else {
+        flusher.states.flushState ? flusher.clear() : null;
+      }
+    });
   });
-  flusher.resizeObserver.observe(flusher.video);
+  flusher.resizeObserver.observe(target);
   function checkAddons(flusher) {
     let counter = 0;
     const intervalId = setInterval(() => {
@@ -2313,29 +2307,20 @@ async function processMessageQueue(flusher) {
       return;
     }
     const eventType = queueItem.event ?? queueItem.eventName;
-    if (eventType === "App\\Events\\ChatMessageEvent" && flusher.props.external) {
+    if (eventType === "App\\Events\\ChatMessageEvent" && (flusher.props.external || flusher.states.flushState)) {
       createMessage(JSON.parse(queueItem.data), flusher);
     } else if (queueItem.type === "message" && flusher.props.external) {
       createMessage(queueItem, flusher);
     } else if (eventType === "App\\Events\\UserBannedEvent") {
       createUserBanMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
+    } else if (eventType === "App\\Events\\GiftedSubscriptionsEvent" && (flusher.props.external || flusher.states.flushState)) {
       createGiftedMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\FollowersUpdated") {
+    } else if (eventType === "App\\Events\\FollowersUpdated" && (flusher.props.external || flusher.states.flushState)) {
       createFollowersMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\StreamHostEvent" && flusher.props.external) {
+    } else if (eventType === "App\\Events\\StreamHostEvent" && (flusher.props.external || flusher.states.flushState)) {
       createHostMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\SubscriptionEvent") {
+    } else if (eventType === "App\\Events\\SubscriptionEvent" && (flusher.props.external || flusher.states.flushState)) {
       createSubMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType !== "App\\Events\\ChatMessageEvent") {
-      /* debug */
-      /* console.log('uknown type: ', queueItem);
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
-      audio.volume = 0.2;
-      audio.play().catch(error => console.error("Audio playback failed:", error)); */
-      /* debug */
-      flusher.props.isProcessingMessages = false;
-      processMessageQueue(flusher);
     } else {
       flusher.props.isProcessingMessages = false;
       processMessageQueue(flusher);
@@ -2387,11 +2372,6 @@ function processElementQueue(flusher) {
   }
 }
 function appendMessage(queueItem, flusher) {
-  /* debug delete */
-  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
-  audio.volume = 0.2;
-  audio.play().catch(error => console.error("Audio playback failed:", error));
-  /* debug delete */
   flusher.props.elementQueue.push(queueItem);
   processElementQueue(flusher);
   flusher.props.isProcessingMessages = false;
@@ -2600,16 +2580,16 @@ function createUserBanMessage(data, flusher) {
       timeDiffText = humanizeDuration(timeDifference + 5000);
       const userId = data.user.id;
       addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
-      logText = `🟥 ${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+      logText = `👺 ${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     } else {
-      logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
+      logText = `💀 ${bannedUser} banned by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     }
   } else {
-    logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
+    logText = `💀 ${bannedUser} banned by ${bannedByUser}`;
     const expiresText = document.createTextNode(logText);
     banMessageSpan.appendChild(expiresText);
   }
@@ -2651,7 +2631,7 @@ function createUserBanMessage(data, flusher) {
         unbanMessageContent.classList.add("flusher-message", "flusher-green");
         const unbanMessageSpan = document.createElement("span");
         let logText;
-        logText = `🟩 ${username}'s ban expired`;
+        logText = `🕊 ${username}'s ban expired`;
         const unbanText = document.createTextNode(logText);
         unbanMessageSpan.appendChild(unbanText);
         unbanMessageContent.appendChild(unbanMessageSpan);
@@ -2802,6 +2782,9 @@ class FlusherMessages {
     this.pinnedTimeouts = {};
     this.debounceTimeout = null;
     this.dispose = false;
+    console.log(chrome.runtime.getURL('lib/flusher/alert.wav'));
+    this.alert = new Audio(chrome.runtime.getURL('lib/flusher/alert.wav'));
+    this.alert.volume = 0.2;
   }
   subscribeChannel() {
     const id = this.flusher.props.chatroomId;
@@ -2852,13 +2835,12 @@ class FlusherMessages {
       this.subscribeChannel();
     });
     this.socket.addEventListener("close", event => {
-      console.log('dispose in close: ' + this.dispose);
       if (this.dispose) {
         logToConsole(`WebSocket Connection Closed: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
         this.channels.clear();
       } else {
         setTimeout(() => {
-          logToConsole(`WebSocket Connection Auto Closed.. Trying To Reopen: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
+          logToConsole(`WebSocket Connection Closed By Host: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
           this.setupWebSocket();
         }, 5000);
       }
@@ -2874,7 +2856,6 @@ class FlusherMessages {
   }
   disposeChannel() {
     this.dispose = true;
-    console.log('set dispose true');
     if (this.socket) {
       this.socket.close();
       this.socket = null;
@@ -2899,54 +2880,24 @@ class FlusherMessages {
     function waitForChat(AeroKick) {
       let parent = AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages";
       let parentElement = document.querySelector(parent);
-      if (parentElement) {
-        const chatEntry = parentElement.querySelector(".rounded-md.bk-block") ?? parentElement.querySelector(".group.relative");
-        if (chatEntry) {
-          return Promise.resolve(chatEntry.closest('.no-scrollbar.relative'));
-        }
-      }
       return new Promise((resolve, reject) => {
-        const config = {
-          attributes: true,
-          childList: true,
-          subtree: true
-        };
-        let foundChat = false;
-        let observer;
-        const checkParentInterval = setInterval(() => {
+        let checkParentInterval;
+        let resolved = false;
+        function checkParentElement() {
           parentElement = document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages");
           if (parentElement) {
-            clearInterval(checkParentInterval);
-            startObserver();
-          }
-        }, 1000);
-        const startObserver = () => {
-          const mutationCallback = function (mutationsList) {
-            for (const mutation of mutationsList) {
-              if (mutation.type === "childList") {
-                mutation.addedNodes.forEach(node => {
-                  if (node.nodeType === 1 && (node.classList.contains("bk-block.rounded-md") || node.querySelector(".group.relative"))) {
-                    if (foundChat) return;
-                    foundChat = true;
-                    cleanup();
-                    resolve(node.closest('.no-scrollbar.relative'));
-                  }
-                });
-              }
+            const scrollbar = parentElement.querySelector('.no-scrollbar.relative');
+            if (scrollbar && !resolved) {
+              clearInterval(checkParentInterval);
+              resolved = true;
+              resolve(scrollbar);
             }
-          };
-          observer = new MutationObserver(mutationCallback);
-          observer.observe(parentElement, config);
-        };
-        const intervalId = setInterval(() => {
-          foundChat = false;
-          parentElement = document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages");
-        }, 1000);
-        const cleanup = () => {
-          if (observer) observer.disconnect();
-          clearInterval(checkParentInterval);
-          clearInterval(intervalId);
-        };
+          }
+        }
+        checkParentElement();
+        if (!resolved) {
+          checkParentInterval = setInterval(checkParentElement, 1000);
+        }
       });
     }
   }
@@ -2978,17 +2929,14 @@ class FlusherMessages {
     }
   }
   observePinned() {
-    console.log('start pinned');
     this.pinnedNative = document.getElementById('chatroom-messages')?.parentElement?.firstElementChild;
     this.pinnedFlusher = this.flusher?.container?.querySelector(".flusher-pinned");
     if (!this.pinnedNative || !this.pinnedFlusher) return;
     let parent = this.pinnedNative.querySelector('.relative.flex');
     if (!parent) return;
     this.checkPinned(parent, this.pinnedFlusher);
-    console.log('check pinned on load');
     if (this.pinnedObserver) this.pinnedObserver.disconnect();
     this.pinnedObserver = new MutationObserver(mutations => {
-      console.log('check pinned through observer');
       this.checkPinned(parent, this.pinnedFlusher);
     });
     this.pinnedObserver.observe(parent, {
@@ -2997,33 +2945,24 @@ class FlusherMessages {
     });
   }
   checkPinned(parent) {
-    /* debug delete */
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
-    audio.volume = 0.2;
-    audio.play().catch(error => console.error("Audio playback failed:", error));
-    /* debug delete */
-
     this.removePinned();
     Array.from(parent?.children || []).forEach(pinElement => {
       let id = pinElement.getAttribute('flusher-id');
       if (!id || !this.ignoredIds.includes(id)) {
         const pinId = this.pinnedId++;
         setTimeout(() => this.appendPinned(pinElement, pinId), 1500);
-      } else {
-        console.log('blocked pin item');
       }
     });
   }
   appendPinned(pinElement, pinId) {
+    const innerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
+    logToConsole(innerText);
+    if (this.flusher?.states?.eventAudioState) this.alert.play().catch(error => console.error("Audio playback failed:", error));
     const currentPinnedId = pinId;
     pinElement.setAttribute('flusher-id', currentPinnedId);
-    console.log(`Add new pin item`, currentPinnedId);
-    console.log(`Native`, pinElement);
     let pinElementObject = pinElement.cloneNode(true);
     pinElementObject.removeAttribute('style');
-    console.log(pinElementObject);
     if (pinElementObject.querySelector('button.inline.font-bold')) {
-      console.log('item is message');
       pinElementObject.classList.add('pinned');
       pinElementObject.querySelector('div.flex-nowrap.justify-between button').remove();
       pinElementObject.querySelectorAll('.line-clamp-2').forEach(element => {
@@ -3031,19 +2970,14 @@ class FlusherMessages {
       });
       this.setPinnedRemoveTimer(currentPinnedId);
     } else {
-      if (pinElementObject.matches('.z-absolute')) {
-        console.log('item is poll');
-      } else {
+      if (!pinElementObject.matches('.z-absolute')) {
         this.pinnedFlusher.classList.add('flusher-top');
-        console.log('item is event');
       }
-      console.log(pinElementObject);
     }
     let hideBtn = pinElementObject.querySelector('button.box-border.flex');
     if (hideBtn) {
       hideBtn.parentElement.classList.add('flusher-close-btn');
       hideBtn.onclick = () => {
-        console.log('hiden btn clicked');
         this.ignoredIds.push(currentPinnedId.toString());
         this.removePinned(currentPinnedId);
       };
@@ -3055,21 +2989,19 @@ class FlusherMessages {
     let pinObserver = new MutationObserver(mutations => {
       let newClone = pinElement.cloneNode(true);
       if (pinElementObject) {
-        console.log('observer pin stils exists');
         pinElementObject.replaceWith(newClone);
         pinElementObject = newClone;
         if (pinElementObject.querySelector('button.inline.font-bold')) {
-          console.log('observer pin is message try pulling down');
+          pinElement.classList.remove('upward-transition');
           pinElementObject.classList.add('downward-transition');
           pinElementObject.offsetHeight;
           pinElementObject.classList.add('in-view');
           this.setPinnedRemoveTimer(currentPinnedId);
         }
       } else {
-        console.log('observer pin doesnt exist no more creating new');
         pinObserver.disconnect();
-        const pinId = this.pinnedId++;
-        this.appendPinned(pinElement, pinId);
+        const newPinId = this.pinnedId++;
+        this.appendPinned(pinElement, newPinId);
       }
     });
     pinObserver.observe(pinElement, {
@@ -3078,18 +3010,15 @@ class FlusherMessages {
       characterData: true,
       attributes: true
     });
-    console.log('pinObserver ' + currentPinnedId);
     this.pinnedObservers[currentPinnedId] = pinObserver;
   }
   setPinnedRemoveTimer(id) {
-    console.log('set remove time');
     if (this.pinnedTimeouts[id]) clearTimeout(this.pinnedTimeouts[id]);
     this.pinnedTimeouts[id] = setTimeout(() => {
       this.removePinned(id);
     }, 8000);
   }
   removePinned(id) {
-    console.log('removePinned', id);
     const pinElement = this.pinnedFlusher?.querySelector(`[flusher-id="${id}"]`);
     if (!pinElement && id) return;
     if (pinElement) {
@@ -3100,8 +3029,6 @@ class FlusherMessages {
         const flusherId = child.getAttribute('flusher-id') || '';
         if (!nativeItems.includes(flusherId)) {
           this.removePin(child);
-        } else {
-          console.log('keep observer cause still pinned');
         }
       });
     }
@@ -3112,10 +3039,8 @@ class FlusherMessages {
     pinElement.classList.remove('in-view');
     pinElement.classList.add('upward-transition');
     setTimeout(() => {
-      console.log('remove pin element with text: ' + pinElement.innerText, flusherId);
       const exists = this.pinnedNative?.querySelector(`[flusher-id="${pinElement.getAttribute('flusher-id', '')}"]`);
       pinElement.remove();
-      console.log('remove ' + flusherId);
       if (this.pinnedObservers[flusherId] && (!exists || !pinElement.querySelector('button.inline.font-bold'))) this.pinnedObservers[flusherId].disconnect();
       if (this.pinnedTimeouts[flusherId]) clearTimeout(this.pinnedTimeouts[flusherId]);
       if (pinElement.matches('.bg-shade-lower')) {
@@ -3127,7 +3052,6 @@ class FlusherMessages {
           }
         });
         if (addTop) this.pinnedFlusher.classList.remove('flusher-top');
-        console.log('remove ' + 'item is event');
       }
     }, 1000);
   }
@@ -3567,7 +3491,6 @@ class FlusherMessages {
     this.flusher.props.messageObservers.set(id, observer);
   }
   async bindRequests(flusher) {
-    console.log('set dispose false');
     this.dispose = false;
     if (!flusher) return;
     this.flusher = flusher;
@@ -3616,14 +3539,12 @@ class FlusherMessages {
       }
       if (this.pinnedTimeouts) {
         for (const id in this.pinnedTimeouts) {
-          console.log('clearing pinnedTimeout: ' + id);
           clearTimeout(this.pinnedTimeouts[id]);
           delete this.pinnedTimeouts[id];
         }
       }
       if (this.pinnedObservers) {
         for (const id in this.pinnedObservers) {
-          console.log('clearing pinnedObserver: ' + id);
           this.pinnedObservers[id].disconnect();
           delete this.pinnedObservers[id];
         }
@@ -3795,9 +3716,7 @@ class Flusher {
     this.props.isAeroKick = aeroKick ?? false;
     this.props.channelName = channelName;
     this.provider = new FlusherMessages();
-
-    /* window.currentUrl = window.location.href; */
-
+    window.currentUrl = window.location.href;
     visibilityChange(this);
   }
   resetConnection() {
@@ -3881,8 +3800,7 @@ class Kick {
   static init() {
     if (window.isObserving) return;
     window.isObserving = true;
-
-    /* logToConsole(`Initialize`); */
+    logToConsole(`Initialize`);
     let stopObserver = false;
     const observeVideo = () => {
       const videoObserver = new MutationObserver(() => {

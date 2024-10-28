@@ -17,6 +17,8 @@ export class FlusherStates {
     this.reply = true;
     this.timeState = false;
 
+    this.eventAudioState = false;
+
     this.spamState = false;
     this.fontState = 1;
 

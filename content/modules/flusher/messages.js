@@ -26,6 +26,10 @@ export class FlusherMessages {
     this.pinnedTimeouts = {};
     this.debounceTimeout = null;
     this.dispose = false;
+
+    console.log(chrome.runtime.getURL('lib/flusher/alert.wav'));
+    this.alert = new Audio(chrome.runtime.getURL('lib/flusher/alert.wav'));
+    this.alert.volume = 0.2;
   }
 
   subscribeChannel() {
@@ -92,14 +96,12 @@ export class FlusherMessages {
     });
 
     this.socket.addEventListener("close", (event) => {
-      console.log('dispose in close: ' + this.dispose);
-
       if (this.dispose) {
         logToConsole(`WebSocket Connection Closed: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
         this.channels.clear();
       } else {
         setTimeout(() => {
-          logToConsole(`WebSocket Connection Auto Closed.. Trying To Reopen: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
+          logToConsole(`WebSocket Connection Closed By Host: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
           this.setupWebSocket();
         }, 5000);
       }
@@ -119,7 +121,6 @@ export class FlusherMessages {
 
   disposeChannel() {
     this.dispose = true;
-    console.log('set dispose true');
     if (this.socket) {
       this.socket.close();
       this.socket = null;
@@ -150,67 +151,28 @@ export class FlusherMessages {
       let parent = AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages";
       let parentElement = document.querySelector(parent);
 
-      if (parentElement) {
-        const chatEntry =
-          parentElement.querySelector(".rounded-md.bk-block") ??
-          parentElement.querySelector(".group.relative");
-
-        if (chatEntry) {
-          return Promise.resolve(chatEntry.closest('.no-scrollbar.relative'));
-        }
-      }
-
       return new Promise((resolve, reject) => {
-        const config = { attributes: true, childList: true, subtree: true };
-        let foundChat = false;
-        let observer;
-        const checkParentInterval = setInterval(() => {
-          parentElement = document.querySelector(
-            AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages"
-          );
+        let checkParentInterval;
+        let resolved = false;
+
+        function checkParentElement() {
+          parentElement = document.querySelector(AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages");
 
           if (parentElement) {
-            clearInterval(checkParentInterval);
-            startObserver();
-          }
-        }, 1000);
-
-        const startObserver = () => {
-          const mutationCallback = function (mutationsList) {
-            for (const mutation of mutationsList) {
-              if (mutation.type === "childList") {
-                mutation.addedNodes.forEach((node) => {
-                  if (
-                    node.nodeType === 1 &&
-                    (node.classList.contains("bk-block.rounded-md") ||
-                      node.querySelector(".group.relative"))
-                  ) {
-                    if (foundChat) return;
-                    foundChat = true;
-                    cleanup();
-                    resolve(node.closest('.no-scrollbar.relative'));
-                  }
-                });
-              }
+            const scrollbar = parentElement.querySelector('.no-scrollbar.relative');
+            if (scrollbar && !resolved) {
+              clearInterval(checkParentInterval);
+              resolved = true;
+              resolve(scrollbar);
             }
-          };
+          }
+        }
 
-          observer = new MutationObserver(mutationCallback);
-          observer.observe(parentElement, config);
-        };
+        checkParentElement();
 
-        const intervalId = setInterval(() => {
-          foundChat = false;
-          parentElement = document.querySelector(
-            AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages"
-          );
-        }, 1000);
-
-        const cleanup = () => {
-          if (observer) observer.disconnect();
-          clearInterval(checkParentInterval);
-          clearInterval(intervalId);
-        };
+        if (!resolved) {
+          checkParentInterval = setInterval(checkParentElement, 1000);
+        }
       });
     }
   }
@@ -245,7 +207,6 @@ export class FlusherMessages {
   }
 
   observePinned() {
-    console.log('start pinned');
     this.pinnedNative = document.getElementById('chatroom-messages')?.parentElement?.firstElementChild;
     this.pinnedFlusher = this.flusher?.container?.querySelector(".flusher-pinned");
 
@@ -255,11 +216,9 @@ export class FlusherMessages {
     if (!parent) return;
 
     this.checkPinned(parent, this.pinnedFlusher);
-    console.log('check pinned on load');
 
     if (this.pinnedObserver) this.pinnedObserver.disconnect();
     this.pinnedObserver = new MutationObserver((mutations) => {
-      console.log('check pinned through observer');
       this.checkPinned(parent, this.pinnedFlusher);
     });
 
@@ -269,40 +228,31 @@ export class FlusherMessages {
   }
 
   checkPinned(parent) {
-    /* debug delete */
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
-    audio.volume = 0.2;
-    audio.play().catch(error => console.error("Audio playback failed:", error));
-    /* debug delete */
-
     this.removePinned();
     Array.from(parent?.children || []).forEach(pinElement => {
       let id = pinElement.getAttribute('flusher-id');
       if (!id || !this.ignoredIds.includes(id)) {
         const pinId = this.pinnedId++;
         setTimeout(() => this.appendPinned(pinElement, pinId), 1500);
-      } else {
-        console.log('blocked pin item');
       }
     });
   }
 
   appendPinned(pinElement, pinId) {
+    const innerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
+    logToConsole(innerText);
+
+    if (this.flusher?.states?.eventAudioState) this.alert.play().catch(error => console.error("Audio playback failed:", error));
+
     const currentPinnedId = pinId;
 
     pinElement.setAttribute('flusher-id', currentPinnedId);
-    console.log(`Add new pin item`, currentPinnedId);
-    console.log(`Native`, pinElement);
 
     let pinElementObject = pinElement.cloneNode(true);
     pinElementObject.removeAttribute('style');
 
-    console.log(pinElementObject);
-
     if (pinElementObject.querySelector('button.inline.font-bold')) {
-      console.log('item is message');
       pinElementObject.classList.add('pinned');
-
       pinElementObject.querySelector('div.flex-nowrap.justify-between button').remove();
 
       pinElementObject.querySelectorAll('.line-clamp-2').forEach(element => {
@@ -311,22 +261,15 @@ export class FlusherMessages {
 
       this.setPinnedRemoveTimer(currentPinnedId);
     } else {
-      if (pinElementObject.matches('.z-absolute')) {
-        console.log('item is poll')
-      } else {
+      if (!pinElementObject.matches('.z-absolute')) {
         this.pinnedFlusher.classList.add('flusher-top');
-        console.log('item is event');
       }
-
-      console.log(pinElementObject);
     }
 
     let hideBtn = pinElementObject.querySelector('button.box-border.flex');
-
     if (hideBtn) {
       hideBtn.parentElement.classList.add('flusher-close-btn');
       hideBtn.onclick = () => {
-        console.log('hiden btn clicked');
         this.ignoredIds.push(currentPinnedId.toString());
         this.removePinned(currentPinnedId);
       };
@@ -342,24 +285,20 @@ export class FlusherMessages {
       let newClone = pinElement.cloneNode(true);
 
       if (pinElementObject) {
-        console.log('observer pin stils exists');
-
         pinElementObject.replaceWith(newClone);
         pinElementObject = newClone;
 
         if (pinElementObject.querySelector('button.inline.font-bold')) {
-          console.log('observer pin is message try pulling down');
-
+          pinElement.classList.remove('upward-transition');
           pinElementObject.classList.add('downward-transition');
           pinElementObject.offsetHeight;
           pinElementObject.classList.add('in-view');
           this.setPinnedRemoveTimer(currentPinnedId);
         }
       } else {
-        console.log('observer pin doesnt exist no more creating new');
         pinObserver.disconnect();
-        const pinId = this.pinnedId++;
-        this.appendPinned(pinElement, pinId);
+        const newPinId = this.pinnedId++;
+        this.appendPinned(pinElement, newPinId);
       }
     });
 
@@ -370,12 +309,10 @@ export class FlusherMessages {
       attributes: true
     });
 
-    console.log('pinObserver ' + currentPinnedId);
     this.pinnedObservers[currentPinnedId] = pinObserver;
   }
 
   setPinnedRemoveTimer(id) {
-    console.log('set remove time');
     if (this.pinnedTimeouts[id]) clearTimeout(this.pinnedTimeouts[id]);
     this.pinnedTimeouts[id] = setTimeout(() => {
       this.removePinned(id);
@@ -383,8 +320,6 @@ export class FlusherMessages {
   }
 
   removePinned(id) {
-    console.log('removePinned', id);
-
     const pinElement = this.pinnedFlusher?.querySelector(`[flusher-id="${id}"]`);
     if (!pinElement && id) return;
 
@@ -394,7 +329,7 @@ export class FlusherMessages {
       const nativeItems = Array.from(this.pinnedNative?.children || []).map(child => child.getAttribute('flusher-id') || '');
       Array.from(this.pinnedFlusher?.children || []).forEach(child => {
         const flusherId = child.getAttribute('flusher-id') || '';
-        if (!nativeItems.includes(flusherId)) { this.removePin(child); } else { console.log('keep observer cause still pinned'); }
+        if (!nativeItems.includes(flusherId)) { this.removePin(child); }
       });
     }
   }
@@ -407,10 +342,8 @@ export class FlusherMessages {
     pinElement.classList.add('upward-transition');
 
     setTimeout(() => {
-      console.log('remove pin element with text: ' + pinElement.innerText, flusherId);
       const exists = this.pinnedNative?.querySelector(`[flusher-id="${pinElement.getAttribute('flusher-id', '')}"]`);
       pinElement.remove();
-      console.log('remove ' + flusherId);
 
       if ((this.pinnedObservers[flusherId] && (!exists || !pinElement.querySelector('button.inline.font-bold')))) this.pinnedObservers[flusherId].disconnect();
       if (this.pinnedTimeouts[flusherId]) clearTimeout(this.pinnedTimeouts[flusherId]);
@@ -425,7 +358,6 @@ export class FlusherMessages {
         });
 
         if (addTop) this.pinnedFlusher.classList.remove('flusher-top');
-        console.log('remove ' + 'item is event');
       }
     }, 1000);
   }
@@ -967,8 +899,6 @@ export class FlusherMessages {
   }
 
   async bindRequests(flusher) {
-    console.log('set dispose false');
-
     this.dispose = false;
     if (!flusher) return;
     this.flusher = flusher;
@@ -1027,13 +957,11 @@ export class FlusherMessages {
         this.pinnedObserver = null;
       } if (this.pinnedTimeouts) {
         for (const id in this.pinnedTimeouts) {
-          console.log('clearing pinnedTimeout: ' + id);
           clearTimeout(this.pinnedTimeouts[id]);
           delete this.pinnedTimeouts[id];
         }
       } if (this.pinnedObservers) {
         for (const id in this.pinnedObservers) {
-          console.log('clearing pinnedObserver: ' + id);
           this.pinnedObservers[id].disconnect();
           delete this.pinnedObservers[id];
         }

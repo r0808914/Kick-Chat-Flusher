@@ -19,7 +19,7 @@ export class Flusher {
 
 		this.provider = new FlusherMessages();
 
-		/* window.currentUrl = window.location.href; */
+		window.currentUrl = window.location.href;
 
 		visibilityChange(this);
 	}

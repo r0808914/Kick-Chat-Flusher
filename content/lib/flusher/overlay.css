@@ -126,7 +126,7 @@
 .flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower-content,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower>span {
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 .flusher-container .seventv-text-token,
@@ -171,7 +171,7 @@
 } */
 
 .flusher-container div.flusher-deleted {
-  opacity: .7 !important;
+  opacity: .8 !important;
 }
 
 .flusher-container[aerokick] div.bk-text-sm,
@@ -294,15 +294,10 @@
   vertical-align: middle;
 }
 
-.flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .flusher-message {
-  text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
-    1px 1px 1px rgba(0, 0, 0, 0.6);
-}
-
 .flusher-container[layout="vertical"] .flusher-messages .flusher-message {
   border-radius: 8px;
   box-sizing: border-box;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 700 !important;
   line-height: 1.2rem;
   margin-top: 2px;
@@ -554,12 +549,8 @@
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower button.font-bold {
   text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.7),
-    /* Soft dark shadow for depth */
     0px 0px 1px rgba(255, 255, 255, 0.3);
-
-  filter: brightness(1.1) contrast(0.8);
   font-weight: 700;
-  /* font-size: 13px; */
 }
 
 .flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal {
@@ -620,16 +611,21 @@
   border: 2px solid blue;
 }
 
-.flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .flusher-red,
+/* .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .flusher-red,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .flusher-green {
   text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.6), 1px -1px 1px rgba(0, 0, 0, 0.6), -1px 1px 1px rgba(0, 0, 0, 0.6),
     1px 1px 1px rgba(0, 0, 0, 0.6);
+} */
+
+.flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .flusher-message {
+  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.7), 0px 0px 1px rgba(255, 255, 255, 0.3);
+  line-height: 25px;
 }
 
-.flusher-container[layout="vertical"] .flusher-messages .flusher-red,
+/* .flusher-container[layout="vertical"] .flusher-messages .flusher-red,
 .flusher-container[layout="vertical"] .flusher-messages .flusher-green {
   margin: 0.2rem !important;
-}
+} */
 
 .flusher-username {
   font-weight: 800 !important;

@@ -387,6 +387,18 @@ export async function createMenu(flusher) {
       (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
       if (flusher.states.spamState) spamBtn.classList.toggle(toggledClass);
 
+      const eventAudioBtnContainer = parent.querySelector('.flusher-eventAudio');
+      const eventAudioBtn = eventAudioBtnContainer.querySelector('.flusher-toggle');
+      eventAudioBtn.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+         const newEventAudioEnabled = toggleElement.classList.contains(toggledClass);
+         flusher.states.eventAudioState = newEventAudioEnabled;
+         setExtensionStorageItem('flusher-event-audio', newEventAudioEnabled);
+      });
+
+      if (flusher.states.eventAudioState) eventAudioBtn.classList.toggle(toggledClass);
+
       const fontBtn = settingsMenu.querySelector('.flusher-font');
       const divInsideFont = fontBtn.querySelector('div:empty');
       safeTextContent(divInsideFont, toTitleCase(flusher.states.sizeStates[flusher.states.fontState]));

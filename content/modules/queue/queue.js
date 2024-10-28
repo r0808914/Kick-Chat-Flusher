@@ -37,29 +37,20 @@ export async function processMessageQueue(flusher) {
 
     const eventType = queueItem.event ?? queueItem.eventName;
 
-    if (eventType === "App\\Events\\ChatMessageEvent" && flusher.props.external) {
+    if (eventType === "App\\Events\\ChatMessageEvent" && (flusher.props.external || flusher.states.flushState)) {
       createMessage(JSON.parse(queueItem.data), flusher);
     } else if (queueItem.type === "message" && flusher.props.external) {
       createMessage(queueItem, flusher);
     } else if (eventType === "App\\Events\\UserBannedEvent") {
       createUserBanMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\GiftedSubscriptionsEvent") {
+    } else if (eventType === "App\\Events\\GiftedSubscriptionsEvent" && (flusher.props.external || flusher.states.flushState)) {
       createGiftedMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\FollowersUpdated") {
+    } else if (eventType === "App\\Events\\FollowersUpdated" && (flusher.props.external || flusher.states.flushState)) {
       createFollowersMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\StreamHostEvent" && flusher.props.external) {
+    } else if (eventType === "App\\Events\\StreamHostEvent" && (flusher.props.external || flusher.states.flushState)) {
       createHostMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType === "App\\Events\\SubscriptionEvent") {
+    } else if (eventType === "App\\Events\\SubscriptionEvent" && (flusher.props.external || flusher.states.flushState)) {
       createSubMessage(JSON.parse(queueItem.data), flusher);
-    } else if (eventType !== "App\\Events\\ChatMessageEvent") {
-      /* debug */
-      /* console.log('uknown type: ', queueItem);
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
-      audio.volume = 0.2;
-      audio.play().catch(error => console.error("Audio playback failed:", error)); */
-      /* debug */
-      flusher.props.isProcessingMessages = false;
-      processMessageQueue(flusher);
     } else {
       flusher.props.isProcessingMessages = false;
       processMessageQueue(flusher);
@@ -121,11 +112,6 @@ export function processElementQueue(flusher) {
 }
 
 function appendMessage(queueItem, flusher) {
-  /* debug delete */
-  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/333/333.wav');
-  audio.volume = 0.2;
-  audio.play().catch(error => console.error("Audio playback failed:", error));
-  /* debug delete */
   flusher.props.elementQueue.push(queueItem);
   processElementQueue(flusher);
   flusher.props.isProcessingMessages = false;
@@ -403,17 +389,17 @@ export function createUserBanMessage(data, flusher) {
       const userId = data.user.id;
       addBannedUser(bannedUser, bannedByUser, userId, expiresAt);
 
-      logText = `🟥 ${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
+      logText = `👺 ${bannedUser} banned for ${timeDiffText} by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     } else {
-      logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
+      logText = `💀 ${bannedUser} banned by ${bannedByUser}`;
       const expiresText = document.createTextNode(logText);
       banMessageSpan.appendChild(expiresText);
     }
 
   } else {
-    logText = `🟥 🟥 ${bannedUser} banned by ${bannedByUser}`;
+    logText = `💀 ${bannedUser} banned by ${bannedByUser}`;
     const expiresText = document.createTextNode(logText);
     banMessageSpan.appendChild(expiresText);
   }
@@ -466,7 +452,7 @@ export function createUserBanMessage(data, flusher) {
 
         let logText;
 
-        logText = `🟩 ${username}'s ban expired`;
+        logText = `🕊 ${username}'s ban expired`;
         const unbanText = document.createTextNode(logText);
         unbanMessageSpan.appendChild(unbanText);
 

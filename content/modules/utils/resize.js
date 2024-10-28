@@ -34,95 +34,68 @@ export function reset(flusher) {
 
 export function checkResize(flusher) {
   const videoElement = flusher.video.querySelector("video");
-  let target;
-  if (!flusher.props.isAeroKick && videoElement) {
-    target = videoElement;
-  } else { target = flusher.video; }
+
+  const target = (!flusher.props.isAeroKick && videoElement) ? videoElement : flusher.video;
 
   flusher.resizeTimer = null;
   if (flusher.resizeObserver) flusher.resizeObserver.disconnect();
+
   flusher.resizeObserver = new ResizeObserver((entries) => {
-    for (let entry of entries) {
-      if (flusher.resizeTimer) clearTimeout(flusher.resizeTimer);
-      flusher.resizeTimer = setTimeout(() => {
-        for (let entry of entries) {
-          if (flusher.container !== null) flusher.container.style.display = "none";
+    if (flusher.resizeTimer) cancelAnimationFrame(flusher.resizeTimer);
 
-          const rect = target.getBoundingClientRect();
-          let width = rect.width;
-          let height = rect.height;
+    flusher.resizeTimer = requestAnimationFrame(() => {
+      if (flusher.container !== null) flusher.container.style.display = "none";
 
-          /* temp fix */
-          const isUrlEqual = (window.currentUrl === undefined || window.currentUrl === window.location.href);
-          const isurlEqualLog = window.currentUrl === window.location.href;
-          window.currentUrl = window.location.href;
+      const rect = target.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
 
-          const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
+      const isUrlEqual = (window.currentUrl === undefined || window.currentUrl === window.location.href);
+      window.currentUrl = window.location.href;
 
-          if (((width === null || width === 0) && (!height || height === 0) && !videoChanged) || !isUrlEqual || !flusher?.container) {
-            if (flusher !== null) reset(flusher);
-            return;
-          }
+      const videoChanged = flusher.props.isAeroKick ? checkAeroKick() : false;
 
-          if (flusher.props.isAeroKick) checkAeroKick();
+      if (((width === null || width === 0) && (!height || height === 0) && !videoChanged) || !isUrlEqual || !flusher?.container) {
+        reset(flusher);
+        return;
+      }
 
-          const oldWidth = flusher.props.parentWidth;
-          flusher.props.parentWidth = Math.trunc(width) * 2;
-          flusher.props.parentHeight = Math.trunc(height);
-          flusher.props.parentRight = rect.right;
+      if (flusher.props.isAeroKick) checkAeroKick();
 
-          /* set data for css */
-          setAttributes();
+      const oldWidth = flusher.props.parentWidth;
+      flusher.props.parentWidth = Math.trunc(width) * 2;
+      flusher.props.parentHeight = Math.trunc(height);
+      flusher.props.parentRight = rect.right;
 
-          /* toggleEnableMenu(); */
+      setAttributes();
+      setCustomPosition(flusher);
+      detectViewMode();
+      checkPosition(flusher, height, width);
 
-          /* set overlay data within menu */
-          setCustomPosition(flusher);
+      flusher.props.elementHeight = null;
+      flusher.container.style.display = "flex";
+      createIntroMessage(flusher);
 
-          /* check if fullscreen, theater, etc. */
-          detectViewMode();
+      if (oldWidth == null || oldWidth === 0) {
+        if (flusher.container === null) return;
 
-          /* set custom overlay position */
-          checkPosition(flusher, height, width);
+        if (flusher.states.chatEnabled) flusher.provider.bindRequests(flusher);
 
-          flusher.props.elementHeight = null;
-          flusher.container.style.display = "flex";
-          createIntroMessage(flusher);
+        flusher.props.loading = false;
+        processMessageQueue(flusher);
+        togglePointerEvents(flusher);
+        checkAddons(flusher);
 
-          if (oldWidth == null || oldWidth == 0) {
-            if (flusher.container === null) return;
-            if (flusher.states.chatEnabled)
-              flusher.provider.bindRequests(flusher);
+        logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
 
-            flusher.props.loading = false;
-            processMessageQueue(flusher);
-            togglePointerEvents(flusher);
-
-            checkAddons(flusher);
-
-            if (!isurlEqualLog) {
-              logToConsole(
-                `(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"
-                }): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`
-              );
-            }
-
-            /* temp fix toggle btn not clickable in theater */
-            /* const element = document.querySelector(".z\\-\\[500\\].flex.w-screen");
-            if (element) element.classList.remove("z-[500]"); */
-
-            flusher.props.keydownListener = new KeybindListener(flusher);
-          } else {
-            flusher.states.flushState
-              ? flusher.clear()
-              : null;
-          }
-        }
-      }, 500);
-    }
+        flusher.props.keydownListener = new KeybindListener(flusher);
+      } else {
+        flusher.states.flushState ? flusher.clear() : null;
+      }
+    });
   });
 
-  flusher.resizeObserver.observe(flusher.video);
+  flusher.resizeObserver.observe(target);
 
   function checkAddons(flusher) {
     let counter = 0;
