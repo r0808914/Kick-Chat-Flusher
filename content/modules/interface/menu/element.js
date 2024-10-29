@@ -88,16 +88,6 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-eventAudio flusher-actions-item">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Event Alert</div>
-        <div class="flex h-10 w-fit items-center justify-end">
-          <div class="flusher-toggle-size-sm">
-            <div class="flusher-toggle">
-              <div class="flusher-toggle-indicator"></div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div style="display: none;" class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Font Size</div>
         <div class="flex h-10 w-fit items-center justify-end">
@@ -329,8 +319,61 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       </button>
     </div>
     <div class="chat-actions-content">
-      <div class="flusher-event-delete flusher-actions-item" style="display: flex;">
-        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Deleted</div>
+      <div class="flusher-event-bans flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Bans</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-deleted flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Deleted</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-pinned flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Pinned</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event-bans" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-bans-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Bans</div>
+      </div>
+      <button class="flusher-event-bans-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-bans-show flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Bans</div>
         <div class="flex h-10 w-fit pl-2 items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
@@ -339,9 +382,85 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-event-ban flusher-actions-item">
-        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Bans</div>
+      <div class="flusher-event-bans-alert flusher-actions-item">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Alert Tone</div>
         <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event-pinned" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-pinned-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Pinned</div>
+      </div>
+      <button class="flusher-event-pinned-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-pinned-show flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Pinned</div>
+        <div class="flex h-10 w-fit pl-2 items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-pinned-alert flusher-actions-item">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Alert Tone</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event-deleted" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-deleted-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Deleted</div>
+      </div>
+      <button class="flusher-event-deleted-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-deleted-show flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Deleted</div>
+        <div class="flex h-10 w-fit pl-2 items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
               <div class="flusher-toggle-indicator"></div>

@@ -17,7 +17,6 @@ class FlusherStates {
     this.slide = true;
     this.reply = true;
     this.timeState = false;
-    this.eventAudioState = false;
     this.spamState = false;
     this.fontState = 1;
     this.keybinds = {
@@ -27,7 +26,12 @@ class FlusherStates {
       "spam": "ALT + S"
     };
     this.bans = true;
+    this.banAlert = false;
     this.deleted = true;
+    /* this.deletedAlert = false; */
+
+    this.pinned = true;
+    this.pinnedAlert = false;
   }
 }
 ;// CONCATENATED MODULE: ./modules/flusher/props.js
@@ -308,16 +312,6 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-eventAudio flusher-actions-item">
-        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Event Alert</div>
-        <div class="flex h-10 w-fit items-center justify-end">
-          <div class="flusher-toggle-size-sm">
-            <div class="flusher-toggle">
-              <div class="flusher-toggle-indicator"></div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div style="display: none;" class="flusher-font flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Font Size</div>
         <div class="flex h-10 w-fit items-center justify-end">
@@ -549,8 +543,61 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       </button>
     </div>
     <div class="chat-actions-content">
-      <div class="flusher-event-delete flusher-actions-item" style="display: flex;">
-        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Deleted</div>
+      <div class="flusher-event-bans flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Bans</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-deleted flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Deleted</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-pinned flusher-actions-item cursor-pointer hover:bg-secondary-lightest active:bg-secondary-lightest/60" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Pinned</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div style="width: 16px; height: 16px;" class="flusher-icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m4.5 12.9l4.9-4.9-4.9-4.9 1.1-1.1 6 6-6 6z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event-bans" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-bans-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Bans</div>
+      </div>
+      <button class="flusher-event-bans-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-bans-show flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Bans</div>
         <div class="flex h-10 w-fit pl-2 items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
@@ -559,9 +606,85 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
           </div>
         </div>
       </div>
-      <div class="flusher-event-ban flusher-actions-item">
-        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Bans</div>
+      <div class="flusher-event-bans-alert flusher-actions-item">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Alert Tone</div>
         <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event-pinned" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-pinned-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Pinned</div>
+      </div>
+      <button class="flusher-event-pinned-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-pinned-show flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Pinned</div>
+        <div class="flex h-10 w-fit pl-2 items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flusher-event-pinned-alert flusher-actions-item">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Alert Tone</div>
+        <div class="flex h-10 w-fit items-center justify-end">
+          <div class="flusher-toggle-size-sm">
+            <div class="flusher-toggle">
+              <div class="flusher-toggle-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flusher-menu-event-deleted" style="display: none;">
+    <div class="flex items-center justify-between px-2.5 pt-1 text-base font-bold">
+      <div class="flex h-8 items-center space-x-2.5">
+        <button class="flusher-event-deleted-back -ml-2 variant-text size-sm flusher-icon-button">
+          <div style="width: 16px; height: 16px;" class="base-icon icon">
+            <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path id="Layer" class="s0" d="m11.1 3.1l-4.9 4.9 4.9 4.9-1.1 1.1-6-6 6-6z"></path>
+            </svg>
+          </div>
+        </button>
+        <div class="pr-3">Deleted</div>
+      </div>
+      <button class="flusher-event-deleted-close variant-text size-xs flusher-icon-button">
+        <div style="width: 12px; height: 12px;" class="base-icon icon">
+          <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1.99602L10.504 0.5L6 4.99867L1.49602 0.5L0 1.99602L4.49867 6.5L0 11.004L1.49602 12.5L6 8.00133L10.504 12.5L12 11.004L7.50133 6.5L12 1.99602Z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
+    <div class="chat-actions-content">
+      <div class="flusher-event-deleted-show flusher-actions-item" style="display: flex;">
+        <div class="select-none overflow-hidden truncate pr-3 text-sm font-medium">Show Deleted</div>
+        <div class="flex h-10 w-fit pl-2 items-center justify-end">
           <div class="flusher-toggle-size-sm">
             <div class="flusher-toggle">
               <div class="flusher-toggle-indicator"></div>
@@ -795,16 +918,6 @@ function svgToggle(flusher) {
   }
 }
 ;// CONCATENATED MODULE: ./modules/utils/drag.js
-function throttle(fn, videoRect, wait) {
-  let lastTime = 0;
-  return function (...args) {
-    const now = new Date().getTime();
-    if (now - lastTime >= wait) {
-      lastTime = now;
-      fn(...args, videoRect);
-    }
-  };
-}
 function dragElement(flusher) {
   let pos1 = 0,
     pos2 = 0,
@@ -824,16 +937,18 @@ function dragElement(flusher) {
     offsetY = e.clientY - containerRect.top;
     pos3 = e.clientX;
     pos4 = e.clientY;
+    lastValidX = pos3 - offsetX - videoRect.left;
+    lastValidY = pos4 - offsetY - videoRect.top;
+    setInitialPosition(flusher, videoRect, containerRect);
+    flusher.container.removeAttribute("position");
+    setInitialDimensions(flusher);
     if (isInResizeHandle(e)) {
-      setInitialDimensions(flusher);
       flusher.container.removeAttribute("size");
       document.onmouseup = closeResize;
       document.onmousemove = resizeElement;
     } else {
-      setInitialPosition(flusher, videoRect, containerRect);
-      flusher.container.removeAttribute("position");
       document.onmouseup = closeDragElement;
-      document.onmousemove = throttle(dragElement, videoRect, 16);
+      document.onmousemove = event => dragElement(event, videoRect);
     }
     function setInitialPosition(flusher, videoRect, containerRect) {
       const offsetTop = containerRect.top - videoRect.top;
@@ -1014,6 +1129,9 @@ async function createMenu(flusher) {
     let keybindMenu = parent.querySelector('.flusher-menu-keybind');
     let aboutMenu = parent.querySelector('.flusher-menu-about');
     let eventMenu = parent.querySelector('.flusher-menu-event');
+    let eventBanMenu = parent.querySelector('.flusher-menu-event-bans');
+    let eventDeletedMenu = parent.querySelector('.flusher-menu-event-deleted');
+    let eventPinnedMenu = parent.querySelector('.flusher-menu-event-pinned');
     const closeBtn = parent.querySelector('.flusher-menu-close');
     closeBtn.addEventListener('mousedown', function (event) {
       hideMenu(flusher);
@@ -1208,6 +1326,48 @@ async function createMenu(flusher) {
     eventCloseBtn.addEventListener('mousedown', function (event) {
       hideMenu(flusher);
     });
+    const eventBanBtn = parent.querySelector('.flusher-event-bans');
+    eventBanBtn.addEventListener('mousedown', function (event) {
+      eventBanMenu.style.display = 'block';
+      eventMenu.style.display = 'none';
+    });
+    const eventBanBackBtn = parent.querySelector('.flusher-event-bans-back');
+    eventBanBackBtn.addEventListener('mousedown', function (event) {
+      eventBanMenu.style.display = 'none';
+      eventMenu.style.display = 'block';
+    });
+    const eventBanCloseBtn = parent.querySelector('.flusher-event-bans-close');
+    eventBanCloseBtn.addEventListener('mousedown', function (event) {
+      hideMenu(flusher);
+    });
+    const eventPinnedBtn = parent.querySelector('.flusher-event-pinned');
+    eventPinnedBtn.addEventListener('mousedown', function (event) {
+      eventPinnedMenu.style.display = 'block';
+      eventMenu.style.display = 'none';
+    });
+    const eventPinnedBackBtn = parent.querySelector('.flusher-event-pinned-back');
+    eventPinnedBackBtn.addEventListener('mousedown', function (event) {
+      eventPinnedMenu.style.display = 'none';
+      eventMenu.style.display = 'block';
+    });
+    const eventPinnedCloseBtn = parent.querySelector('.flusher-event-pinned-close');
+    eventPinnedCloseBtn.addEventListener('mousedown', function (event) {
+      hideMenu(flusher);
+    });
+    const eventDeletedBtn = parent.querySelector('.flusher-event-deleted');
+    eventDeletedBtn.addEventListener('mousedown', function (event) {
+      eventDeletedMenu.style.display = 'block';
+      eventMenu.style.display = 'none';
+    });
+    const eventDeletedBackBtn = parent.querySelector('.flusher-event-deleted-back');
+    eventDeletedBackBtn.addEventListener('mousedown', function (event) {
+      eventDeletedMenu.style.display = 'none';
+      eventMenu.style.display = 'block';
+    });
+    const eventDeletedCloseBtn = parent.querySelector('.flusher-event-deleted-close');
+    eventDeletedCloseBtn.addEventListener('mousedown', function (event) {
+      hideMenu(flusher);
+    });
     const layoutCloseBtn = parent.querySelector('.flusher-layout-close');
     layoutCloseBtn.addEventListener('mousedown', function (event) {
       hideMenu(flusher);
@@ -1292,16 +1452,6 @@ async function createMenu(flusher) {
     });
     flusher.states.flushState || !flusher.states.chatEnabled ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
     if (flusher.states.spamState) spamBtn.classList.toggle(toggledClass);
-    const eventAudioBtnContainer = parent.querySelector('.flusher-eventAudio');
-    const eventAudioBtn = eventAudioBtnContainer.querySelector('.flusher-toggle');
-    eventAudioBtn.addEventListener('mousedown', function (event) {
-      const toggleElement = event.currentTarget;
-      toggleElement.classList.toggle(toggledClass);
-      const newEventAudioEnabled = toggleElement.classList.contains(toggledClass);
-      flusher.states.eventAudioState = newEventAudioEnabled;
-      setExtensionStorageItem('flusher-event-audio', newEventAudioEnabled);
-    });
-    if (flusher.states.eventAudioState) eventAudioBtn.classList.toggle(toggledClass);
     const fontBtn = settingsMenu.querySelector('.flusher-font');
     const divInsideFont = fontBtn.querySelector('div:empty');
     safeTextContent(divInsideFont, toTitleCase(flusher.states.sizeStates[flusher.states.fontState]));
@@ -1423,26 +1573,72 @@ async function createMenu(flusher) {
     });
     if (flusher.states.timeState) timeToggle.classList.toggle(toggledClass);
     !flusher.props.isVod || flusher.states.flushState ? timeToggleContainer.style.display = 'none' : timeToggleContainer.style.display = 'flex';
-    const banToggleContainer = parent.querySelector('.flusher-event-ban');
-    const banToggle = banToggleContainer.querySelector('.flusher-toggle');
-    banToggle.addEventListener('mousedown', function (event) {
+    const eventBanAlertToggleContainer = parent.querySelector('.flusher-event-bans-alert');
+    const eventBanAlertToggle = eventBanAlertToggleContainer.querySelector('.flusher-toggle');
+    eventBanAlertToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newBanState = toggleElement.classList.contains(toggledClass);
+      flusher.states.banAlert = newBanState;
+      if (newBanState && flusher?.alerts?.banAlert) flusher.alerts.banAlert.play().catch(error => console.error("Audio playback failed:", error));
+      setExtensionStorageItem('flusher-event-bans-alert', newBanState);
+    });
+    !flusher.states.bans ? eventBanAlertToggleContainer.style.display = 'none' : eventBanAlertToggleContainer.style.display = 'flex';
+    if (flusher.states.bans && flusher.states.banAlert) eventBanAlertToggle.classList.toggle(toggledClass);
+    const eventBanToggleContainer = parent.querySelector('.flusher-event-bans-show');
+    const eventBanToggle = eventBanToggleContainer.querySelector('.flusher-toggle');
+    eventBanToggle.addEventListener('mousedown', function (event) {
       const toggleElement = event.currentTarget;
       toggleElement.classList.toggle(toggledClass);
       const newBanState = toggleElement.classList.contains(toggledClass);
       flusher.states.bans = newBanState;
+      flusher.states.bans && flusher.states.banAlert ? eventBanAlertToggle.classList.add(toggledClass) : eventBanAlertToggle.classList.remove(toggledClass);
+      !flusher.states.bans ? eventBanAlertToggleContainer.style.display = 'none' : eventBanAlertToggleContainer.style.display = 'flex';
+      if (!flusher.states.bans) {
+        flusher.states.banAlert = false;
+        setExtensionStorageItem('flusher-event-bans-alert', false);
+      }
       setExtensionStorageItem('flusher-event-bans', newBanState);
     });
-    if (flusher.states.bans) banToggle.classList.toggle(toggledClass);
-    const deletedToggleContainer = parent.querySelector('.flusher-event-delete');
-    const deletedToggle = deletedToggleContainer.querySelector('.flusher-toggle');
-    deletedToggle.addEventListener('mousedown', function (event) {
+    if (flusher.states.bans) eventBanToggle.classList.toggle(toggledClass);
+    const eventPinnedAlertToggleContainer = parent.querySelector('.flusher-event-pinned-alert');
+    const eventPinnedAlertToggle = eventPinnedAlertToggleContainer.querySelector('.flusher-toggle');
+    eventPinnedAlertToggle.addEventListener('mousedown', function (event) {
       const toggleElement = event.currentTarget;
       toggleElement.classList.toggle(toggledClass);
-      const newDeletedState = toggleElement.classList.contains(toggledClass);
-      flusher.states.deleted = newDeletedState;
-      setExtensionStorageItem('flusher-event-deleted', newDeletedState);
+      const newPinnedState = toggleElement.classList.contains(toggledClass);
+      flusher.states.pinnedAlert = newPinnedState;
+      if (newPinnedState && flusher?.alerts?.pinnedAlert) flusher.alerts.pinnedAlert.play().catch(error => console.error("Audio playback failed:", error));
+      setExtensionStorageItem('flusher-event-pinned-alert', newPinnedState);
     });
-    if (flusher.states.deleted) deletedToggle.classList.toggle(toggledClass);
+    !flusher.states.pinned ? eventPinnedAlertToggleContainer.style.display = 'none' : eventPinnedAlertToggleContainer.style.display = 'flex';
+    if (flusher.states.pinned && flusher.states.pinnedAlert) eventPinnedAlertToggle.classList.toggle(toggledClass);
+    const eventPinnedToggleContainer = parent.querySelector('.flusher-event-pinned-show');
+    const eventPinnedToggle = eventPinnedToggleContainer.querySelector('.flusher-toggle');
+    eventPinnedToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newPinnedState = toggleElement.classList.contains(toggledClass);
+      flusher.states.pinned = newPinnedState;
+      flusher.states.pinned && flusher.states.pinnedAlert ? eventPinnedAlertToggle.classList.add(toggledClass) : eventPinnedAlertToggle.classList.remove(toggledClass);
+      !flusher.states.pinned ? eventPinnedAlertToggleContainer.style.display = 'none' : eventPinnedAlertToggleContainer.style.display = 'flex';
+      if (!flusher.states.pinned) {
+        flusher.states.pinnedAlert = false;
+        setExtensionStorageItem('flusher-event-pinned-alert', false);
+      }
+      setExtensionStorageItem('flusher-event-pinned', newPinnedState);
+    });
+    if (flusher.states.pinned) eventPinnedToggle.classList.toggle(toggledClass);
+    const eventdeletedToggleContainer = parent.querySelector('.flusher-event-deleted-show');
+    const eventdeletedToggle = eventdeletedToggleContainer.querySelector('.flusher-toggle');
+    eventdeletedToggle.addEventListener('mousedown', function (event) {
+      const toggleElement = event.currentTarget;
+      toggleElement.classList.toggle(toggledClass);
+      const newdeletedState = toggleElement.classList.contains(toggledClass);
+      flusher.states.deleted = newdeletedState;
+      setExtensionStorageItem('flusher-event-deleted', newdeletedState);
+    });
+    if (flusher.states.deleted) eventdeletedToggle.classList.toggle(toggledClass);
     const flusherToggleContainer = parent.querySelector('.flusher-flush');
     const flushToggle = flusherToggleContainer.querySelector('.flusher-toggle');
     flushToggle.addEventListener('mousedown', function (event) {
@@ -1561,6 +1757,9 @@ function hideMenu(flusher) {
   const keybindMenu = flusher.menu.querySelector('.flusher-menu-keybind');
   const aboutMenu = flusher.menu.querySelector('.flusher-menu-about');
   const eventMenu = flusher.menu.querySelector('.flusher-menu-event');
+  const eventBanMenu = flusher.menu.querySelector('.flusher-menu-event-bans');
+  const eventDeletedMenu = flusher.menu.querySelector('.flusher-menu-event-deleted');
+  const eventPinnedMenu = flusher.menu.querySelector('.flusher-menu-event-pinned');
   flusher.menu.style.display = 'none';
   settingsMenu.style.display = 'none';
   baseMenu.style.display = 'none';
@@ -1570,6 +1769,9 @@ function hideMenu(flusher) {
   keybindMenu.style.display = 'none';
   aboutMenu.style.display = 'none';
   eventMenu.style.display = 'none';
+  eventBanMenu.style.display = 'none';
+  eventDeletedMenu.style.display = 'none';
+  eventPinnedMenu.style.display = 'none';
   svgToggle(flusher);
   document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);
   flusher.container.classList.remove('flusher-hover');
@@ -1755,7 +1957,10 @@ async function createChat(flusher) {
       setExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
       setExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
       setExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
-      setExtensionStorageItem('flusher-event-audio', flusherObject.states.eventAudioState);
+      setExtensionStorageItem('flusher-event-bans-alert', flusherObject.states.banAlert);
+      setExtensionStorageItem('flusher-event-pinned', flusherObject.states.pinned);
+      setExtensionStorageItem('flusher-event-pinned-alert', flusherObject.states.pinnedAlert);
+      /* setExtensionStorageItem('flusher-event-deleted-alert', flusherObject.states.deletedAlert); */
       setExtensionStorageItem('flusher-version', currentVersion);
       chrome.storage.local.remove("positionsPerChannel", function () {
         logToConsole('New update detected. Resetting settings to default.');
@@ -1777,7 +1982,10 @@ async function createChat(flusher) {
       flusherObject.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
       flusherObject.states.bans = await getExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
       flusherObject.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
-      flusherObject.states.eventAudioState = await getExtensionStorageItem('flusher-event-audio', flusherObject.states.eventAudioState);
+      flusherObject.states.banAlert = await getExtensionStorageItem('flusher-event-bans-alert', flusherObject.states.banAlert);
+      flusherObject.states.pinned = await getExtensionStorageItem('flusher-event-pinned', flusherObject.states.pinned);
+      flusherObject.states.pinnedAlert = await getExtensionStorageItem('flusher-event-pinned-alert', flusherObject.states.pinnedAlert);
+      /* flusherObject.states.deletedAlert = await getExtensionStorageItem('flusher-event-deleted-alert', flusherObject.states.deletedAlert); */
       flusherObject.props.intro = await getExtensionStorageItem('flusher-intro', false);
     }
   }
@@ -2575,6 +2783,7 @@ function createUserBanMessage(data, flusher) {
   if (data.expires_at) {
     const expiresAt = new Date(data.expires_at);
     const timeDifference = expiresAt - new Date();
+    if (flusher?.states?.banAlert && flusher?.alerts?.banAlert) flusher.alerts.banAlert.play().catch(error => console.error("Audio playback failed:", error));
     let timeDiffText;
     if (timeDifference > 0) {
       timeDiffText = humanizeDuration(timeDifference + 5000);
@@ -2778,13 +2987,14 @@ class FlusherMessages {
     this.pinnedFlusher = null;
     this.pinnedNative = null;
     this.pinnedObserver = null;
+    this.pinnedObserverTimeout = null;
     this.pinnedObservers = {};
+    this.pinnedMessageOld = null;
     this.pinnedTimeouts = {};
+    this.checkPinnedTimeouts = {};
     this.debounceTimeout = null;
     this.dispose = false;
-    console.log(chrome.runtime.getURL('lib/flusher/alert.wav'));
-    this.alert = new Audio(chrome.runtime.getURL('lib/flusher/alert.wav'));
-    this.alert.volume = 0.2;
+    this.seventv = false;
   }
   subscribeChannel() {
     const id = this.flusher.props.chatroomId;
@@ -2876,6 +3086,7 @@ class FlusherMessages {
       this.observeNativechatState();
       this.observeNativechatMessages();
       if (!this.flusher.props.isVod) this.observePinned();
+      this.seventv = document.querySelector('seventv-container') ? true : false;
     });
     function waitForChat(AeroKick) {
       let parent = AeroKick ? ".chat-container .bk-overflow-y-auto" : "#chatroom-messages";
@@ -2950,19 +3161,29 @@ class FlusherMessages {
       let id = pinElement.getAttribute('flusher-id');
       if (!id || !this.ignoredIds.includes(id)) {
         const pinId = this.pinnedId++;
-        setTimeout(() => this.appendPinned(pinElement, pinId), 1500);
+        this.checkPinnedTimeouts[pinId] = setTimeout(() => {
+          pinElement.setAttribute('flusher-id', pinId);
+          this.appendPinned(pinId);
+        }, 1500);
       }
     });
   }
-  appendPinned(pinElement, pinId) {
+  appendPinned(pinId) {
+    let pinElement = this.pinnedNative?.querySelector(`[flusher-id="${pinId}"]`);
+    console.log(pinElement);
+    if (!pinElement) return;
     const innerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
     logToConsole(innerText);
-    if (this.flusher?.states?.eventAudioState) this.alert.play().catch(error => console.error("Audio playback failed:", error));
     const currentPinnedId = pinId;
-    pinElement.setAttribute('flusher-id', currentPinnedId);
     let pinElementObject = pinElement.cloneNode(true);
     pinElementObject.removeAttribute('style');
-    if (pinElementObject.querySelector('button.inline.font-bold')) {
+    let isMessage = pinElementObject.querySelector('button.inline.font-bold');
+    if (isMessage) {
+      console.log('is message');
+      if (!pinElementObject.querySelector('.line-clamp-2') || !this.flusher.states.pinned) return;
+      const newInnerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
+      if (this.pinnedMessageOld === newInnerText) return;
+      this.pinnedMessageOld = newInnerText;
       pinElementObject.classList.add('pinned');
       pinElementObject.querySelector('div.flex-nowrap.justify-between button').remove();
       pinElementObject.querySelectorAll('.line-clamp-2').forEach(element => {
@@ -2970,8 +3191,11 @@ class FlusherMessages {
       });
       this.setPinnedRemoveTimer(currentPinnedId);
     } else {
+      console.log('is not message');
       if (!pinElementObject.matches('.z-absolute')) {
         this.pinnedFlusher.classList.add('flusher-top');
+      } else {
+        if (!this.flusher.states.pinned) return;
       }
     }
     let hideBtn = pinElementObject.querySelector('button.box-border.flex');
@@ -2982,26 +3206,38 @@ class FlusherMessages {
         this.removePinned(currentPinnedId);
       };
     }
-    this.pinnedFlusher.append(pinElementObject);
+    if (this.flusher?.states?.pinnedAlert && this.flusher?.alerts?.pinnedAlert) this.flusher.alerts.pinnedAlert.play().catch(error => console.error("Audio playback failed:", error));
     pinElementObject.classList.add('downward-transition');
+    this.pinnedFlusher.append(pinElementObject);
     pinElementObject.offsetHeight;
     pinElementObject.classList.add('in-view');
     let pinObserver = new MutationObserver(mutations => {
+      /* hotfix */
+      /* if (mutations[0].type === "attributes" && mutations[0].attributeName === "class") {
+        if (mutations[0].target.className === "z-absolute w-full") return;
+      } */
+
       let newClone = pinElement.cloneNode(true);
+      pinElementObject = this.pinnedFlusher?.querySelector(`[flusher-id="${pinElement.getAttribute('flusher-id', '')}"]`);
       if (pinElementObject) {
         pinElementObject.replaceWith(newClone);
         pinElementObject = newClone;
         if (pinElementObject.querySelector('button.inline.font-bold')) {
-          pinElement.classList.remove('upward-transition');
+          if (!pinElementObject.matches('.z-absolute.w-full')) return;
+          const newText = pinElement.innerText.replace(/\s+/g, ' ').trim();
+          if (this.pinnedMessageOld === newText) return;
+          this.pinnedMessageOld = newText;
+          pinElementObject.classList.remove('upward-transition');
           pinElementObject.classList.add('downward-transition');
           pinElementObject.offsetHeight;
           pinElementObject.classList.add('in-view');
-          this.setPinnedRemoveTimer(currentPinnedId);
+          this.setPinnedRemoveTimer(pinElementObject.getAttribute('flusher-id'));
         }
       } else {
         pinObserver.disconnect();
         const newPinId = this.pinnedId++;
-        this.appendPinned(pinElement, newPinId);
+        pinElement.setAttribute('flusher-id', newPinId);
+        this.appendPinned(pinElement);
       }
     });
     pinObserver.observe(pinElement, {
@@ -3013,6 +3249,8 @@ class FlusherMessages {
     this.pinnedObservers[currentPinnedId] = pinObserver;
   }
   setPinnedRemoveTimer(id) {
+    if (id === undefined || id === null) return;
+    console.log('set pinned');
     if (this.pinnedTimeouts[id]) clearTimeout(this.pinnedTimeouts[id]);
     this.pinnedTimeouts[id] = setTimeout(() => {
       this.removePinned(id);
@@ -3471,10 +3709,11 @@ class FlusherMessages {
     const observer = new MutationObserver(() => {
       if (clonedNode) {
         /* check when changing that 7TV still works */
-        if (this.flusher.states.deleted && parentNode.querySelector('.text-neutral .font-semiBold')) {
+        if (this.flusher.states.deleted && parentNode.querySelector('span.text-neutral span.font-semibold')) {
           clonedNode.classList.add('flusher-deleted');
         } else {
           clonedNode.replaceWith(this.prepareMessage(parentNode, true));
+          if (!this.seventv) parentNode.classList.add('flusher-red-border');
           /* let currentTextElement = clonedNode.querySelector('span.font-normal');
           if (currentTextElement) {
           let newTextElement = this.prepareMessage(parentNode, true)?.querySelector('span.font-normal');
@@ -3537,6 +3776,16 @@ class FlusherMessages {
         this.pinnedObserver.disconnect();
         this.pinnedObserver = null;
       }
+      if (this.checkPinnedTimeouts) {
+        for (const id in this.checkPinnedTimeouts) {
+          clearTimeout(this.checkPinnedTimeouts[id]);
+          delete this.pinnedTimeouts[id];
+        }
+      }
+      if (this.pinnedMessageOld) {
+        this.pinnedMessageOld = null;
+      }
+      if (this.pinnedObserverTimeout) clearTimeout(this.pinnedObserverTimeout);
       if (this.pinnedTimeouts) {
         for (const id in this.pinnedTimeouts) {
           clearTimeout(this.pinnedTimeouts[id]);
@@ -3715,6 +3964,11 @@ class Flusher {
     this.props.isVod = window.location.href.includes('/videos/');
     this.props.isAeroKick = aeroKick ?? false;
     this.props.channelName = channelName;
+    this.alerts = {};
+    this.alerts.pinnedAlert = new Audio(chrome.runtime.getURL('lib/flusher/pinned.wav'));
+    this.alerts.pinnedAlert.volume = 0.2;
+    this.alerts.banAlert = new Audio(chrome.runtime.getURL('lib/flusher/banned.wav'));
+    this.alerts.banAlert.volume = 1;
     this.provider = new FlusherMessages();
     window.currentUrl = window.location.href;
     visibilityChange(this);
@@ -3800,7 +4054,8 @@ class Kick {
   static init() {
     if (window.isObserving) return;
     window.isObserving = true;
-    logToConsole(`Initialize`);
+
+    /* logToConsole(`Initialize`); */
     let stopObserver = false;
     const observeVideo = () => {
       const videoObserver = new MutationObserver(() => {
@@ -3944,6 +4199,6 @@ class Ip2 {
 ;// CONCATENATED MODULE: ./modules/content.js
 
 
-window.location.hostname.includes('kick.com') ? setTimeout(kick.init(), 2000) : ip2.init();
+window.location.hostname.includes('kick.com') ? kick.init() : ip2.init();
 /******/ })()
 ;

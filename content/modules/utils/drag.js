@@ -1,14 +1,3 @@
-function throttle(fn, videoRect, wait) {
-	let lastTime = 0;
-	return function (...args) {
-		const now = new Date().getTime();
-		if (now - lastTime >= wait) {
-			lastTime = now;
-			fn(...args, videoRect);
-		}
-	};
-}
-
 export function dragElement(flusher) {
 	let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 	let offsetX = 0, offsetY = 0;
@@ -29,16 +18,22 @@ export function dragElement(flusher) {
 		pos3 = e.clientX;
 		pos4 = e.clientY;
 
+		lastValidX = pos3 - offsetX - videoRect.left;
+		lastValidY = pos4 - offsetY - videoRect.top;
+
+		setInitialPosition(flusher, videoRect, containerRect);
+		flusher.container.removeAttribute("position");
+
+		setInitialDimensions(flusher);
+
+
 		if (isInResizeHandle(e)) {
-			setInitialDimensions(flusher);
 			flusher.container.removeAttribute("size");
 			document.onmouseup = closeResize;
 			document.onmousemove = resizeElement;
 		} else {
-			setInitialPosition(flusher, videoRect, containerRect);
-			flusher.container.removeAttribute("position");
 			document.onmouseup = closeDragElement;
-			document.onmousemove = throttle(dragElement, videoRect, 16);
+			document.onmousemove = (event) => dragElement(event, videoRect);
 		}
 
 		function setInitialPosition(flusher, videoRect, containerRect) {

@@ -383,6 +383,8 @@ export function createUserBanMessage(data, flusher) {
     const expiresAt = new Date(data.expires_at);
     const timeDifference = expiresAt - new Date();
 
+    if (flusher?.states?.banAlert && flusher?.alerts?.banAlert) flusher.alerts.banAlert.play().catch(error => console.error("Audio playback failed:", error));
+
     let timeDiffText;
     if (timeDifference > 0) {
       timeDiffText = humanizeDuration(timeDifference + 5000);

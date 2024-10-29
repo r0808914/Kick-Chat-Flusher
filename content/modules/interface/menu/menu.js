@@ -55,6 +55,9 @@ export async function createMenu(flusher) {
       let keybindMenu = parent.querySelector('.flusher-menu-keybind');
       let aboutMenu = parent.querySelector('.flusher-menu-about');
       let eventMenu = parent.querySelector('.flusher-menu-event');
+      let eventBanMenu = parent.querySelector('.flusher-menu-event-bans');
+      let eventDeletedMenu = parent.querySelector('.flusher-menu-event-deleted');
+      let eventPinnedMenu = parent.querySelector('.flusher-menu-event-pinned');
 
       const closeBtn = parent.querySelector('.flusher-menu-close');
       closeBtn.addEventListener('mousedown', function (event) {
@@ -285,6 +288,57 @@ export async function createMenu(flusher) {
          hideMenu(flusher);
       });
 
+      const eventBanBtn = parent.querySelector('.flusher-event-bans');
+      eventBanBtn.addEventListener('mousedown', function (event) {
+         eventBanMenu.style.display = 'block';
+         eventMenu.style.display = 'none';
+      });
+
+      const eventBanBackBtn = parent.querySelector('.flusher-event-bans-back');
+      eventBanBackBtn.addEventListener('mousedown', function (event) {
+         eventBanMenu.style.display = 'none';
+         eventMenu.style.display = 'block';
+      });
+
+      const eventBanCloseBtn = parent.querySelector('.flusher-event-bans-close');
+      eventBanCloseBtn.addEventListener('mousedown', function (event) {
+         hideMenu(flusher);
+      });
+
+      const eventPinnedBtn = parent.querySelector('.flusher-event-pinned');
+      eventPinnedBtn.addEventListener('mousedown', function (event) {
+         eventPinnedMenu.style.display = 'block';
+         eventMenu.style.display = 'none';
+      });
+
+      const eventPinnedBackBtn = parent.querySelector('.flusher-event-pinned-back');
+      eventPinnedBackBtn.addEventListener('mousedown', function (event) {
+         eventPinnedMenu.style.display = 'none';
+         eventMenu.style.display = 'block';
+      });
+
+      const eventPinnedCloseBtn = parent.querySelector('.flusher-event-pinned-close');
+      eventPinnedCloseBtn.addEventListener('mousedown', function (event) {
+         hideMenu(flusher);
+      });
+
+      const eventDeletedBtn = parent.querySelector('.flusher-event-deleted');
+      eventDeletedBtn.addEventListener('mousedown', function (event) {
+         eventDeletedMenu.style.display = 'block';
+         eventMenu.style.display = 'none';
+      });
+
+      const eventDeletedBackBtn = parent.querySelector('.flusher-event-deleted-back');
+      eventDeletedBackBtn.addEventListener('mousedown', function (event) {
+         eventDeletedMenu.style.display = 'none';
+         eventMenu.style.display = 'block';
+      });
+
+      const eventDeletedCloseBtn = parent.querySelector('.flusher-event-deleted-close');
+      eventDeletedCloseBtn.addEventListener('mousedown', function (event) {
+         hideMenu(flusher);
+      });
+
       const layoutCloseBtn = parent.querySelector('.flusher-layout-close');
       layoutCloseBtn.addEventListener('mousedown', function (event) {
          hideMenu(flusher);
@@ -386,18 +440,6 @@ export async function createMenu(flusher) {
 
       (flusher.states.flushState || !flusher.states.chatEnabled) ? spamBtnContainer.style.display = 'none' : spamBtnContainer.style.display = 'flex';
       if (flusher.states.spamState) spamBtn.classList.toggle(toggledClass);
-
-      const eventAudioBtnContainer = parent.querySelector('.flusher-eventAudio');
-      const eventAudioBtn = eventAudioBtnContainer.querySelector('.flusher-toggle');
-      eventAudioBtn.addEventListener('mousedown', function (event) {
-         const toggleElement = event.currentTarget;
-         toggleElement.classList.toggle(toggledClass);
-         const newEventAudioEnabled = toggleElement.classList.contains(toggledClass);
-         flusher.states.eventAudioState = newEventAudioEnabled;
-         setExtensionStorageItem('flusher-event-audio', newEventAudioEnabled);
-      });
-
-      if (flusher.states.eventAudioState) eventAudioBtn.classList.toggle(toggledClass);
 
       const fontBtn = settingsMenu.querySelector('.flusher-font');
       const divInsideFont = fontBtn.querySelector('div:empty');
@@ -563,33 +605,94 @@ export async function createMenu(flusher) {
       if (flusher.states.timeState) timeToggle.classList.toggle(toggledClass);
       (!flusher.props.isVod || flusher.states.flushState) ? timeToggleContainer.style.display = 'none' : timeToggleContainer.style.display = 'flex';
 
-      const banToggleContainer = parent.querySelector('.flusher-event-ban');
-      const banToggle = banToggleContainer.querySelector('.flusher-toggle');
-      banToggle.addEventListener('mousedown', function (event) {
+      const eventBanAlertToggleContainer = parent.querySelector('.flusher-event-bans-alert');
+      const eventBanAlertToggle = eventBanAlertToggleContainer.querySelector('.flusher-toggle');
+      eventBanAlertToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newBanState = toggleElement.classList.contains(toggledClass);
+         flusher.states.banAlert = newBanState;
+
+         if (newBanState && flusher?.alerts?.banAlert) flusher.alerts.banAlert.play().catch(error => console.error("Audio playback failed:", error));
+
+         setExtensionStorageItem('flusher-event-bans-alert', newBanState);
+      });
+      !flusher.states.bans ? eventBanAlertToggleContainer.style.display = 'none' : eventBanAlertToggleContainer.style.display = 'flex';
+      if (flusher.states.bans && flusher.states.banAlert) eventBanAlertToggle.classList.toggle(toggledClass);
+
+      const eventBanToggleContainer = parent.querySelector('.flusher-event-bans-show');
+      const eventBanToggle = eventBanToggleContainer.querySelector('.flusher-toggle');
+      eventBanToggle.addEventListener('mousedown', function (event) {
          const toggleElement = event.currentTarget;
          toggleElement.classList.toggle(toggledClass);
 
          const newBanState = toggleElement.classList.contains(toggledClass);
          flusher.states.bans = newBanState;
 
+         (flusher.states.bans && flusher.states.banAlert) ? eventBanAlertToggle.classList.add(toggledClass) : eventBanAlertToggle.classList.remove(toggledClass);
+
+         !flusher.states.bans ? eventBanAlertToggleContainer.style.display = 'none' : eventBanAlertToggleContainer.style.display = 'flex';
+         if (!flusher.states.bans) {
+            flusher.states.banAlert = false;
+            setExtensionStorageItem('flusher-event-bans-alert', false);
+         }
+
          setExtensionStorageItem('flusher-event-bans', newBanState);
       });
+      if (flusher.states.bans) eventBanToggle.classList.toggle(toggledClass);
 
-      if (flusher.states.bans) banToggle.classList.toggle(toggledClass);
-
-      const deletedToggleContainer = parent.querySelector('.flusher-event-delete');
-      const deletedToggle = deletedToggleContainer.querySelector('.flusher-toggle');
-      deletedToggle.addEventListener('mousedown', function (event) {
+      const eventPinnedAlertToggleContainer = parent.querySelector('.flusher-event-pinned-alert');
+      const eventPinnedAlertToggle = eventPinnedAlertToggleContainer.querySelector('.flusher-toggle');
+      eventPinnedAlertToggle.addEventListener('mousedown', function (event) {
          const toggleElement = event.currentTarget;
          toggleElement.classList.toggle(toggledClass);
 
-         const newDeletedState = toggleElement.classList.contains(toggledClass);
-         flusher.states.deleted = newDeletedState;
+         const newPinnedState = toggleElement.classList.contains(toggledClass);
+         flusher.states.pinnedAlert = newPinnedState;
 
-         setExtensionStorageItem('flusher-event-deleted', newDeletedState);
+         if (newPinnedState && flusher?.alerts?.pinnedAlert) flusher.alerts.pinnedAlert.play().catch(error => console.error("Audio playback failed:", error));
+
+         setExtensionStorageItem('flusher-event-pinned-alert', newPinnedState);
+      });
+      !flusher.states.pinned ? eventPinnedAlertToggleContainer.style.display = 'none' : eventPinnedAlertToggleContainer.style.display = 'flex';
+      if (flusher.states.pinned && flusher.states.pinnedAlert) eventPinnedAlertToggle.classList.toggle(toggledClass);
+
+      const eventPinnedToggleContainer = parent.querySelector('.flusher-event-pinned-show');
+      const eventPinnedToggle = eventPinnedToggleContainer.querySelector('.flusher-toggle');
+      eventPinnedToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newPinnedState = toggleElement.classList.contains(toggledClass);
+         flusher.states.pinned = newPinnedState;
+
+         (flusher.states.pinned && flusher.states.pinnedAlert) ? eventPinnedAlertToggle.classList.add(toggledClass) : eventPinnedAlertToggle.classList.remove(toggledClass);
+
+         !flusher.states.pinned ? eventPinnedAlertToggleContainer.style.display = 'none' : eventPinnedAlertToggleContainer.style.display = 'flex';
+         if (!flusher.states.pinned) {
+            flusher.states.pinnedAlert = false;
+            setExtensionStorageItem('flusher-event-pinned-alert', false);
+         }
+
+         setExtensionStorageItem('flusher-event-pinned', newPinnedState);
       });
 
-      if (flusher.states.deleted) deletedToggle.classList.toggle(toggledClass);
+      if (flusher.states.pinned) eventPinnedToggle.classList.toggle(toggledClass);
+
+      const eventdeletedToggleContainer = parent.querySelector('.flusher-event-deleted-show');
+      const eventdeletedToggle = eventdeletedToggleContainer.querySelector('.flusher-toggle');
+      eventdeletedToggle.addEventListener('mousedown', function (event) {
+         const toggleElement = event.currentTarget;
+         toggleElement.classList.toggle(toggledClass);
+
+         const newdeletedState = toggleElement.classList.contains(toggledClass);
+         flusher.states.deleted = newdeletedState;
+
+         setExtensionStorageItem('flusher-event-deleted', newdeletedState);
+      });
+
+      if (flusher.states.deleted) eventdeletedToggle.classList.toggle(toggledClass);
 
       const flusherToggleContainer = parent.querySelector('.flusher-flush');
       const flushToggle = flusherToggleContainer.querySelector('.flusher-toggle');
@@ -732,6 +835,9 @@ export function hideMenu(flusher) {
    const keybindMenu = flusher.menu.querySelector('.flusher-menu-keybind');
    const aboutMenu = flusher.menu.querySelector('.flusher-menu-about');
    const eventMenu = flusher.menu.querySelector('.flusher-menu-event');
+   const eventBanMenu = flusher.menu.querySelector('.flusher-menu-event-bans');
+   const eventDeletedMenu = flusher.menu.querySelector('.flusher-menu-event-deleted');
+   const eventPinnedMenu = flusher.menu.querySelector('.flusher-menu-event-pinned');
 
    flusher.menu.style.display = 'none';
    settingsMenu.style.display = 'none';
@@ -742,6 +848,9 @@ export function hideMenu(flusher) {
    keybindMenu.style.display = 'none';
    aboutMenu.style.display = 'none';
    eventMenu.style.display = 'none';
+   eventBanMenu.style.display = 'none';
+   eventDeletedMenu.style.display = 'none';
+   eventPinnedMenu.style.display = 'none';
 
    svgToggle(flusher);
    document.removeEventListener('mousedown', flusher.clickOutsideHandlerFunction);

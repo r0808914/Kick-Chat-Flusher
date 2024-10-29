@@ -17,6 +17,13 @@ export class Flusher {
 		this.props.isAeroKick = aeroKick ?? false;
 		this.props.channelName = channelName;
 
+		this.alerts = {};
+		this.alerts.pinnedAlert = new Audio(chrome.runtime.getURL('lib/flusher/pinned.wav'));
+		this.alerts.pinnedAlert.volume = 0.2;
+
+		this.alerts.banAlert = new Audio(chrome.runtime.getURL('lib/flusher/banned.wav'));
+		this.alerts.banAlert.volume = 1;
+
 		this.provider = new FlusherMessages();
 
 		window.currentUrl = window.location.href;

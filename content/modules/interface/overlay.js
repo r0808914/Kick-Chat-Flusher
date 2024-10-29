@@ -78,7 +78,10 @@ export async function createChat(flusher) {
          setExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
          setExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
          setExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
-         setExtensionStorageItem('flusher-event-audio', flusherObject.states.eventAudioState);
+         setExtensionStorageItem('flusher-event-bans-alert', flusherObject.states.banAlert);
+         setExtensionStorageItem('flusher-event-pinned', flusherObject.states.pinned);
+         setExtensionStorageItem('flusher-event-pinned-alert', flusherObject.states.pinnedAlert);
+         /* setExtensionStorageItem('flusher-event-deleted-alert', flusherObject.states.deletedAlert); */
          setExtensionStorageItem('flusher-version', currentVersion);
 
          chrome.storage.local.remove("positionsPerChannel", function () {
@@ -103,7 +106,10 @@ export async function createChat(flusher) {
          flusherObject.states.keybinds = await getExtensionStorageItem('flusher-keybinds', flusherObject.states.keybinds);
          flusherObject.states.bans = await getExtensionStorageItem('flusher-event-bans', flusherObject.states.bans);
          flusherObject.states.deleted = await getExtensionStorageItem('flusher-event-deleted', flusherObject.states.deleted);
-         flusherObject.states.eventAudioState = await getExtensionStorageItem('flusher-event-audio', flusherObject.states.eventAudioState);
+         flusherObject.states.banAlert = await getExtensionStorageItem('flusher-event-bans-alert', flusherObject.states.banAlert);
+         flusherObject.states.pinned = await getExtensionStorageItem('flusher-event-pinned', flusherObject.states.pinned);
+         flusherObject.states.pinnedAlert = await getExtensionStorageItem('flusher-event-pinned-alert', flusherObject.states.pinnedAlert);
+         /* flusherObject.states.deletedAlert = await getExtensionStorageItem('flusher-event-deleted-alert', flusherObject.states.deletedAlert); */
          flusherObject.props.intro = await getExtensionStorageItem('flusher-intro', false);
       }
    }

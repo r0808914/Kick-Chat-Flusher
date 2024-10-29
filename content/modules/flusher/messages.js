@@ -22,14 +22,14 @@ export class FlusherMessages {
     this.pinnedFlusher = null;
     this.pinnedNative = null;
     this.pinnedObserver = null;
+    this.pinnedObserverTimeout = null;
     this.pinnedObservers = {};
+    this.pinnedMessageOld = null;
     this.pinnedTimeouts = {};
+    this.checkPinnedTimeouts = {};
     this.debounceTimeout = null;
     this.dispose = false;
-
-    console.log(chrome.runtime.getURL('lib/flusher/alert.wav'));
-    this.alert = new Audio(chrome.runtime.getURL('lib/flusher/alert.wav'));
-    this.alert.volume = 0.2;
+    this.seventv = false;
   }
 
   subscribeChannel() {
@@ -145,6 +145,7 @@ export class FlusherMessages {
       this.observeNativechatState();
       this.observeNativechatMessages();
       if (!this.flusher.props.isVod) this.observePinned();
+      this.seventv = document.querySelector('seventv-container') ? true : false;
     });
 
     function waitForChat(AeroKick) {
@@ -209,21 +210,17 @@ export class FlusherMessages {
   observePinned() {
     this.pinnedNative = document.getElementById('chatroom-messages')?.parentElement?.firstElementChild;
     this.pinnedFlusher = this.flusher?.container?.querySelector(".flusher-pinned");
-
     if (!this.pinnedNative || !this.pinnedFlusher) return;
-
     let parent = this.pinnedNative.querySelector('.relative.flex');
     if (!parent) return;
-
     this.checkPinned(parent, this.pinnedFlusher);
-
     if (this.pinnedObserver) this.pinnedObserver.disconnect();
-    this.pinnedObserver = new MutationObserver((mutations) => {
+    this.pinnedObserver = new MutationObserver(mutations => {
       this.checkPinned(parent, this.pinnedFlusher);
     });
-
     this.pinnedObserver.observe(parent, {
-      childList: true, subtree: false
+      childList: true,
+      subtree: false
     });
   }
 
@@ -233,39 +230,44 @@ export class FlusherMessages {
       let id = pinElement.getAttribute('flusher-id');
       if (!id || !this.ignoredIds.includes(id)) {
         const pinId = this.pinnedId++;
-        setTimeout(() => this.appendPinned(pinElement, pinId), 1500);
+        this.checkPinnedTimeouts[pinId] = setTimeout(() => {
+          pinElement.setAttribute('flusher-id', pinId);
+          this.appendPinned(pinId);
+        }, 1500);
       }
     });
   }
 
-  appendPinned(pinElement, pinId) {
+  appendPinned(pinId) {
+    let pinElement = this.pinnedNative?.querySelector(`[flusher-id="${pinId}"]`);
+    console.log(pinElement);
+    if (!pinElement) return;
     const innerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
     logToConsole(innerText);
-
-    if (this.flusher?.states?.eventAudioState) this.alert.play().catch(error => console.error("Audio playback failed:", error));
-
     const currentPinnedId = pinId;
-
-    pinElement.setAttribute('flusher-id', currentPinnedId);
-
     let pinElementObject = pinElement.cloneNode(true);
     pinElementObject.removeAttribute('style');
-
-    if (pinElementObject.querySelector('button.inline.font-bold')) {
+    let isMessage = pinElementObject.querySelector('button.inline.font-bold');
+    if (isMessage) {
+      console.log('is message');
+      if (!pinElementObject.querySelector('.line-clamp-2') || !this.flusher.states.pinned) return;
+      const newInnerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
+      if (this.pinnedMessageOld === newInnerText) return;
+      this.pinnedMessageOld = newInnerText;
       pinElementObject.classList.add('pinned');
       pinElementObject.querySelector('div.flex-nowrap.justify-between button').remove();
-
       pinElementObject.querySelectorAll('.line-clamp-2').forEach(element => {
         element.classList.remove('line-clamp-2');
       });
-
       this.setPinnedRemoveTimer(currentPinnedId);
     } else {
+      console.log('is not message');
       if (!pinElementObject.matches('.z-absolute')) {
         this.pinnedFlusher.classList.add('flusher-top');
+      } else {
+        if (!this.flusher.states.pinned) return;
       }
     }
-
     let hideBtn = pinElementObject.querySelector('button.box-border.flex');
     if (hideBtn) {
       hideBtn.parentElement.classList.add('flusher-close-btn');
@@ -275,44 +277,52 @@ export class FlusherMessages {
       };
     }
 
-    this.pinnedFlusher.append(pinElementObject);
+    if (this.flusher?.states?.pinnedAlert && this.flusher?.alerts?.pinnedAlert) this.flusher.alerts.pinnedAlert.play().catch(error => console.error("Audio playback failed:", error));
 
     pinElementObject.classList.add('downward-transition');
+    this.pinnedFlusher.append(pinElementObject);
     pinElementObject.offsetHeight;
     pinElementObject.classList.add('in-view');
+    let pinObserver = new MutationObserver(mutations => {
+      /* hotfix */
+      /* if (mutations[0].type === "attributes" && mutations[0].attributeName === "class") {
+        if (mutations[0].target.className === "z-absolute w-full") return;
+      } */
 
-    let pinObserver = new MutationObserver((mutations) => {
       let newClone = pinElement.cloneNode(true);
-
+      pinElementObject = this.pinnedFlusher?.querySelector(`[flusher-id="${pinElement.getAttribute('flusher-id', '')}"]`);
       if (pinElementObject) {
         pinElementObject.replaceWith(newClone);
         pinElementObject = newClone;
-
         if (pinElementObject.querySelector('button.inline.font-bold')) {
-          pinElement.classList.remove('upward-transition');
+          if (!pinElementObject.matches('.z-absolute.w-full')) return;
+          const newText = pinElement.innerText.replace(/\s+/g, ' ').trim();
+          if (this.pinnedMessageOld === newText) return;
+          this.pinnedMessageOld = newText;
+          pinElementObject.classList.remove('upward-transition');
           pinElementObject.classList.add('downward-transition');
           pinElementObject.offsetHeight;
           pinElementObject.classList.add('in-view');
-          this.setPinnedRemoveTimer(currentPinnedId);
+          this.setPinnedRemoveTimer(pinElementObject.getAttribute('flusher-id'));
         }
       } else {
         pinObserver.disconnect();
         const newPinId = this.pinnedId++;
-        this.appendPinned(pinElement, newPinId);
+        pinElement.setAttribute('flusher-id', newPinId);
+        this.appendPinned(pinElement);
       }
     });
-
     pinObserver.observe(pinElement, {
       childList: true,
       subtree: true,
       characterData: true,
       attributes: true
     });
-
     this.pinnedObservers[currentPinnedId] = pinObserver;
   }
-
   setPinnedRemoveTimer(id) {
+    if (id === undefined || id === null) return;
+    console.log('set pinned');
     if (this.pinnedTimeouts[id]) clearTimeout(this.pinnedTimeouts[id]);
     this.pinnedTimeouts[id] = setTimeout(() => {
       this.removePinned(id);
@@ -322,32 +332,29 @@ export class FlusherMessages {
   removePinned(id) {
     const pinElement = this.pinnedFlusher?.querySelector(`[flusher-id="${id}"]`);
     if (!pinElement && id) return;
-
     if (pinElement) {
       this.removePin(pinElement);
     } else {
       const nativeItems = Array.from(this.pinnedNative?.children || []).map(child => child.getAttribute('flusher-id') || '');
       Array.from(this.pinnedFlusher?.children || []).forEach(child => {
         const flusherId = child.getAttribute('flusher-id') || '';
-        if (!nativeItems.includes(flusherId)) { this.removePin(child); }
+        if (!nativeItems.includes(flusherId)) {
+          this.removePin(child);
+        }
       });
     }
   }
 
   removePin(pinElement) {
     const flusherId = pinElement.getAttribute('flusher-id') || '';
-
     pinElement.classList.remove('downward-transition');
     pinElement.classList.remove('in-view');
     pinElement.classList.add('upward-transition');
-
     setTimeout(() => {
       const exists = this.pinnedNative?.querySelector(`[flusher-id="${pinElement.getAttribute('flusher-id', '')}"]`);
       pinElement.remove();
-
-      if ((this.pinnedObservers[flusherId] && (!exists || !pinElement.querySelector('button.inline.font-bold')))) this.pinnedObservers[flusherId].disconnect();
+      if (this.pinnedObservers[flusherId] && (!exists || !pinElement.querySelector('button.inline.font-bold'))) this.pinnedObservers[flusherId].disconnect();
       if (this.pinnedTimeouts[flusherId]) clearTimeout(this.pinnedTimeouts[flusherId]);
-
       if (pinElement.matches('.bg-shade-lower')) {
         let addTop;
         Array.from(this.pinnedFlusher.children).forEach(child => {
@@ -356,7 +363,6 @@ export class FlusherMessages {
             this.pinnedFlusher.classList.remove('flusher-top');
           }
         });
-
         if (addTop) this.pinnedFlusher.classList.remove('flusher-top');
       }
     }, 1000);
@@ -870,19 +876,18 @@ export class FlusherMessages {
   addMessage(addedNode, clonedNode) {
     this.flusher.props.elementQueue.push(clonedNode);
     processElementQueue(this.flusher);
-
     if (this.id && !this.flusher.states.flushState) this.observeNestedChildren(addedNode, this.id, clonedNode);
-
   }
 
   observeNestedChildren(parentNode, id, clonedNode) {
     const observer = new MutationObserver(() => {
       if (clonedNode) {
         /* check when changing that 7TV still works */
-        if (this.flusher.states.deleted && parentNode.querySelector('.text-neutral .font-semiBold')) {
+        if (this.flusher.states.deleted && parentNode.querySelector('span.text-neutral span.font-semibold')) {
           clonedNode.classList.add('flusher-deleted');
         } else {
           clonedNode.replaceWith(this.prepareMessage(parentNode, true));
+          if (!this.seventv) parentNode.classList.add('flusher-red-border');
           /* let currentTextElement = clonedNode.querySelector('span.font-normal');
           if (currentTextElement) {
           let newTextElement = this.prepareMessage(parentNode, true)?.querySelector('span.font-normal');
@@ -955,7 +960,15 @@ export class FlusherMessages {
       } if (this.pinnedObserver) {
         this.pinnedObserver.disconnect();
         this.pinnedObserver = null;
-      } if (this.pinnedTimeouts) {
+      } if (this.checkPinnedTimeouts) {
+        for (const id in this.checkPinnedTimeouts) {
+          clearTimeout(this.checkPinnedTimeouts[id]);
+          delete this.pinnedTimeouts[id];
+        }
+      } if (this.pinnedMessageOld) {
+        this.pinnedMessageOld = null;
+      } if (this.pinnedObserverTimeout) clearTimeout(this.pinnedObserverTimeout);
+      if (this.pinnedTimeouts) {
         for (const id in this.pinnedTimeouts) {
           clearTimeout(this.pinnedTimeouts[id]);
           delete this.pinnedTimeouts[id];

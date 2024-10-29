@@ -8,7 +8,7 @@ class Kick {
     if (window.isObserving) return;
     window.isObserving = true;
 
-    logToConsole(`Initialize`);
+    /* logToConsole(`Initialize`); */
     let stopObserver = false;
 
     const observeVideo = () => {

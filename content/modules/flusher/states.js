@@ -17,14 +17,18 @@ export class FlusherStates {
     this.reply = true;
     this.timeState = false;
 
-    this.eventAudioState = false;
-
     this.spamState = false;
     this.fontState = 1;
 
     this.keybinds = { "overlay": "ALT + C", "flush": "ALT + G", "menu": "ALT + M", "spam": "ALT + S" };
 
     this.bans = true;
+    this.banAlert = false;
+
     this.deleted = true;
+    /* this.deletedAlert = false; */
+
+    this.pinned = true;
+    this.pinnedAlert = false;
   }
 }
