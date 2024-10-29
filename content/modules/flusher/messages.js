@@ -240,7 +240,6 @@ export class FlusherMessages {
 
   appendPinned(pinId) {
     let pinElement = this.pinnedNative?.querySelector(`[flusher-id="${pinId}"]`);
-    console.log(pinElement);
     if (!pinElement) return;
     const innerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
     logToConsole(innerText);
@@ -249,7 +248,6 @@ export class FlusherMessages {
     pinElementObject.removeAttribute('style');
     let isMessage = pinElementObject.querySelector('button.inline.font-bold');
     if (isMessage) {
-      console.log('is message');
       if (!pinElementObject.querySelector('.line-clamp-2') || !this.flusher.states.pinned) return;
       const newInnerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
       if (this.pinnedMessageOld === newInnerText) return;
@@ -261,7 +259,6 @@ export class FlusherMessages {
       });
       this.setPinnedRemoveTimer(currentPinnedId);
     } else {
-      console.log('is not message');
       if (!pinElementObject.matches('.z-absolute')) {
         this.pinnedFlusher.classList.add('flusher-top');
       } else {
@@ -322,7 +319,6 @@ export class FlusherMessages {
   }
   setPinnedRemoveTimer(id) {
     if (id === undefined || id === null) return;
-    console.log('set pinned');
     if (this.pinnedTimeouts[id]) clearTimeout(this.pinnedTimeouts[id]);
     this.pinnedTimeouts[id] = setTimeout(() => {
       this.removePinned(id);

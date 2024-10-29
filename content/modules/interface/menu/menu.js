@@ -15,7 +15,6 @@ function safeTextContent(element, content) {
 }
 
 export async function createMenu(flusher) {
-   console.log('create chat');
    const toggledClass = 'toggled-on';
    if (!flusher.video.querySelector('.flusher-menu')) {
       const b = typeof browser !== 'undefined' ? browser : chrome;

@@ -474,7 +474,7 @@ const menuHtml = `<div class="flusher-menu" style="display: none;">
       <div class="flusher-actions-item active:bg-secondary-lightest/60">
         <div class="select-none overflow-hidden truncate pr-2 text-sm font-medium">Version</div>
         <div class="flex h-10 w-fit items-center justify-end">
-          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.1.0</div>
+          <div class="select-none overflow-hidden truncate pr-0 text-sm font-medium">1.1.1</div>
         </div>
       </div>
     </div>
@@ -1094,7 +1094,6 @@ function safeTextContent(element, content) {
   }
 }
 async function createMenu(flusher) {
-  console.log('create chat');
   const toggledClass = 'toggled-on';
   if (!flusher.video.querySelector('.flusher-menu')) {
     const b = typeof browser !== 'undefined' ? browser : chrome;
@@ -1813,7 +1812,6 @@ class KeybindListener {
     this.startListening();
   }
   startListening() {
-    console.log('start listning');
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
   }
@@ -3163,7 +3161,6 @@ class FlusherMessages {
   }
   appendPinned(pinId) {
     let pinElement = this.pinnedNative?.querySelector(`[flusher-id="${pinId}"]`);
-    console.log(pinElement);
     if (!pinElement) return;
     const innerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
     logToConsole(innerText);
@@ -3172,7 +3169,6 @@ class FlusherMessages {
     pinElementObject.removeAttribute('style');
     let isMessage = pinElementObject.querySelector('button.inline.font-bold');
     if (isMessage) {
-      console.log('is message');
       if (!pinElementObject.querySelector('.line-clamp-2') || !this.flusher.states.pinned) return;
       const newInnerText = pinElement.innerText.replace(/\s+/g, ' ').trim();
       if (this.pinnedMessageOld === newInnerText) return;
@@ -3184,7 +3180,6 @@ class FlusherMessages {
       });
       this.setPinnedRemoveTimer(currentPinnedId);
     } else {
-      console.log('is not message');
       if (!pinElementObject.matches('.z-absolute')) {
         this.pinnedFlusher.classList.add('flusher-top');
       } else {
@@ -3243,7 +3238,6 @@ class FlusherMessages {
   }
   setPinnedRemoveTimer(id) {
     if (id === undefined || id === null) return;
-    console.log('set pinned');
     if (this.pinnedTimeouts[id]) clearTimeout(this.pinnedTimeouts[id]);
     this.pinnedTimeouts[id] = setTimeout(() => {
       this.removePinned(id);

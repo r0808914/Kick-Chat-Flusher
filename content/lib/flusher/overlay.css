@@ -312,10 +312,10 @@
   outline: 2px ridge var(--flusher-green);
 }
 
-.flusher-hover {
+/* .flusher-hover {
   border-radius: 1px;
   outline: 2px ridge var(--flusher-green);
-}
+} */
 
 .flusher-container.flusher-grab:hover::after {
   background-image: url("data:image/svg+xml,%3Csvg width='64px' height='64px' viewBox='0 0 16 16' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' fill='%23000000'%3E%3Cg id='SVGRepo_bgCarrier' stroke-width='0'%3E%3C/g%3E%3Cg id='SVGRepo_tracerCarrier' stroke-linecap='round' stroke-linejoin='round'%3E%3C/g%3E%3Cg id='SVGRepo_iconCarrier'%3E%3Cpath fill='%23FFFFFF' d='M16 16h-16l16-16z'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
@@ -529,10 +529,8 @@
 .flusher-container[shadow="true"].flusher-container[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower button.font-bold {
-  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.7),
-    1px 0px 2px rgba(0, 0, 0, 0.5),
-    0px 0px 2px rgba(255, 255, 255, 0.3);
-  font-weight: 700;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7), -1px 0px #000000e6, 1px 0px #000000e6, 0px 1px #000000e6, 0px -1px #000000e6, 0px 0px 2px #ffffff2e;
+  font-weight: 800;
 }
 
 .flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal {

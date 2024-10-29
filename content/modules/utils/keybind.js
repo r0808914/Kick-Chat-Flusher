@@ -9,7 +9,6 @@ export class KeybindListener {
    }
 
    startListening() {
-      console.log('start listning');
       window.addEventListener('keydown', this.handleKeyDown);
       window.addEventListener('keyup', this.handleKeyUp);
    }
