@@ -15,9 +15,9 @@ function safeTextContent(element, content) {
 }
 
 export async function createMenu(flusher) {
+   console.log('create chat');
    const toggledClass = 'toggled-on';
-   const domMenu = flusher.video.querySelector('.flusher-menu');
-   if (domMenu === null) {
+   if (!flusher.video.querySelector('.flusher-menu')) {
       const b = typeof browser !== 'undefined' ? browser : chrome;
       let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : flusher.controls;
 
@@ -45,8 +45,10 @@ export async function createMenu(flusher) {
       }
 
       shadowRoot.appendChild(flusher.menu);
-      parent.append(shadowBox);
-      parent = parent.querySelector('#shadowbox').shadowRoot;
+
+      let tempMenu;
+      parent ? parent.append(shadowBox) : (tempMenu = true);
+      parent = shadowRoot;
 
       let settingsMenu = parent.querySelector('.flusher-menu-settings');
       let layoutMenu = parent.querySelector('.flusher-menu-layout');
@@ -779,7 +781,7 @@ export async function createMenu(flusher) {
          flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
       } */
 
-      return createToggle(flusher);
+      return tempMenu ? menu : createToggle(flusher);
    }
 
    function captureKeybind() {

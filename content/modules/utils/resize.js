@@ -1,5 +1,5 @@
 import Kick from "../site/kick.js";
-import { togglePointerEvents } from "../interface/menu/menu.js";
+import { createMenu, togglePointerEvents } from "../interface/menu/menu.js";
 import { processMessageQueue } from "../queue/queue.js";
 import { logToConsole } from "./utils.js";
 import { KeybindListener } from "./keybind.js";
@@ -85,6 +85,7 @@ export function checkResize(flusher) {
         processMessageQueue(flusher);
         togglePointerEvents(flusher);
         checkAddons(flusher);
+        createTempChat();
 
         logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
 
@@ -96,6 +97,10 @@ export function checkResize(flusher) {
   });
 
   flusher.resizeObserver.observe(target);
+
+  async function createTempChat() {
+    await createMenu(flusher);
+  }
 
   function checkAddons(flusher) {
     let counter = 0;

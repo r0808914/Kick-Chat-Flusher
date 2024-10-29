@@ -584,13 +584,13 @@
 .flusher-container[layout="vertical"] .flusher-green {
   box-shadow: inset 0px 0px 0px 1px green;
   box-sizing: border-box;
-  color: green;
+  /* color: green; */
 }
 
 .flusher-container[layout="vertical"] .flusher-red {
   box-shadow: inset 0px 0px 0px 1px red;
   box-sizing: border-box;
-  color: red;
+  /* color: red; */
 }
 
 .flusher-container[layout="vertical"] .flusher-red-border {

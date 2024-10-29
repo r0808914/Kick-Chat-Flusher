@@ -9,6 +9,7 @@ export class KeybindListener {
    }
 
    startListening() {
+      console.log('start listning');
       window.addEventListener('keydown', this.handleKeyDown);
       window.addEventListener('keyup', this.handleKeyUp);
    }
@@ -21,7 +22,7 @@ export class KeybindListener {
    handleKeyDown(event) {
       if (this.flusher.props.isCaptureKeybind) return;
       const key = event.key?.toLowerCase();
-      if (key === 'alt' || key === 'control' || key === 'shift') {
+      if (['alt', 'control', 'shift'].includes(key)) {
          this.modifierKeys[key] = true;
       } else if (this.anyModifierKeyPressed()) {
          this.nonModifierKey = event.key.toUpperCase();
@@ -30,8 +31,9 @@ export class KeybindListener {
    }
 
    handleKeyUp(event) {
-      if (event.key === 'Alt' || event.key === 'Control' || event.key === 'Shift') {
-         this.modifierKeys[event.key.toLowerCase()] = false;
+      const key = event.key.toLowerCase();
+      if (['alt', 'control', 'shift'].includes(key)) {
+         this.modifierKeys[key] = false;
       }
       if (!this.anyModifierKeyPressed()) {
          this.nonModifierKey = null;
@@ -43,25 +45,22 @@ export class KeybindListener {
    }
 
    processKey() {
-      if (this.nonModifierKey) {
-         for (const action in this.flusher.states.keybinds) {
-            if (this.flusher.states.keybinds.hasOwnProperty(action)) {
-               const keyCombination = this.flusher.states.keybinds[action];
-               const keys = keyCombination.split(' + ');
+      if (!this.nonModifierKey) return;
 
-               let modifierKeysMatch = true;
-               if ((keys.includes('ALT') && !this.modifierKeys.alt) ||
-                  (keys.includes('CTRL') && !this.modifierKeys.control) ||
-                  (keys.includes('SHIFT') && !this.modifierKeys.shift)) {
-                  modifierKeysMatch = false;
-               }
+      for (const action in this.flusher.states.keybinds) {
+         if (this.flusher.states.keybinds.hasOwnProperty(action)) {
+            const keyCombination = this.flusher.states.keybinds[action];
+            const keys = keyCombination.split(' + ');
 
-               const nonModifierKeyMatch = this.nonModifierKey === keys[keys.length - 1].toUpperCase();
+            const modifierKeysMatch = (keys.includes('ALT') === this.modifierKeys.alt) &&
+               (keys.includes('CTRL') === this.modifierKeys.control) &&
+               (keys.includes('SHIFT') === this.modifierKeys.shift);
 
-               if (modifierKeysMatch && nonModifierKeyMatch) {
-                  this.activateAction(action);
-                  break;
-               }
+            const nonModifierKeyMatch = this.nonModifierKey === keys[keys.length - 1].toUpperCase();
+
+            if (modifierKeysMatch && nonModifierKeyMatch) {
+               this.activateAction(action);
+               break;
             }
          }
       }
@@ -75,26 +74,17 @@ export class KeybindListener {
          buttons: 1,
       });
 
-      switch (action) {
-         case "overlay":
-            const flusherToggle = this.flusher.menu.querySelector('.flusher-enable .flusher-toggle');
-            flusherToggle.dispatchEvent(mouseDownEvent);
-            break;
-         case "flush":
-            const flushToggle = this.flusher.menu.querySelector('.flusher-flush .flusher-toggle');
-            flushToggle.dispatchEvent(mouseDownEvent);
-            break;
-         case "spam":
-            const spamToggle = this.flusher.menu.querySelector('.flusher-spam .flusher-toggle');
-            spamToggle.dispatchEvent(mouseDownEvent);
-            break;
-         case "menu":
-            const menuToggle = document.querySelector('.flusher-toggle');
-            menuToggle.dispatchEvent(mouseDownEvent);
-            this.flusher.menu.focus();
-            break;
-         default:
-            break;
+      const selectorMap = {
+         overlay: '.flusher-enable .flusher-toggle',
+         flush: '.flusher-flush .flusher-toggle',
+         spam: '.flusher-spam .flusher-toggle',
+         menu: '.flusher-toggle'
+      };
+
+      const element = (action === 'menu' ? document : this.flusher.menu).querySelector(selectorMap[action]);
+      if (element) {
+         element.dispatchEvent(mouseDownEvent);
+         if (action === 'menu') this.flusher.menu.focus();
       }
    }
 }

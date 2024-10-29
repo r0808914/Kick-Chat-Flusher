@@ -1094,9 +1094,9 @@ function safeTextContent(element, content) {
   }
 }
 async function createMenu(flusher) {
+  console.log('create chat');
   const toggledClass = 'toggled-on';
-  const domMenu = flusher.video.querySelector('.flusher-menu');
-  if (domMenu === null) {
+  if (!flusher.video.querySelector('.flusher-menu')) {
     const b = typeof browser !== 'undefined' ? browser : chrome;
     let parent = flusher.props.external ? flusher.video.parentNode : flusher.props.isAeroKick ? flusher.video.closest('#bk-video-player') : flusher.controls;
     const shadowBox = document.createElement('div');
@@ -1120,8 +1120,9 @@ async function createMenu(flusher) {
       flusher.menu.style.right = '0 !important';
     }
     shadowRoot.appendChild(flusher.menu);
-    parent.append(shadowBox);
-    parent = parent.querySelector('#shadowbox').shadowRoot;
+    let tempMenu;
+    parent ? parent.append(shadowBox) : tempMenu = true;
+    parent = shadowRoot;
     let settingsMenu = parent.querySelector('.flusher-menu-settings');
     let layoutMenu = parent.querySelector('.flusher-menu-layout');
     let messageMenu = parent.querySelector('.flusher-menu-message');
@@ -1703,7 +1704,7 @@ async function createMenu(flusher) {
         flusher.video.insertAdjacentElement('afterend', flusher.props.popupContainer);
     } */
 
-    return createToggle(flusher);
+    return tempMenu ? menu : createToggle(flusher);
   }
   function captureKeybind() {
     return new Promise(resolve => {
@@ -1812,6 +1813,7 @@ class KeybindListener {
     this.startListening();
   }
   startListening() {
+    console.log('start listning');
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
   }
@@ -1822,7 +1824,7 @@ class KeybindListener {
   handleKeyDown(event) {
     if (this.flusher.props.isCaptureKeybind) return;
     const key = event.key?.toLowerCase();
-    if (key === 'alt' || key === 'control' || key === 'shift') {
+    if (['alt', 'control', 'shift'].includes(key)) {
       this.modifierKeys[key] = true;
     } else if (this.anyModifierKeyPressed()) {
       this.nonModifierKey = event.key.toUpperCase();
@@ -1830,8 +1832,9 @@ class KeybindListener {
     this.processKey();
   }
   handleKeyUp(event) {
-    if (event.key === 'Alt' || event.key === 'Control' || event.key === 'Shift') {
-      this.modifierKeys[event.key.toLowerCase()] = false;
+    const key = event.key.toLowerCase();
+    if (['alt', 'control', 'shift'].includes(key)) {
+      this.modifierKeys[key] = false;
     }
     if (!this.anyModifierKeyPressed()) {
       this.nonModifierKey = null;
@@ -1841,20 +1844,16 @@ class KeybindListener {
     return Object.values(this.modifierKeys).some(modifier => modifier === true);
   }
   processKey() {
-    if (this.nonModifierKey) {
-      for (const action in this.flusher.states.keybinds) {
-        if (this.flusher.states.keybinds.hasOwnProperty(action)) {
-          const keyCombination = this.flusher.states.keybinds[action];
-          const keys = keyCombination.split(' + ');
-          let modifierKeysMatch = true;
-          if (keys.includes('ALT') && !this.modifierKeys.alt || keys.includes('CTRL') && !this.modifierKeys.control || keys.includes('SHIFT') && !this.modifierKeys.shift) {
-            modifierKeysMatch = false;
-          }
-          const nonModifierKeyMatch = this.nonModifierKey === keys[keys.length - 1].toUpperCase();
-          if (modifierKeysMatch && nonModifierKeyMatch) {
-            this.activateAction(action);
-            break;
-          }
+    if (!this.nonModifierKey) return;
+    for (const action in this.flusher.states.keybinds) {
+      if (this.flusher.states.keybinds.hasOwnProperty(action)) {
+        const keyCombination = this.flusher.states.keybinds[action];
+        const keys = keyCombination.split(' + ');
+        const modifierKeysMatch = keys.includes('ALT') === this.modifierKeys.alt && keys.includes('CTRL') === this.modifierKeys.control && keys.includes('SHIFT') === this.modifierKeys.shift;
+        const nonModifierKeyMatch = this.nonModifierKey === keys[keys.length - 1].toUpperCase();
+        if (modifierKeysMatch && nonModifierKeyMatch) {
+          this.activateAction(action);
+          break;
         }
       }
     }
@@ -1866,26 +1865,16 @@ class KeybindListener {
       button: 0,
       buttons: 1
     });
-    switch (action) {
-      case "overlay":
-        const flusherToggle = this.flusher.menu.querySelector('.flusher-enable .flusher-toggle');
-        flusherToggle.dispatchEvent(mouseDownEvent);
-        break;
-      case "flush":
-        const flushToggle = this.flusher.menu.querySelector('.flusher-flush .flusher-toggle');
-        flushToggle.dispatchEvent(mouseDownEvent);
-        break;
-      case "spam":
-        const spamToggle = this.flusher.menu.querySelector('.flusher-spam .flusher-toggle');
-        spamToggle.dispatchEvent(mouseDownEvent);
-        break;
-      case "menu":
-        const menuToggle = document.querySelector('.flusher-toggle');
-        menuToggle.dispatchEvent(mouseDownEvent);
-        this.flusher.menu.focus();
-        break;
-      default:
-        break;
+    const selectorMap = {
+      overlay: '.flusher-enable .flusher-toggle',
+      flush: '.flusher-flush .flusher-toggle',
+      spam: '.flusher-spam .flusher-toggle',
+      menu: '.flusher-toggle'
+    };
+    const element = (action === 'menu' ? document : this.flusher.menu).querySelector(selectorMap[action]);
+    if (element) {
+      element.dispatchEvent(mouseDownEvent);
+      if (action === 'menu') this.flusher.menu.focus();
     }
   }
 }
@@ -2216,6 +2205,7 @@ function checkResize(flusher) {
         processMessageQueue(flusher);
         togglePointerEvents(flusher);
         checkAddons(flusher);
+        createTempChat();
         logToConsole(`(${flusher.props.channelName} ${flusher.props.domain} ${flusher.props.isVod ? "VOD" : "LIVE"}): Report bugs or collaborate at https://github.com/r0808914/Kick-Chat-Flusher`);
         flusher.props.keydownListener = new KeybindListener(flusher);
       } else {
@@ -2224,6 +2214,9 @@ function checkResize(flusher) {
     });
   });
   flusher.resizeObserver.observe(target);
+  async function createTempChat() {
+    await createMenu(flusher);
+  }
   function checkAddons(flusher) {
     let counter = 0;
     const intervalId = setInterval(() => {
@@ -3052,7 +3045,7 @@ class FlusherMessages {
         setTimeout(() => {
           logToConsole(`WebSocket Connection Closed By Host: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
           this.setupWebSocket();
-        }, 5000);
+        }, 30000);
       }
     });
     this.socket.addEventListener("error", event => {
@@ -3734,6 +3727,7 @@ class FlusherMessages {
     if (!flusher) return;
     this.flusher = flusher;
     if (!this.flusher.props.external) this.interceptNative();
+    if (this.flusher?.props?.bindTimeout) clearTimeout(this.flusher.props.bindTimeout);
     this.flusher.props.bindTimeout = setTimeout(async () => {
       if (!this.flusher) return;
       if (!this.flusher.props.chatroomId && !this.flusher.props.isVod) {
@@ -3751,7 +3745,7 @@ class FlusherMessages {
         }
       }
       if (!this.socket && !this.flusher.props.isVod) this.subscribeChannel();
-    }, this.flusher.props.external ? 0 : 5000);
+    }, this.flusher.props.external ? 0 : 30000);
   }
   unbindRequests() {
     this.disposeChannel();

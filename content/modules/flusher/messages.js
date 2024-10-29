@@ -103,7 +103,7 @@ export class FlusherMessages {
         setTimeout(() => {
           logToConsole(`WebSocket Connection Closed By Host: ${this.flusher.props.channelName} (${this.flusher.props.chatroomId})`);
           this.setupWebSocket();
-        }, 5000);
+        }, 30000);
       }
     });
 
@@ -910,6 +910,7 @@ export class FlusherMessages {
 
     if (!this.flusher.props.external) this.interceptNative();
 
+    if (this.flusher?.props?.bindTimeout) clearTimeout(this.flusher.props.bindTimeout);
     this.flusher.props.bindTimeout = setTimeout(
       async () => {
         if (!this.flusher) return;
@@ -938,7 +939,7 @@ export class FlusherMessages {
         if (!this.socket && !this.flusher.props.isVod)
           this.subscribeChannel();
       },
-      this.flusher.props.external ? 0 : 5000
+      this.flusher.props.external ? 0 : 30000
     );
   }
 
