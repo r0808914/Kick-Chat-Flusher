@@ -20,11 +20,15 @@ export async function createChat(flusher) {
    const flusherObjectPinned = document.createElement("div");
    flusherObjectPinned.classList.add("flusher-pinned");
 
+   const flusherObjectChat = document.createElement("div");
+   flusherObjectChat.classList.add("flusher-chat");
+
    const flusherObjectDiv = document.createElement("div");
    flusherObjectDiv.classList.add("flusher-messages");
 
    flusherObjectContainer.append(flusherObjectPinned);
    flusherObjectContainer.append(flusherObjectDiv);
+   flusherObjectContainer.append(flusherObjectChat);
 
    const shadowRoot = flusherObject.props.external ? chatflusherObject.attachShadow({ mode: 'open' }) : null;
    const b = typeof browser !== 'undefined' ? browser : chrome;
@@ -52,6 +56,7 @@ export async function createChat(flusher) {
 
    flusherObject.container = flusherObjectContainer;
    flusherObject.messages = flusherObjectDiv;
+   flusherObject.chat = flusherObjectChat;
 
    function setExtensionStorageItem(key, value) {
       const data = { [key]: value };
@@ -181,8 +186,7 @@ export async function createChat(flusher) {
    const throttleDelay = 1000;
    window.isDragging = false;
 
-   /* remove old first */
-   /* flusherObject.video.parentNode.removeEventListener('mousemove', throttledMove); */
+   flusherObject.video.parentNode.removeEventListener('mousemove', throttledMove);
 
    flusherObject.props.mouseMoveHandler = (event) => {
       if (!window.isDragging) throttledMove();
@@ -197,20 +201,113 @@ export async function createChat(flusher) {
    flusherObject.container.addEventListener('mouseenter', () => {
       window.isDragging = true;
       flusherObject.video.removeEventListener('mousemove', flusherObject.props.mouseMoveHandler);
+
       lastRun = 1000;
       throttledMove();
+
+      const chatElement = document.getElementById('channel-chatroom')?.querySelector('.z-common.flex.w-full.border-x')?.parentElement;
+      if (chatElement) syncChat(chatElement);
    });
+
+   let chat = null;
+
+   function syncChat(chatElement) {
+      chat = chatElement.parentElement;
+
+      if (flusherObject.chat) {
+         const clonedChat = chatElement.cloneNode(true);
+         clonedChat.classList.add('flusher-temp');
+
+         const inputField = chatElement.querySelector('[contenteditable="true"]');
+         if (inputField) inputField.focus();
+
+         const originalButton = chatElement.querySelector('#chat-input-wrapper button');
+
+         let closed = chatElement.querySelector('.z-common.flex.w-full.border-x').classList.contains('border-transparent');
+         if (!closed && originalButton) originalButton.click();
+
+         let sendBtn = chatElement.querySelector('#flusher-chat-send');
+         const sendButton = chatElement.querySelector('#send-message-button');
+
+         if (!sendBtn && originalButton) {
+            const clonedButton = originalButton.cloneNode(true);
+            clonedButton.id = 'flusher-chat-send';
+
+            const svg = clonedButton.querySelector('svg');
+            if (svg) {
+               svg.setAttribute('viewBox', '0 0 20 20');
+               const svgPath = svg.querySelector('path');
+               if (svgPath) {
+                  svgPath.setAttribute('d', "M11.5003 12H5.41872M5.24634 12.7972L4.24158 15.7986C3.69128 17.4424 3.41613 18.2643 3.61359 18.7704C3.78506 19.21 4.15335 19.5432 4.6078 19.6701C5.13111 19.8161 5.92151 19.4604 7.50231 18.7491L17.6367 14.1886C19.1797 13.4942 19.9512 13.1471 20.1896 12.6648C20.3968 12.2458 20.3968 11.7541 20.1896 11.3351C19.9512 10.8529 19.1797 10.5057 17.6367 9.81135L7.48483 5.24303C5.90879 4.53382 5.12078 4.17921 4.59799 4.32468C4.14397 4.45101 3.77572 4.78336 3.60365 5.22209C3.40551 5.72728 3.67772 6.54741 4.22215 8.18767L5.24829 11.2793C5.34179 11.561 5.38855 11.7019 5.407 11.8459C5.42338 11.9738 5.42321 12.1032 5.40651 12.231C5.38768 12.375 5.34057 12.5157 5.24634 12.7972Z");
+                  svgPath.setAttribute('stroke', '#000000');
+                  svgPath.setAttribute('stroke-width', '2');
+                  svgPath.setAttribute('stroke-linecap', 'round');
+                  svgPath.setAttribute('stroke-linejoin', 'round');
+               }
+            }
+
+            if (sendButton) {
+               clonedButton.addEventListener('click', (event) => {
+                  sendButton.click();
+               });
+               originalButton.insertAdjacentElement('afterend', clonedButton);
+            }
+         } else {
+            if (sendBtn) {
+
+               if (sendButton) {
+                  sendBtn.addEventListener('click', (event) => {
+                     sendButton.click();
+                  });
+                  sendBtn.style.display = 'flex';
+               }
+            }
+         }
+
+         flusherObject.chat.appendChild(chatElement);
+         if (chat && clonedChat) chat.appendChild(clonedChat);
+      }
+   }
 
    flusherObject.container.addEventListener('mouseleave', () => {
       window.isDragging = false;
       flusherObject.video.addEventListener('mousemove', flusherObject.props.mouseMoveHandler);
       lastRun = 1000;
+
+      let tempChat = chat.querySelector('.flusher-temp');
+      if (tempChat) tempChat.remove();
+
+      let closed = flusherObject.chat.querySelector('.z-common.flex.w-full.border-x')?.classList.contains('border-transparent');
+      if (!closed) {
+         let emojiBtn = flusherObject.chat.querySelector('#chat-input-wrapper button');
+         if (emojiBtn) emojiBtn.click();
+      }
+
+      /* const editableParagraph = flusherObject.chat.querySelector('.editor-paragraph');
+      if (editableParagraph) {
+         while (editableParagraph.firstChild) {
+            editableParagraph.removeChild(editableParagraph.firstChild);
+         }
+         const br = document.createElement('br');
+         editableParagraph.appendChild(br);
+      } */
+
+      let sendBtn = flusherObject.chat.querySelector('#flusher-chat-send');
+      if (sendBtn) sendBtn.style.display = 'none';
+
+      if (chat && flusherObject.chat.firstChild) chat.appendChild(flusherObject.chat.firstChild);
+
+      /* document.body.click(); */
+
+      chat = null;
    });
+
 
    function throttledMove() {
       const now = Date.now();
       if (now - lastRun >= throttleDelay) {
          let node = flusherObject.video.parentNode.querySelector('.z-controls');
+
          if (node) { dupeBtn(node); }
          else {
             function attemptToDupeButton(maxAttempts = 5, initialWaitTime = 50) {
@@ -232,7 +329,7 @@ export async function createChat(flusher) {
                setTimeout(tryDuplication, currentWaitTime);
             }
 
-            attemptToDupeButton(); // Call the function
+            attemptToDupeButton();
 
          }
          lastRun = now;

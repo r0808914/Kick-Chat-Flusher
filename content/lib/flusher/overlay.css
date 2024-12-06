@@ -94,6 +94,33 @@
   z-index: 20;
 }
 
+.flusher-container[layout="vertical"] .flusher-chat {
+  bottom: 0;
+  position: absolute;
+  z-index: 20;
+  width: 100%;
+  left: 0;
+  scale: 0.9;
+  max-width: 340px;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.flusher-container[layout="vertical"] .flusher-chat .z-common {
+  border-radius: 8px;
+}
+
+.flusher-container[layout="vertical"] .flusher-chat #chat-input-wrapper {
+  cursor: auto;
+  pointer-events: auto;
+  user-select: text;
+}
+
+.flusher-container[layout="vertical"] .flusher-chat .justify-between.items-center:last-of-type {
+  display: none;
+}
+
 .flusher-container[layout="vertical"] .flusher-pinned .flex-nowrap.justify-between {
   margin-right: 6px;
 }
@@ -327,6 +354,7 @@
   bottom: 2px;
   right: 2px;
   cursor: nwse-resize;
+  z-index: 21;
 }
 
 .flusher-container[layout="vertical"][position="BOTTOMLEFT"] {
