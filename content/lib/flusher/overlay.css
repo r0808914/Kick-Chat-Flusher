@@ -109,6 +109,7 @@
 
 .flusher-container[layout="vertical"] .flusher-chat .z-common {
   border-radius: 8px;
+  opacity: .9;
 }
 
 .flusher-container[layout="vertical"] .flusher-chat #chat-input-wrapper {
@@ -557,7 +558,8 @@
 .flusher-container[shadow="true"].flusher-container[layout="vertical"][aerokick] .bk-text-transparent,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower span.font-normal,
 .flusher-container[shadow="true"].flusher-container[layout="vertical"] .flusher-messages .betterhover\:group-hover\:bg-shade-lower button.font-bold {
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7), -1px 0px #000000e6, 1px 0px #000000e6, 0px 1px #000000e6, 0px -1px #000000e6, 0px 0px 2px #ffffff2e;
+  /* text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7), -1px 0px #000000e6, 1px 0px #000000e6, 0px 1px #000000e6, 0px -1px #000000e6, 0px 0px 2px #ffffff2e; */
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6), -1px -1px 0px rgba(0, 0, 0, 0.2), 1px -1px 0px rgba(0, 0, 0, 0.2), -1px 1px 0px rgba(0, 0, 0, 0.2), 1px 1px 0px rgba(0, 0, 0, 0.2);
   font-weight: 800;
 }
 

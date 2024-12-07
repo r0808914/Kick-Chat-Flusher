@@ -6,6 +6,9 @@ import { svgToggle } from '../interface/toggle/toggle.js';
 let flusherObject;
 
 export async function createChat(flusher) {
+   /* remove old */
+   document.querySelectorAll('.flusher').forEach(item => item.remove());
+
    flusherObject = flusher;
    if (flusherObject.video.hasAttribute('flusher')) return;
    flusherObject.video.setAttribute('flusher', "");
@@ -212,14 +215,12 @@ export async function createChat(flusher) {
    let chat = null;
 
    function syncChat(chatElement) {
+      if (flusherObject.chat.firstChild) return;
       chat = chatElement.parentElement;
 
       if (flusherObject.chat) {
          const clonedChat = chatElement.cloneNode(true);
          clonedChat.classList.add('flusher-temp');
-
-         const inputField = chatElement.querySelector('[contenteditable="true"]');
-         if (inputField) inputField.focus();
 
          const originalButton = chatElement.querySelector('#chat-input-wrapper button');
 
@@ -266,6 +267,19 @@ export async function createChat(flusher) {
 
          flusherObject.chat.appendChild(chatElement);
          if (chat && clonedChat) chat.appendChild(clonedChat);
+
+         const inputField = chatElement.querySelector('[contenteditable="true"]');
+         if (inputField) {
+            inputField.focus();
+            const range = document.createRange();
+            const selection = window.getSelection();
+
+            range.selectNodeContents(inputField);
+            range.collapse(false);
+
+            selection.removeAllRanges();
+            selection.addRange(range);
+         }
       }
    }
 
@@ -274,7 +288,7 @@ export async function createChat(flusher) {
       flusherObject.video.addEventListener('mousemove', flusherObject.props.mouseMoveHandler);
       lastRun = 1000;
 
-      let tempChat = chat.querySelector('.flusher-temp');
+      let tempChat = chat?.querySelector('.flusher-temp');
       if (tempChat) tempChat.remove();
 
       let closed = flusherObject.chat.querySelector('.z-common.flex.w-full.border-x')?.classList.contains('border-transparent');
@@ -283,21 +297,14 @@ export async function createChat(flusher) {
          if (emojiBtn) emojiBtn.click();
       }
 
-      /* const editableParagraph = flusherObject.chat.querySelector('.editor-paragraph');
-      if (editableParagraph) {
-         while (editableParagraph.firstChild) {
-            editableParagraph.removeChild(editableParagraph.firstChild);
-         }
-         const br = document.createElement('br');
-         editableParagraph.appendChild(br);
-      } */
-
       let sendBtn = flusherObject.chat.querySelector('#flusher-chat-send');
       if (sendBtn) sendBtn.style.display = 'none';
 
       if (chat && flusherObject.chat.firstChild) chat.appendChild(flusherObject.chat.firstChild);
 
-      /* document.body.click(); */
+      while (flusherObject.chat.firstChild) {
+         flusherObject.chat.firstChild.remove();
+      }
 
       chat = null;
    });
