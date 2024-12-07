@@ -1,12 +1,18 @@
 # Kick Chat Flusher
 
-[<img src="https://extensionworkshop.com/assets/img/documentation/publish/get-the-addon-129x45px.8041c789.png" height="45px">](https://addons.mozilla.org/en-US/firefox/addon/kickchatflusher/) [<img src="https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/UV4C4ybeBTsZt43U4xis.png" height="45px">](https://chrome.google.com/webstore/detail/kick-chat-flusher/cefplanllnmdnnhncpopljmcjnlafdke)
+[<img src="https://blog.mozilla.org/addons/files/2015/11/get-the-addon.png" height="46px">](https://addons.mozilla.org/en-US/firefox/addon/kickchatflusher/) [<img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" height="45px">](https://chrome.google.com/webstore/detail/kick-chat-flusher/cefplanllnmdnnhncpopljmcjnlafdke)
 
-Enhance your kick.com viewing experience with a dynamic fullscreen chat overlay. Messages flow seamlessly from right to left, providing an immersive chat environment while you enjoy your content. This script works in both live and VOD (Video on Demand) modes.
+Dynamic chat overlay for **kick.com**, featuring both standard vertical and fullscreen horizontal sliding modes. Works seamlessly in live and VOD modes.  
 
-## Features
+## Features  
 
-- Fullscreen chat overlay for kick
-- Elegant right-to-left message transition
-- Compatible with both live and VOD (Video on Demand) modes
-- Supports various message types, including user bans, gifted subscriptions, etc.
+- **Dual Modes:**  
+  - **Vertical Overlay:** Classic chat view.  
+  - **Horizontal Overlay:** Messages slide from right to left in fullscreen mode.  
+- **Event Support:** Handles pinned messages, bans, gifted subs, and more.  
+- **Interactive:** Supports sending messages directly via the overlay.  
+- **Multi-Mode:** Fully compatible with live streams and VODs.  
+
+---  
+
+Let me know if you need additional edits!
