@@ -13,6 +13,5 @@ Dynamic chat overlay for **kick.com**, featuring both standard vertical and full
 - **Interactive:** Supports sending messages directly via the overlay.  
 - **Multi-Mode:** Fully compatible with live streams and VODs.  
 
----  
 
 Let me know if you need additional edits!
